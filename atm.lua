@@ -47,7 +47,7 @@ local STATE = {
 setfpscap(CONFIG.Fps)
 
 pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua'))()end)
-pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/Optimization.Lua'))()end)
+--pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/Optimization.Lua'))()end)
 
 -- ════════════════════════════════════════════════════════════════
 -- UTILITY FUNCTIONS
