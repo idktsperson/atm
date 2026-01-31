@@ -447,6 +447,8 @@ function ATM.Break(atmData)
         Utils.Log("═══════════════════════════════")
         Utils.Log("Breaking ATM: " .. atmData.Name)
         Utils.Log("═══════════════════════════════")
+
+        local hrp = LocalPlayer.Character.HumanoidRootPart
         
         Noclip.Enable()
 
@@ -460,7 +462,6 @@ function ATM.Break(atmData)
         local targetPos = atmData.Position - Vector3.new(0, 3, 0)
         
         if Utils.IsValidCharacter(LocalPlayer.Character) then
-            local hrp = LocalPlayer.Character.HumanoidRootPart
             
             -- Position character lying down, facing sky
             hrp.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(90), 0, 0)
