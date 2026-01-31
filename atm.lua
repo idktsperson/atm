@@ -452,7 +452,7 @@ function ATM.Break(atmData)
         Noclip.Enable()
         
         -- Teleport 4 studs below ATM
-        local targetPos = atmData.Position - Vector3.new(0, 4, 0)
+        local targetPos = atmData.Position - Vector3.new(0, 1, 0)
         
         if Utils.IsValidCharacter(LocalPlayer.Character) then
             local hrp = LocalPlayer.Character.HumanoidRootPart
