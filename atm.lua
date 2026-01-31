@@ -1,18 +1,9 @@
---[[
-    Da Hood ATM Farm System
-    Optimized & Automated
-    Features: Auto ATM Detection, Cash Aura, Server Hop, Webhook
-]]
-
--- ════════════════════════════════════════════════════════════════
--- CONFIGURATION
--- ════════════════════════════════════════════════════════════════
 
 getgenv().Configuration = getgenv().Configuration or {
     ['ServerHop'] = false,
     ['ServerHopNum'] = 5,
     ['WebhookEnabled'] = true,
-    ['Webhook'] = "https://discord.com/api/webhooks/1467104363897163807/s0m0Kjspwt6x7g3uBvdDFqYUaduAYSKuI9dgapAZv-AcbbxhZL_z4eu4-5nb0QHUzNnh",
+    ['Webhook'] = "",
     ['WebhookInterval'] = 2,
     ['Fps'] = 15,
 }
