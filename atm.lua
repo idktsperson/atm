@@ -448,11 +448,16 @@ function ATM.Break(atmData)
         Utils.Log("Breaking ATM: " .. atmData.Name)
         Utils.Log("═══════════════════════════════")
         
-        -- Enable noclip
         Noclip.Enable()
+
+        hrp.Anchored = true
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+            
+        task.wait(0.2)
         
         -- Teleport 4 studs below ATM
-        local targetPos = atmData.Position
+        local targetPos = atmData.Position - Vector3.new(0, 3, 0)
         
         if Utils.IsValidCharacter(LocalPlayer.Character) then
             local hrp = LocalPlayer.Character.HumanoidRootPart
@@ -460,13 +465,6 @@ function ATM.Break(atmData)
             -- Position character lying down, facing sky
             hrp.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(90), 0, 0)
             task.wait(0.3)
-            
-            -- Freeze character completely
-            hrp.Anchored = true
-            hrp.AssemblyLinearVelocity = Vector3.zero
-            hrp.AssemblyAngularVelocity = Vector3.zero
-            
-            task.wait(0.2)
             
             -- Equip Combat
             Utils.EquipCombat()
