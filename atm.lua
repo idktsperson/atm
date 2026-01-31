@@ -1,9 +1,9 @@
-print("working")
+print("made by _ethz on discord")
 
 getgenv().Configuration = getgenv().Configuration or {
     ['ServerHop'] = false,
     ['ServerHopNum'] = 5,
-    ['WebhookEnabled'] = true,
+    ['WebhookEnabled'] = false,
     ['Webhook'] = "",
     ['WebhookInterval'] = 2,
     ['Fps'] = 15,
@@ -37,6 +37,7 @@ local STATE = {
     isRunning = false,
     cashAuraActive = false,
     lastWebhookSent = 0,
+    processedATMs = {}, -- Track processed ATMs
 }
 
 -- ════════════════════════════════════════════════════════════════
@@ -48,6 +49,9 @@ setfpscap(CONFIG.Fps)
 pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua'))()end)
 pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/Optimization.Lua'))()end)
 
+-- ════════════════════════════════════════════════════════════════
+-- UTILITY FUNCTIONS
+-- ════════════════════════════════════════════════════════════════
 
 local Utils = {}
 
@@ -121,34 +125,29 @@ function Webhook.Send(title, description, color)
                 ["color"] = color or 3447003,
                 ["fields"] = {
                     {
-                        ["name"] = "💰 Total Cash Collected",
+                        ["name"] = "💰 Total Cash",
                         ["value"] = "$" .. tostring(STATE.totalCashCollected),
                         ["inline"] = true
                     },
                     {
-                        ["name"] = "💀 Death Count",
+                        ["name"] = "💀 Deaths",
                         ["value"] = tostring(STATE.deathCount),
                         ["inline"] = true
                     },
                     {
-                        ["name"] = "⏱️ Session Time",
+                        ["name"] = "⏱️ Session",
                         ["value"] = string.format("%dh %dm", hours, minutes),
-                        ["inline"] = true
-                    },
-                    {
-                        ["name"] = "🏧 Current ATM",
-                        ["value"] = tostring(STATE.currentATMIndex),
                         ["inline"] = true
                     },
                 },
                 ["footer"] = {
-                    ["text"] = "Da Hood ATM Farm • " .. os.date("%H:%M:%S")
+                    ["text"] = "ATM Farm • " .. os.date("%H:%M:%S")
                 },
                 ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
             }}
         }
         
-        local response = request({
+        request({
             Url = CONFIG.Webhook,
             Method = "POST",
             Headers = {
@@ -186,7 +185,7 @@ function CashAura.Start()
                             
                             if distance < 12 then
                                 fireclickdetector(drop.ClickDetector)
-                                STATE.totalCashCollected = STATE.totalCashCollected + 10 -- Estimate
+                                STATE.totalCashCollected = STATE.totalCashCollected + 10
                             end
                         end
                     end
@@ -227,10 +226,43 @@ function CashAura.CheckNearbyDrops()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- ATM DETECTION SYSTEM
+-- ATM DETECTION SYSTEM (IMPROVED)
 -- ════════════════════════════════════════════════════════════════
 
 local ATM = {}
+
+function ATM.IsATMFilled(cashier)
+    -- Method 1: Check "Open" part with specific size
+    local open = cashier:FindFirstChild("Open")
+    if open and open:IsA("BasePart") then
+        local size = open.Size
+        -- Check if size is approximately 2.6, 0.5, 0.1
+        if math.abs(size.X - 2.6) < 0.1 and math.abs(size.Y - 0.5) < 0.1 and math.abs(size.Z - 0.1) < 0.1 then
+            return true, open
+        end
+    end
+    
+    -- Method 2: Check for any part named "Open" (regardless of size)
+    if open then
+        return true, open
+    end
+    
+    -- Method 3: Look for largest part (backup method)
+    local largestPart = nil
+    local largestSize = 0
+    
+    for _, child in ipairs(cashier:GetChildren()) do
+        if child:IsA("BasePart") then
+            local size = child.Size.X * child.Size.Y * child.Size.Z
+            if size > largestSize then
+                largestSize = size
+                largestPart = child
+            end
+        end
+    end
+    
+    return largestPart ~= nil, largestPart
+end
 
 function ATM.ScanAll()
     local filledATMs = {}
@@ -242,18 +274,28 @@ function ATM.ScanAll()
             return
         end
         
+        Utils.Log("Scanning " .. #cashiers:GetChildren() .. " cashiers...")
+        
         for index, cashier in ipairs(cashiers:GetChildren()) do
-            local open = cashier:FindFirstChild("Open")
-            
-            if open and open.Size == Vector3.new(2.6, 0.5, 0.1) then
-                table.insert(filledATMs, {
-                    Index = index,
-                    Name = cashier.Name,
-                    Position = open.WorldPivot.Position,
-                    Cashier = cashier,
-                })
+            -- Skip if already processed
+            if not STATE.processedATMs[cashier.Name] then
+                local isFilled, targetPart = ATM.IsATMFilled(cashier)
+                
+                if isFilled and targetPart then
+                    table.insert(filledATMs, {
+                        Index = index,
+                        Name = cashier.Name,
+                        Position = targetPart.Position,
+                        Cashier = cashier,
+                        TargetPart = targetPart,
+                    })
+                    
+                    Utils.Log("  ✓ Found filled ATM: " .. cashier.Name)
+                end
             end
         end
+        
+        Utils.Log("Total filled ATMs: " .. #filledATMs)
     end)
     
     return filledATMs
@@ -261,7 +303,9 @@ end
 
 function ATM.Break(atmData)
     return pcall(function()
-        Utils.Log("Breaking ATM: " .. atmData.Name .. " (#" .. atmData.Index .. ")")
+        Utils.Log("═══════════════════════════════")
+        Utils.Log("Breaking ATM: " .. atmData.Name)
+        Utils.Log("═══════════════════════════════")
         
         -- Teleport to ATM (2 studs below)
         Utils.TeleportTo(atmData.Position, 2)
@@ -276,19 +320,22 @@ function ATM.Break(atmData)
         task.wait(0.3)
         
         -- First charge attack
-        Utils.Log("Charge attack 1/2")
+        Utils.Log("⚡ Charge attack 1/2")
         MainEvent:FireServer("ChargeButton")
-        task.wait(3)
+        task.wait(3.5)
         
         -- Second charge attack
-        Utils.Log("Charge attack 2/2")
+        Utils.Log("⚡ Charge attack 2/2")
         MainEvent:FireServer("ChargeButton")
-        task.wait(3)
+        task.wait(3.5)
         
         -- Unanchor character
         Utils.AnchorCharacter(false)
         
-        Utils.Log("ATM broken successfully!")
+        -- Mark as processed
+        STATE.processedATMs[atmData.Name] = true
+        
+        Utils.Log("✅ ATM broken successfully!")
         return true
     end)
 end
@@ -300,7 +347,7 @@ end
 local ServerHop = {}
 
 function ServerHop.Execute()
-    Utils.Log("Server hopping...")
+    Utils.Log("🔄 Server hopping...")
     Webhook.Send("🔄 Server Hopping", "Death limit reached. Switching servers...", 16776960)
     
     pcall(function()
@@ -314,7 +361,6 @@ function ServerHop.Execute()
             end
         end
         
-        -- Fallback
         TeleportService:Teleport(placeId, LocalPlayer)
     end)
 end
@@ -339,10 +385,11 @@ function Farm.Start()
     
     STATE.isRunning = true
     STATE.sessionStartTime = os.time()
+    STATE.processedATMs = {} -- Reset processed ATMs
     
     Utils.Log("═══════════════════════════════════════")
-    Utils.Log("ATM Farm Started!")
-    Utils.Log("FPS Cap: " .. CONFIG.Fps)
+    Utils.Log("🏧 ATM Farm Started!")
+    Utils.Log("FPS: " .. CONFIG.Fps)
     Utils.Log("Server Hop: " .. tostring(CONFIG.ServerHop))
     Utils.Log("Webhook: " .. tostring(CONFIG.WebhookEnabled))
     Utils.Log("═══════════════════════════════════════")
@@ -354,17 +401,24 @@ function Farm.Start()
     
     task.spawn(function()
         while STATE.isRunning do
-            pcall(function()
+            local success, err = pcall(function()
                 -- Scan for filled ATMs
                 local filledATMs = ATM.ScanAll()
                 
                 if #filledATMs == 0 then
-                    Utils.Log("No filled ATMs found. Waiting...")
-                    task.wait(10)
+                    Utils.Log("⏳ No new filled ATMs. Waiting 15 seconds...")
+                    Utils.Log("   (Processed: " .. #STATE.processedATMs .. " ATMs so far)")
+                    task.wait(15)
+                    
+                    -- Reset processed ATMs every 5 minutes
+                    if os.time() - STATE.sessionStartTime % 300 == 0 then
+                        STATE.processedATMs = {}
+                        Utils.Log("🔄 Reset processed ATMs list")
+                    end
                     return
                 end
                 
-                Utils.Log("Found " .. #filledATMs .. " filled ATMs")
+                Utils.Log("🎯 Processing " .. #filledATMs .. " ATMs...")
                 
                 -- Farm each ATM
                 for i, atmData in ipairs(filledATMs) do
@@ -373,10 +427,10 @@ function Farm.Start()
                     STATE.currentATMIndex = i
                     
                     -- Break ATM
-                    local success = ATM.Break(atmData)
+                    local breakSuccess, breakErr = ATM.Break(atmData)
                     
-                    if success then
-                        Utils.Log("Waiting for cash drops...")
+                    if breakSuccess then
+                        Utils.Log("💰 Waiting for cash drops...")
                         
                         -- Wait and collect cash
                         local maxWaitTime = 15
@@ -385,8 +439,10 @@ function Farm.Start()
                         while waitedTime < maxWaitTime and STATE.isRunning do
                             local nearbyDrops = CashAura.CheckNearbyDrops()
                             
-                            if nearbyDrops == 0 then
-                                Utils.Log("All cash collected!")
+                            Utils.Log("   Cash nearby: " .. nearbyDrops)
+                            
+                            if nearbyDrops == 0 and waitedTime > 3 then
+                                Utils.Log("✅ All cash collected!")
                                 break
                             end
                             
@@ -394,16 +450,21 @@ function Farm.Start()
                             waitedTime = waitedTime + 1
                         end
                     else
-                        Utils.Log("Failed to break ATM, moving to next...")
+                        Utils.Log("❌ Failed to break ATM: " .. tostring(breakErr))
                     end
                     
                     task.wait(2)
                 end
                 
-                Utils.Log("All ATMs processed. Rescanning in 10 seconds...")
-                Webhook.Send("🔄 Scanning", "All ATMs processed. Rescanning for new ones...", 3447003)
+                -- All ATMs done
+                Utils.Log("🔄 All visible ATMs processed. Rescanning in 10 seconds...")
                 task.wait(10)
             end)
+            
+            if not success then
+                Utils.Log("❌ ERROR: " .. tostring(err))
+                task.wait(5)
+            end
         end
     end)
 end
@@ -413,8 +474,8 @@ function Farm.Stop()
     CashAura.Stop()
     Utils.AnchorCharacter(false)
     
-    Utils.Log("Farm stopped!")
-    Webhook.Send("🛑 Farm Stopped", "ATM farming session ended", 15158332)
+    Utils.Log("🛑 Farm stopped!")
+    Webhook.Send("🛑 Farm Stopped", "Session ended. Total: $" .. STATE.totalCashCollected, 15158332)
 end
 
 -- ════════════════════════════════════════════════════════════════
@@ -424,17 +485,17 @@ end
 LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
     
-    Utils.Log("Character respawned! Death count: " .. STATE.deathCount)
-    Webhook.Send("💀 Death Detected", "Character died. Total deaths: " .. STATE.deathCount, 15158332)
+    Utils.Log("💀 Death #" .. STATE.deathCount)
+    Webhook.Send("💀 Death", "Total deaths: " .. STATE.deathCount, 15158332)
     
     ServerHop.CheckDeath()
     
     task.wait(3)
-    
-    if STATE.isRunning then
-        Utils.Log("Resuming farm after respawn...")
-    end
 end)
+
+-- ════════════════════════════════════════════════════════════════
+-- ANTI-AFK
+-- ════════════════════════════════════════════════════════════════
 
 task.spawn(function()
     local vu = game:GetService("VirtualUser")
@@ -445,27 +506,62 @@ task.spawn(function()
     end)
 end)
 
+-- ════════════════════════════════════════════════════════════════
+-- DEBUG COMMAND
+-- ════════════════════════════════════════════════════════════════
+
+getgenv().DebugATM = function()
+    Utils.Log("=== DEBUG INFO ===")
+    local cashiers = Workspace:FindFirstChild("Cashiers")
+    if cashiers then
+        Utils.Log("Cashiers found: " .. #cashiers:GetChildren())
+        for i, cashier in ipairs(cashiers:GetChildren()) do
+            Utils.Log("Cashier #" .. i .. ": " .. cashier.Name)
+            local open = cashier:FindFirstChild("Open")
+            if open then
+                Utils.Log("  Size: " .. tostring(open.Size))
+            else
+                Utils.Log("  No 'Open' part found")
+            end
+        end
+    else
+        Utils.Log("Cashiers folder NOT FOUND")
+    end
+end
+
+-- ════════════════════════════════════════════════════════════════
+-- AUTO START
+-- ════════════════════════════════════════════════════════════════
+
 task.wait(3)
 Farm.Start()
+
+-- ════════════════════════════════════════════════════════════════
+-- GLOBAL FUNCTIONS
+-- ════════════════════════════════════════════════════════════════
 
 getgenv().ATMFarm = {
     Start = Farm.Start,
     Stop = Farm.Stop,
+    Debug = getgenv().DebugATM,
     GetStats = function()
         return {
             TotalCash = STATE.totalCashCollected,
             Deaths = STATE.deathCount,
             SessionTime = os.time() - STATE.sessionStartTime,
             CurrentATM = STATE.currentATMIndex,
+            ProcessedATMs = #STATE.processedATMs,
             IsRunning = STATE.isRunning,
         }
+    end,
+    ResetProcessed = function()
+        STATE.processedATMs = {}
+        Utils.Log("Processed ATMs reset!")
     end
 }
 
 print("═══════════════════════════════════════")
-print("[ATM FARM] Loaded Successfully!")
-print("[Commands]")
-print("  getgenv().ATMFarm.Start() - Start farm")
-print("  getgenv().ATMFarm.Stop() - Stop farm")
-print("  getgenv().ATMFarm.GetStats() - View stats")
+print("[ATM FARM] Loaded - v2.0")
+print("[Debug] getgenv().DebugATM()")
+print("[Stats] getgenv().ATMFarm.GetStats()")
 print("═══════════════════════════════════════")
