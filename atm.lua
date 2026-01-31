@@ -52,6 +52,7 @@ local STATE = {
 setfpscap(CONFIG.Fps)
 
 pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua'))()end)
+pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua'))()end)
 --pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/Optimization.Lua'))()end)
 
 local OcclusionCamera = {}
@@ -459,6 +460,8 @@ function ATM.Break(atmData)
             
             -- Position character lying down, facing sky
             hrp.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(90), 0, 0)
+
+            wait(0.5)
 
             hrp.Anchored = true
             hrp.AssemblyLinearVelocity = Vector3.zero
