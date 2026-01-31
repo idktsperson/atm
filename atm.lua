@@ -1,3 +1,4 @@
+print("working")
 
 getgenv().Configuration = getgenv().Configuration or {
     ['ServerHop'] = false,
