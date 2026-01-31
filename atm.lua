@@ -11,19 +11,28 @@ getgenv().Configuration = getgenv().Configuration or {
 
 local CONFIG = getgenv().Configuration
 
--- ════════════════════════════════════════════════════════════════
--- SERVICES
--- ════════════════════════════════════════════════════════════════
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local MainEvent = ReplicatedStorage:WaitForChild("MainEvent", 10)
+
+-- Wait for game to load
+repeat task.wait(0.1) until game:IsLoaded() and LocalPlayer
+
+-- Wait for character to fully load
+if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("FULLY_LOADED_CHAR") then 
+    repeat task.wait(0.5) until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("FULLY_LOADED_CHAR")
+    task.wait(1)
+end
+
+local Camera = Workspace.CurrentCamera
 
 -- ════════════════════════════════════════════════════════════════
 -- STATE MANAGEMENT
@@ -37,7 +46,7 @@ local STATE = {
     isRunning = false,
     cashAuraActive = false,
     lastWebhookSent = 0,
-    processedATMs = {}, -- Track processed ATMs
+    processedATMs = {},
 }
 
 -- ════════════════════════════════════════════════════════════════
@@ -48,6 +57,29 @@ setfpscap(CONFIG.Fps)
 
 pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua'))()end)
 --pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/Optimization.Lua'))()end)
+
+-- ════════════════════════════════════════════════════════════════
+-- OCCLUSION CAMERA
+-- ════════════════════════════════════════════════════════════════
+
+local OcclusionCamera = {}
+
+function OcclusionCamera.Enable()
+    pcall(function()
+        sethiddenproperty(Camera, "DevCameraOcclusionMode", "Invisicam")
+        Utils.Log("Occlusion Camera enabled (Invisicam)")
+    end)
+end
+
+function OcclusionCamera.Disable()
+    pcall(function()
+        sethiddenproperty(Camera, "DevCameraOcclusionMode", "Zoom")
+        Utils.Log("Occlusion Camera disabled")
+    end)
+end
+
+-- Enable on load
+OcclusionCamera.Enable()
 
 -- ════════════════════════════════════════════════════════════════
 -- UTILITY FUNCTIONS
@@ -106,98 +138,165 @@ local Webhook = {}
 function Webhook.Send(title, description, color)
     if not CONFIG.WebhookEnabled or CONFIG.Webhook == "" then return end
     
-    pcall(function()
-        local currentTime = os.time()
-        if currentTime - STATE.lastWebhookSent < (CONFIG.WebhookInterval * 60) then
-            return
-        end
-        
-        STATE.lastWebhookSent = currentTime
-        
-        local sessionTime = os.time() - STATE.sessionStartTime
-        local hours = math.floor(sessionTime / 3600)
-        local minutes = math.floor((sessionTime % 3600) / 60)
-        
-        local embed = {
-            ["embeds"] = {{
-                ["title"] = title,
-                ["description"] = description,
-                ["color"] = color or 3447003,
-                ["fields"] = {
-                    {
-                        ["name"] = "💰 Total Cash",
-                        ["value"] = "$" .. tostring(STATE.totalCashCollected),
-                        ["inline"] = true
+    task.spawn(function()
+        pcall(function()
+            local currentTime = os.time()
+            if currentTime - STATE.lastWebhookSent < (CONFIG.WebhookInterval * 60) then
+                return
+            end
+            
+            STATE.lastWebhookSent = currentTime
+            
+            local sessionTime = os.time() - STATE.sessionStartTime
+            local hours = math.floor(sessionTime / 3600)
+            local minutes = math.floor((sessionTime % 3600) / 60)
+            
+            local embed = {
+                ["embeds"] = {{
+                    ["title"] = title,
+                    ["description"] = description,
+                    ["color"] = color or 3447003,
+                    ["fields"] = {
+                        {
+                            ["name"] = "💰 Total Cash",
+                            ["value"] = "$" .. tostring(STATE.totalCashCollected),
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "💀 Deaths",
+                            ["value"] = tostring(STATE.deathCount),
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "⏱️ Session",
+                            ["value"] = string.format("%dh %dm", hours, minutes),
+                            ["inline"] = true
+                        },
+                        {
+                            ["name"] = "🏧 ATMs Farmed",
+                            ["value"] = tostring(#STATE.processedATMs),
+                            ["inline"] = true
+                        },
                     },
-                    {
-                        ["name"] = "💀 Deaths",
-                        ["value"] = tostring(STATE.deathCount),
-                        ["inline"] = true
+                    ["footer"] = {
+                        ["text"] = "ATM Farm • " .. os.date("%H:%M:%S")
                     },
-                    {
-                        ["name"] = "⏱️ Session",
-                        ["value"] = string.format("%dh %dm", hours, minutes),
-                        ["inline"] = true
-                    },
-                },
-                ["footer"] = {
-                    ["text"] = "ATM Farm • " .. os.date("%H:%M:%S")
-                },
-                ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
-            }}
-        }
-        
-        request({
-            Url = CONFIG.Webhook,
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = HttpService:JSONEncode(embed)
-        })
+                    ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
+                }}
+            }
+            
+            request({
+                Url = CONFIG.Webhook,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode(embed)
+            })
+        end)
     end)
 end
 
 -- ════════════════════════════════════════════════════════════════
--- CASH AURA SYSTEM
+-- CASH AURA SYSTEM (ADVANCED)
 -- ════════════════════════════════════════════════════════════════
 
 local CashAura = {}
+local Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
+local isProcessing = false
 
 function CashAura.Start()
     if STATE.cashAuraActive then return end
     
     STATE.cashAuraActive = true
-    Utils.Log("Cash Aura activated")
+    Utils.Log("Cash Aura activated (Advanced Mode)")
     
     task.spawn(function()
         while STATE.cashAuraActive do
+            task.wait(0.15)
+            
             pcall(function()
                 if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
+                if not Drops then
+                    Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
+                    return
+                end
                 
                 local playerPos = LocalPlayer.Character.HumanoidRootPart.Position
-                local dropsFolder = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
                 
-                if dropsFolder then
-                    for _, drop in pairs(dropsFolder:GetChildren()) do
-                        if drop.Name == "MoneyDrop" and drop:FindFirstChild("ClickDetector") then
-                            local distance = (playerPos - drop.Position).Magnitude
+                for _, drop in pairs(Drops:GetChildren()) do
+                    if drop.Name == "MoneyDrop" and not isProcessing then
+                        local distance = (drop.Position - playerPos).Magnitude
+                        
+                        if distance <= 12 then
+                            isProcessing = true
                             
-                            if distance < 12 then
-                                fireclickdetector(drop.ClickDetector)
-                                STATE.totalCashCollected = STATE.totalCashCollected + 10
+                            -- Unequip all tools
+                            for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
+                                if tool:IsA("Tool") then
+                                    tool.Parent = LocalPlayer.Backpack
+                                end
                             end
+                            
+                            -- Set camera to scriptable
+                            Camera.CameraType = Enum.CameraType.Scriptable
+                            
+                            repeat
+                                task.wait()
+                                
+                                -- Point camera at money drop with random offset
+                                local offset = Vector3.new(
+                                    math.random(-30, 30) / 100,
+                                    2,
+                                    math.random(-30, 30) / 100
+                                )
+                                Camera.CFrame = CFrame.lookAt(drop.Position + offset, drop.Position)
+                                
+                                -- Click at center of screen
+                                local viewportCenter = Camera.ViewportSize / 2
+                                VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
+                                task.wait(0.15)
+                                VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
+                                
+                                -- Update distance
+                                if Utils.IsValidCharacter(LocalPlayer.Character) then
+                                    distance = (drop.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                                else
+                                    break
+                                end
+                                
+                            until not drop or drop.Parent == nil or distance > 12
+                            
+                            -- Restore camera
+                            Camera.CameraType = Enum.CameraType.Custom
+                            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+                            
+                            isProcessing = false
+                            STATE.totalCashCollected = STATE.totalCashCollected + 10
                         end
                     end
                 end
             end)
-            task.wait(0.1)
         end
+        
+        -- Cleanup when stopped
+        pcall(function()
+            Camera.CameraType = Enum.CameraType.Custom
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                Camera.CameraSubject = LocalPlayer.Character.Humanoid
+            end
+        end)
     end)
 end
 
 function CashAura.Stop()
     STATE.cashAuraActive = false
+    
+    pcall(function()
+        Camera.CameraType = Enum.CameraType.Custom
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+        end
+    end)
+    
     Utils.Log("Cash Aura deactivated")
 end
 
@@ -206,17 +305,15 @@ function CashAura.CheckNearbyDrops()
     
     pcall(function()
         if not Utils.IsValidCharacter(LocalPlayer.Character) then return 0 end
+        if not Drops then return 0 end
         
         local playerPos = LocalPlayer.Character.HumanoidRootPart.Position
-        local dropsFolder = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
         
-        if dropsFolder then
-            for _, drop in pairs(dropsFolder:GetChildren()) do
-                if drop.Name == "MoneyDrop" then
-                    local distance = (playerPos - drop.Position).Magnitude
-                    if distance < 12 then
-                        count = count + 1
-                    end
+        for _, drop in pairs(Drops:GetChildren()) do
+            if drop.Name == "MoneyDrop" then
+                local distance = (drop.Position - playerPos).Magnitude
+                if distance < 12 then
+                    count = count + 1
                 end
             end
         end
@@ -226,7 +323,7 @@ function CashAura.CheckNearbyDrops()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- ATM DETECTION SYSTEM (IMPROVED)
+-- ATM DETECTION SYSTEM
 -- ════════════════════════════════════════════════════════════════
 
 local ATM = {}
@@ -385,13 +482,14 @@ function Farm.Start()
     
     STATE.isRunning = true
     STATE.sessionStartTime = os.time()
-    STATE.processedATMs = {} -- Reset processed ATMs
+    STATE.processedATMs = {}
     
     Utils.Log("═══════════════════════════════════════")
     Utils.Log("🏧 ATM Farm Started!")
     Utils.Log("FPS: " .. CONFIG.Fps)
     Utils.Log("Server Hop: " .. tostring(CONFIG.ServerHop))
     Utils.Log("Webhook: " .. tostring(CONFIG.WebhookEnabled))
+    Utils.Log("Occlusion Camera: Enabled")
     Utils.Log("═══════════════════════════════════════")
     
     Webhook.Send("✅ Farm Started", "ATM farming session initiated", 3066993)
@@ -411,7 +509,7 @@ function Farm.Start()
                     task.wait(15)
                     
                     -- Reset processed ATMs every 5 minutes
-                    if os.time() - STATE.sessionStartTime % 300 == 0 then
+                    if (os.time() - STATE.sessionStartTime) % 300 < 15 then
                         STATE.processedATMs = {}
                         Utils.Log("🔄 Reset processed ATMs list")
                     end
@@ -458,6 +556,7 @@ function Farm.Start()
                 
                 -- All ATMs done
                 Utils.Log("🔄 All visible ATMs processed. Rescanning in 10 seconds...")
+                Webhook.Send("🔄 Scanning", "All ATMs processed. Rescanning...", 3447003)
                 task.wait(10)
             end)
             
@@ -479,7 +578,7 @@ function Farm.Stop()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- DEATH HANDLER
+-- CHARACTER HANDLERS
 -- ════════════════════════════════════════════════════════════════
 
 LocalPlayer.CharacterAdded:Connect(function(character)
@@ -490,7 +589,19 @@ LocalPlayer.CharacterAdded:Connect(function(character)
     
     ServerHop.CheckDeath()
     
-    task.wait(3)
+    -- Wait for full load
+    task.wait(0.5)
+    if not character:FindFirstChild("FULLY_LOADED_CHAR") then
+        repeat task.wait(0.5) until character:FindFirstChild("FULLY_LOADED_CHAR")
+        task.wait(1)
+    end
+    
+    -- Update camera reference
+    Camera = Workspace.CurrentCamera
+    OcclusionCamera.Enable()
+    
+    -- Update drops reference
+    Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
 end)
 
 -- ════════════════════════════════════════════════════════════════
@@ -500,14 +611,14 @@ end)
 task.spawn(function()
     local vu = game:GetService("VirtualUser")
     LocalPlayer.Idled:Connect(function()
-        vu:Button2Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+        vu:Button2Down(Vector2.new(0,0), Camera.CFrame)
         task.wait(1)
-        vu:Button2Up(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+        vu:Button2Up(Vector2.new(0,0), Camera.CFrame)
     end)
 end)
 
 -- ════════════════════════════════════════════════════════════════
--- DEBUG COMMAND
+-- DEBUG FUNCTIONS
 -- ════════════════════════════════════════════════════════════════
 
 getgenv().DebugATM = function()
@@ -520,6 +631,7 @@ getgenv().DebugATM = function()
             local open = cashier:FindFirstChild("Open")
             if open then
                 Utils.Log("  Size: " .. tostring(open.Size))
+                Utils.Log("  Position: " .. tostring(open.Position))
             else
                 Utils.Log("  No 'Open' part found")
             end
@@ -533,7 +645,7 @@ end
 -- AUTO START
 -- ════════════════════════════════════════════════════════════════
 
-task.wait(3)
+task.wait(2)
 Farm.Start()
 
 -- ════════════════════════════════════════════════════════════════
@@ -544,6 +656,13 @@ getgenv().ATMFarm = {
     Start = Farm.Start,
     Stop = Farm.Stop,
     Debug = getgenv().DebugATM,
+    ToggleOcclusion = function()
+        if Camera.DevCameraOcclusionMode == Enum.DevCameraOcclusionMode.Invisicam then
+            OcclusionCamera.Disable()
+        else
+            OcclusionCamera.Enable()
+        end
+    end,
     GetStats = function()
         return {
             TotalCash = STATE.totalCashCollected,
@@ -552,6 +671,7 @@ getgenv().ATMFarm = {
             CurrentATM = STATE.currentATMIndex,
             ProcessedATMs = #STATE.processedATMs,
             IsRunning = STATE.isRunning,
+            CashAuraActive = STATE.cashAuraActive,
         }
     end,
     ResetProcessed = function()
@@ -561,7 +681,10 @@ getgenv().ATMFarm = {
 }
 
 print("═══════════════════════════════════════")
-print("[ATM FARM] Loaded - v2.0")
-print("[Debug] getgenv().DebugATM()")
-print("[Stats] getgenv().ATMFarm.GetStats()")
+print("[ATM FARM] Loaded Successfully - v3.0")
+print("[Occlusion Camera] Enabled")
+print("[Commands]")
+print("  getgenv().DebugATM()")
+print("  getgenv().ATMFarm.GetStats()")
+print("  getgenv().ATMFarm.ToggleOcclusion()")
 print("═══════════════════════════════════════")
