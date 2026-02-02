@@ -1,6 +1,6 @@
 --[[
-    Da Hood ATM Farm System - OPTIMIZED VERSION
-    Features: CFrame Loop (No Freeze), Smart Wait System, Vault Filter
+    Da Hood ATM Farm System - ULTIMATE OPTIMIZED VERSION
+    Features: Camera Clip, Executor Detection, Smart Positioning, Safe AFK Zone
 ]]
 
 -- ════════════════════════════════════════════════════════════════
@@ -47,6 +47,83 @@ end
 local Camera = Workspace.CurrentCamera
 
 -- ════════════════════════════════════════════════════════════════
+-- EXECUTOR DETECTION
+-- ════════════════════════════════════════════════════════════════
+
+local EXECUTOR_TYPE = "UNKNOWN"
+
+local function detectExecutor()
+    if identifyexecutor then
+        local executor = identifyexecutor()
+        if string.find(string.lower(executor), "solara") then
+            EXECUTOR_TYPE = "SOLARA"
+        elseif string.find(string.lower(executor), "xeno") then
+            EXECUTOR_TYPE = "XENO"
+        else
+            EXECUTOR_TYPE = "OTHER"
+        end
+    elseif getexecutorname then
+        local executor = getexecutorname()
+        if string.find(string.lower(executor), "solara") then
+            EXECUTOR_TYPE = "SOLARA"
+        elseif string.find(string.lower(executor), "xeno") then
+            EXECUTOR_TYPE = "XENO"
+        else
+            EXECUTOR_TYPE = "OTHER"
+        end
+    else
+        EXECUTOR_TYPE = "OTHER"
+    end
+    
+    return EXECUTOR_TYPE
+end
+
+local DETECTED_EXECUTOR = detectExecutor()
+
+-- ════════════════════════════════════════════════════════════════
+-- SAFE AFK ZONE
+-- ════════════════════════════════════════════════════════════════
+
+local SAFE_ZONE = {
+    Position = Vector3.new(-3363.70337, 91784.7188, 11727.2256),
+    Orientation = CFrame.new(0, 0, 0, 0.102251053, 5.01812885e-08, 0.994758606, 1.7767182e-12, 1, -5.04458768e-08, -0.994758606, 5.15991161e-09, 0.102251053),
+    Part = nil
+}
+
+local function createSafeZone()
+    if SAFE_ZONE.Part then
+        SAFE_ZONE.Part:Destroy()
+    end
+    
+    local part = Instance.new("Part")
+    part.Size = Vector3.new(20, 1, 20)
+    part.Position = SAFE_ZONE.Position
+    part.Anchored = true
+    part.CanCollide = true
+    part.Transparency = 0.5
+    part.Material = Enum.Material.Neon
+    part.Color = Color3.fromRGB(46, 204, 113)
+    part.Name = "SafeZonePlatform"
+    part.Parent = Workspace
+    
+    SAFE_ZONE.Part = part
+    Utils.Log("Safe zone created at sky position")
+end
+
+local function teleportToSafeZone()
+    pcall(function()
+        if not SAFE_ZONE.Part then
+            createSafeZone()
+        end
+        
+        if Utils.IsValidCharacter(LocalPlayer.Character) then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(SAFE_ZONE.Position + Vector3.new(0, 3, 0))
+            Utils.Log("Teleported to safe AFK zone")
+        end
+    end)
+end
+
+-- ════════════════════════════════════════════════════════════════
 -- STATE MANAGEMENT
 -- ════════════════════════════════════════════════════════════════
 
@@ -64,6 +141,7 @@ local STATE = {
     cframeLoopConnection = nil,
     lastCashCount = 0,
     noCashChangeTime = 0,
+    useCameraAura = (DETECTED_EXECUTOR == "SOLARA" or DETECTED_EXECUTOR == "XENO"),
 }
 
 -- ════════════════════════════════════════════════════════════════
@@ -105,21 +183,23 @@ Workspace.DescendantAdded:Connect(function(obj)
 end)
 
 -- ════════════════════════════════════════════════════════════════
--- OCCLUSION CAMERA
+-- CAMERA NOCLIP
 -- ════════════════════════════════════════════════════════════════
 
-local OcclusionCamera = {}
+local CameraClip = {}
 
-function OcclusionCamera.Enable()
+function CameraClip.Enable()
     pcall(function()
+        -- Occlusion (Invisicam)
         sethiddenproperty(Camera, "DevCameraOcclusionMode", "Invisicam")
+        
+        -- Camera can clip through walls
+        LocalPlayer.CameraMaxZoomDistance = 9e9
+        LocalPlayer.CameraMinZoomDistance = 0
+        LocalPlayer.CameraMode = Enum.CameraMode.Classic
     end)
-end
-
-function OcclusionCamera.Disable()
-    pcall(function()
-        sethiddenproperty(Camera, "DevCameraOcclusionMode", "Zoom")
-    end)
+    
+    Utils.Log("Camera noclip enabled")
 end
 
 -- ════════════════════════════════════════════════════════════════
@@ -210,13 +290,13 @@ function Noclip.Disable()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- CFRAME LOOP SYSTEM (FLOATING)
+-- CFRAME LOOP SYSTEM
 -- ════════════════════════════════════════════════════════════════
 
 local CFrameLoop = {}
 
 function CFrameLoop.Start(targetCFrame)
-    CFrameLoop.Stop() -- Stop any existing loop
+    CFrameLoop.Stop()
     
     STATE.cframeLoopConnection = RunService.Heartbeat:Connect(function()
         pcall(function()
@@ -227,20 +307,17 @@ function CFrameLoop.Start(targetCFrame)
             end
         end)
     end)
-    
-    Utils.Log("CFrame loop started (Floating mode)")
 end
 
 function CFrameLoop.Stop()
     if STATE.cframeLoopConnection then
         STATE.cframeLoopConnection:Disconnect()
         STATE.cframeLoopConnection = nil
-        Utils.Log("CFrame loop stopped")
     end
 end
 
 -- ════════════════════════════════════════════════════════════════
--- WEBHOOK SYSTEM (ENHANCED)
+-- WEBHOOK SYSTEM (FIXED)
 -- ════════════════════════════════════════════════════════════════
 
 local Webhook = {}
@@ -249,7 +326,7 @@ function Webhook.Send(title, description, color)
     if not CONFIG.WebhookEnabled or CONFIG.Webhook == "" then return end
     
     task.spawn(function()
-        pcall(function()
+        local success, err = pcall(function()
             local currentTime = os.time()
             if currentTime - STATE.lastWebhookSent < (CONFIG.WebhookInterval * 60) then
                 return
@@ -285,9 +362,9 @@ function Webhook.Send(title, description, color)
                             ["name"] = "💰 Auto Farm Info",
                             ["value"] = string.format(
                                 "Profit: **$%s**\nRobbed: **%d**\nWallet: **$%s**\nElapsed: **%s**",
-                                string.format("%,d", STATE.totalCashCollected):gsub(",", "."),
+                                tostring(STATE.totalCashCollected),
                                 STATE.atmRobbed,
-                                string.format("%,d", currentCash):gsub(",", "."),
+                                tostring(currentCash),
                                 Utils.FormatTime(sessionTime)
                             ),
                             ["inline"] = false
@@ -297,8 +374,8 @@ function Webhook.Send(title, description, color)
                             ["value"] = string.format(
                                 "Deaths: **%d**\nCash/Hour: **$%s**\nATM/Hour: **%.1f**",
                                 STATE.deathCount,
-                                string.format("%,d", math.floor(STATE.totalCashCollected / (sessionTime / 3600))):gsub(",", "."),
-                                STATE.atmRobbed / (sessionTime / 3600)
+                                tostring(math.floor(STATE.totalCashCollected / math.max(sessionTime / 3600, 0.01))),
+                                STATE.atmRobbed / math.max(sessionTime / 3600, 0.01)
                             ),
                             ["inline"] = false
                         },
@@ -310,29 +387,39 @@ function Webhook.Send(title, description, color)
                 }}
             }
             
-            request({
+            local body = HttpService:JSONEncode(embed)
+            
+            local response = request({
                 Url = CONFIG.Webhook,
                 Method = "POST",
-                Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode(embed)
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = body
             })
+            
+            Utils.Log("Webhook sent successfully!")
         end)
+        
+        if not success then
+            Utils.Log("Webhook error: " .. tostring(err))
+        end
     end)
 end
 
 -- ════════════════════════════════════════════════════════════════
--- CASH AURA SYSTEM (ADVANCED)
+-- CASH AURA SYSTEM (CAMERA - SOLARA/XENO)
 -- ════════════════════════════════════════════════════════════════
 
-local CashAura = {}
+local CashAuraCamera = {}
 local Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
-local isProcessing = false
+local isProcessingCamera = false
 
-function CashAura.Start()
+function CashAuraCamera.Start()
     if STATE.cashAuraActive then return end
     
     STATE.cashAuraActive = true
-    Utils.Log("Cash Aura activated (Advanced Mode)")
+    Utils.Log("Cash Aura activated (Camera Mode - " .. DETECTED_EXECUTOR .. ")")
     
     task.spawn(function()
         while STATE.cashAuraActive do
@@ -348,11 +435,11 @@ function CashAura.Start()
                 local playerPos = LocalPlayer.Character.HumanoidRootPart.Position
                 
                 for _, drop in pairs(Drops:GetChildren()) do
-                    if drop.Name == "MoneyDrop" and not isProcessing then
+                    if drop.Name == "MoneyDrop" and not isProcessingCamera then
                         local distance = (drop.Position - playerPos).Magnitude
                         
                         if distance <= 12 then
-                            isProcessing = true
+                            isProcessingCamera = true
                             
                             -- Unequip all tools
                             for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
@@ -367,7 +454,7 @@ function CashAura.Start()
                             repeat
                                 task.wait()
                                 
-                                -- Point camera at money drop with random offset
+                                -- Point camera at money drop
                                 local offset = Vector3.new(
                                     math.random(-30, 30) / 100,
                                     2,
@@ -375,13 +462,12 @@ function CashAura.Start()
                                 )
                                 Camera.CFrame = CFrame.lookAt(drop.Position + offset, drop.Position)
                                 
-                                -- Click at center of screen
+                                -- Click at center
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
                                 task.wait(0.15)
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
                                 
-                                -- Update distance
                                 if Utils.IsValidCharacter(LocalPlayer.Character) then
                                     distance = (drop.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
                                 else
@@ -394,7 +480,7 @@ function CashAura.Start()
                             Camera.CameraType = Enum.CameraType.Custom
                             Camera.CameraSubject = LocalPlayer.Character.Humanoid
                             
-                            isProcessing = false
+                            isProcessingCamera = false
                             STATE.totalCashCollected = STATE.totalCashCollected + 10
                         end
                     end
@@ -402,7 +488,6 @@ function CashAura.Start()
             end)
         end
         
-        -- Cleanup when stopped
         pcall(function()
             Camera.CameraType = Enum.CameraType.Custom
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -412,7 +497,7 @@ function CashAura.Start()
     end)
 end
 
-function CashAura.Stop()
+function CashAuraCamera.Stop()
     STATE.cashAuraActive = false
     
     pcall(function()
@@ -421,8 +506,72 @@ function CashAura.Stop()
             Camera.CameraSubject = LocalPlayer.Character.Humanoid
         end
     end)
+end
+
+-- ════════════════════════════════════════════════════════════════
+-- CASH AURA SYSTEM (SIMPLE - OTHER EXECUTORS)
+-- ════════════════════════════════════════════════════════════════
+
+local CashAuraSimple = {}
+
+function CashAuraSimple.Start()
+    if STATE.cashAuraActive then return end
     
-    Utils.Log("Cash Aura deactivated")
+    STATE.cashAuraActive = true
+    Utils.Log("Cash Aura activated (Simple Mode - " .. DETECTED_EXECUTOR .. ")")
+    
+    task.spawn(function()
+        while STATE.cashAuraActive do
+            task.wait(0.1)
+            
+            pcall(function()
+                if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
+                if not Drops then
+                    Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
+                    return
+                end
+                
+                local playerPos = LocalPlayer.Character.HumanoidRootPart.Position
+                
+                for _, drop in pairs(Drops:GetChildren()) do
+                    if drop.Name == "MoneyDrop" and drop:FindFirstChild("ClickDetector") then
+                        local distance = (drop.Position - playerPos).Magnitude
+                        
+                        if distance < 12 then
+                            fireclickdetector(drop.ClickDetector)
+                            STATE.totalCashCollected = STATE.totalCashCollected + 10
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+function CashAuraSimple.Stop()
+    STATE.cashAuraActive = false
+end
+
+-- ════════════════════════════════════════════════════════════════
+-- UNIFIED CASH AURA
+-- ════════════════════════════════════════════════════════════════
+
+local CashAura = {}
+
+function CashAura.Start()
+    if STATE.useCameraAura then
+        CashAuraCamera.Start()
+    else
+        CashAuraSimple.Start()
+    end
+end
+
+function CashAura.Stop()
+    if STATE.useCameraAura then
+        CashAuraCamera.Stop()
+    else
+        CashAuraSimple.Stop()
+    end
 end
 
 function CashAura.GetNearbyCount()
@@ -464,7 +613,6 @@ function SmartWait.ForCashCollection()
         
         local currentCashCount = CashAura.GetNearbyCount()
         
-        -- If cash count changed, reset timer
         if currentCashCount ~= STATE.lastCashCount then
             STATE.lastCashCount = currentCashCount
             STATE.noCashChangeTime = 0
@@ -473,22 +621,48 @@ function SmartWait.ForCashCollection()
             STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
         end
         
-        -- If no cash nearby and no change for 2 seconds, we're done
         if currentCashCount == 0 and STATE.noCashChangeTime >= 2 then
             Utils.Log("✅ All cash collected!")
             break
         end
         
-        -- Safety timeout: 15 seconds max
         if STATE.noCashChangeTime >= 15 then
-            Utils.Log("⏱️ Collection timeout - moving on")
+            Utils.Log("⏱️ Collection timeout")
             break
         end
     end
 end
 
 -- ════════════════════════════════════════════════════════════════
--- ATM DETECTION SYSTEM (VAULT FILTERED)
+-- ATM POSITIONING (SMART OFFSET)
+-- ════════════════════════════════════════════════════════════════
+
+local ATMPositioning = {}
+
+function ATMPositioning.GetOffset(atmPosition)
+    -- Round position to avoid float comparison issues
+    local x = math.floor(atmPosition.X)
+    local z = math.floor(atmPosition.Z)
+    
+    -- Check for specific ATM positions (side by side ATMs)
+    -- Left ATM: X ≈ -624, Z ≈ -286 → offset RIGHT (+3 studs on X axis)
+    if x == -624 or x == -625 and z == -286 or z == -287 then
+        Utils.Log("  Detected left-side ATM - offsetting right")
+        return Vector3.new(3, 0, 0)
+    end
+    
+    -- Right ATM: X ≈ -627, Z ≈ -286 → offset LEFT (-3 studs on X axis)
+    if x == -627 or x == -628 and z == -286 or z == -287 then
+        Utils.Log("  Detected right-side ATM - offsetting left")
+        return Vector3.new(-3, 0, 0)
+    end
+    
+    -- No offset needed
+    return Vector3.new(0, 0, 0)
+end
+
+-- ════════════════════════════════════════════════════════════════
+-- ATM DETECTION SYSTEM
 -- ════════════════════════════════════════════════════════════════
 
 local ATM = {}
@@ -575,11 +749,14 @@ function ATM.Break(atmData)
         -- Enable noclip
         Noclip.Enable()
         
-        -- Calculate position: 4 studs below ATM, lying down, face up
-        local targetPos = atmData.Position - Vector3.new(0, 4, 0)
+        -- Get smart offset for side-by-side ATMs
+        local positionOffset = ATMPositioning.GetOffset(atmData.Position)
+        
+        -- Calculate position: 4 studs below + smart offset
+        local targetPos = atmData.Position - Vector3.new(0, 4, 0) + positionOffset
         local targetCFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(90), 0, 0)
         
-        -- Start CFrame loop (floating)
+        -- Start CFrame loop
         CFrameLoop.Start(targetCFrame)
         
         task.wait(0.3)
@@ -622,7 +799,7 @@ local ServerHop = {}
 
 function ServerHop.Execute()
     Utils.Log("🔄 Server hopping...")
-    Webhook.Send("🔄 Server Hopping", "No ATMs found or death limit reached. Switching servers...", 16776960)
+    Webhook.Send("🔄 Server Hopping", "No ATMs found or death limit reached.", 16776960)
     
     task.wait(2)
     
@@ -654,6 +831,11 @@ function ServerHop.CheckNoATMs()
         if #atms == 0 then
             ServerHop.Execute()
         end
+    else
+        -- Server hop disabled - go to safe zone
+        Utils.Log("⚠️ No ATMs found - going to safe AFK zone...")
+        teleportToSafeZone()
+        task.wait(30)
     end
 end
 
@@ -681,15 +863,17 @@ function Farm.Start()
     
     Utils.Log("═══════════════════════════════════════")
     Utils.Log("🏧 ATM Farm Started!")
+    Utils.Log("Executor: " .. DETECTED_EXECUTOR)
+    Utils.Log("Cash Aura: " .. (STATE.useCameraAura and "Camera Mode" or "Simple Mode"))
     Utils.Log("FPS: " .. CONFIG.Fps)
     Utils.Log("Server Hop: " .. tostring(CONFIG.ServerHop))
     Utils.Log("Webhook: " .. tostring(CONFIG.WebhookEnabled))
-    Utils.Log("Mode: CFrame Loop (Floating)")
-    Utils.Log("Wait: Smart Collection")
     Utils.Log("═══════════════════════════════════════")
     
-    OcclusionCamera.Enable()
-    Webhook.Send("✅ Farm Started", "ATM farming session initiated", 3066993)
+    CameraClip.Enable()
+    createSafeZone()
+    
+    Webhook.Send("✅ Farm Started", "ATM farming session initiated\nExecutor: " .. DETECTED_EXECUTOR, 3066993)
     
     -- Start cash aura
     CashAura.Start()
@@ -727,19 +911,16 @@ function Farm.Start()
                     local breakSuccess, breakErr = ATM.Break(atmData)
                     
                     if breakSuccess then
-                        -- Smart wait for cash collection
                         SmartWait.ForCashCollection()
                     else
-                        Utils.Log("❌ Failed to break ATM: " .. tostring(breakErr))
+                        Utils.Log("❌ Failed: " .. tostring(breakErr))
                     end
                     
-                    -- Small delay before next ATM
                     task.wait(1)
                 end
                 
-                -- All ATMs done
-                Utils.Log("🔄 All visible ATMs processed. Rescanning...")
-                Webhook.Send("🔄 Scanning", "All ATMs processed. Rescanning...", 3447003)
+                Utils.Log("🔄 All ATMs processed. Rescanning...")
+                Webhook.Send("🔄 Scanning", "All ATMs processed.", 3447003)
                 task.wait(10)
             end)
             
@@ -758,7 +939,7 @@ function Farm.Stop()
     Noclip.Disable()
     
     Utils.Log("🛑 Farm stopped!")
-    Webhook.Send("🛑 Farm Stopped", "Session ended. Total profit: $" .. STATE.totalCashCollected, 15158332)
+    Webhook.Send("🛑 Farm Stopped", "Session ended. Profit: $" .. STATE.totalCashCollected, 15158332)
 end
 
 -- ════════════════════════════════════════════════════════════════
@@ -769,7 +950,7 @@ LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
     
     Utils.Log("💀 Death #" .. STATE.deathCount)
-    Webhook.Send("💀 Death", "Character died. Total deaths: " .. STATE.deathCount, 15158332)
+    Webhook.Send("💀 Death", "Total deaths: " .. STATE.deathCount, 15158332)
     
     ServerHop.CheckDeath()
     
@@ -780,7 +961,7 @@ LocalPlayer.CharacterAdded:Connect(function(character)
     end
     
     Camera = Workspace.CurrentCamera
-    OcclusionCamera.Enable()
+    CameraClip.Enable()
     Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
     
     CFrameLoop.Stop()
@@ -806,15 +987,12 @@ end)
 
 getgenv().DebugATM = function()
     Utils.Log("=== DEBUG INFO ===")
+    Utils.Log("Executor: " .. DETECTED_EXECUTOR)
+    Utils.Log("Cash Aura Mode: " .. (STATE.useCameraAura and "Camera" or "Simple"))
+    
     local cashiers = Workspace:FindFirstChild("Cashiers")
     if cashiers then
-        Utils.Log("Cashiers found: " .. #cashiers:GetChildren())
-        for i, cashier in ipairs(cashiers:GetChildren()) do
-            local isVault = ATM.IsVault(cashier)
-            Utils.Log("Cashier #" .. i .. ": " .. cashier.Name .. (isVault and " [VAULT]" or ""))
-        end
-    else
-        Utils.Log("Cashiers NOT FOUND")
+        Utils.Log("Cashiers: " .. #cashiers:GetChildren())
     end
 end
 
@@ -833,25 +1011,24 @@ getgenv().ATMFarm = {
     Start = Farm.Start,
     Stop = Farm.Stop,
     Debug = getgenv().DebugATM,
+    SafeZone = teleportToSafeZone,
     GetStats = function()
         local sessionTime = os.time() - STATE.sessionStartTime
         return {
-            Username = LocalPlayer.Name,
-            DisplayName = LocalPlayer.DisplayName,
+            Executor = DETECTED_EXECUTOR,
+            CashAuraMode = STATE.useCameraAura and "Camera" or "Simple",
             TotalCash = STATE.totalCashCollected,
             ATMRobbed = STATE.atmRobbed,
             CurrentWallet = Utils.GetCurrentCash(),
-            Deaths = STATE.deathCount,
             SessionTime = Utils.FormatTime(sessionTime),
-            CashPerHour = math.floor(STATE.totalCashCollected / (sessionTime / 3600)),
-            ATMPerHour = STATE.atmRobbed / (sessionTime / 3600),
-            IsRunning = STATE.isRunning,
         }
     end,
 }
 
 print("═══════════════════════════════════════")
-print("[ATM FARM] Optimized - v5.0")
-print("[Mode] CFrame Loop (Floating)")
-print("[Wait] Smart Collection System")
+print("[ATM FARM] Ultimate - v6.0")
+print("[Executor] " .. DETECTED_EXECUTOR)
+print("[Cash Aura] " .. (STATE.useCameraAura and "Camera Mode" or "Simple Mode"))
+print("[Camera] Noclip Enabled")
+print("[Safe Zone] Created")
 print("═══════════════════════════════════════")
