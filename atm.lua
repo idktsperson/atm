@@ -1,5 +1,11 @@
-print("Script Loading Please Wait...")
-print("Made by _ethz on Discord")
+--[[
+    Da Hood ATM Farm System - OPTIMIZED VERSION
+    Features: CFrame Loop (No Freeze), Smart Wait System, Vault Filter
+]]
+
+-- ════════════════════════════════════════════════════════════════
+-- CONFIGURATION
+-- ════════════════════════════════════════════════════════════════
 
 getgenv().Configuration = getgenv().Configuration or {
     ['ServerHop'] = false,
@@ -11,6 +17,10 @@ getgenv().Configuration = getgenv().Configuration or {
 }
 
 local CONFIG = getgenv().Configuration
+
+-- ════════════════════════════════════════════════════════════════
+-- SERVICES
+-- ════════════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -36,6 +46,10 @@ end
 
 local Camera = Workspace.CurrentCamera
 
+-- ════════════════════════════════════════════════════════════════
+-- STATE MANAGEMENT
+-- ════════════════════════════════════════════════════════════════
+
 local STATE = {
     currentATMIndex = 1,
     deathCount = 0,
@@ -47,20 +61,58 @@ local STATE = {
     lastWebhookSent = 0,
     processedATMs = {},
     noclipConnection = nil,
+    cframeLoopConnection = nil,
+    lastCashCount = 0,
+    noCashChangeTime = 0,
 }
 
-setfpscap(CONFIG.Fps)
+-- ════════════════════════════════════════════════════════════════
+-- OPTIMIZATION
+-- ════════════════════════════════════════════════════════════════
 
-pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua'))()end)
-pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua'))()end)
---pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/Optimization.Lua'))()end)
+setfpscap(CONFIG.Fps)
+settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+
+-- Lighting Optimization
+Lighting.GlobalShadows = false
+Lighting.FogEnd = 100
+Lighting.Brightness = 0
+
+-- Workspace Optimization
+for _, obj in pairs(Workspace:GetDescendants()) do
+    if obj:IsA("BasePart") then
+        obj.Material = Enum.Material.SmoothPlastic
+        obj.CastShadow = false
+        obj.Reflectance = 0
+    elseif obj:IsA("Decal") or obj:IsA("Texture") then
+        obj.Transparency = 1
+    elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") then
+        obj.Enabled = false
+    elseif obj:IsA("MeshPart") then
+        obj.TextureID = ""
+    end
+end
+
+Workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA("BasePart") then
+        obj.Material = Enum.Material.SmoothPlastic
+        obj.CastShadow = false
+    elseif obj:IsA("Decal") or obj:IsA("Texture") then
+        obj.Transparency = 1
+    elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
+        obj.Enabled = false
+    end
+end)
+
+-- ════════════════════════════════════════════════════════════════
+-- OCCLUSION CAMERA
+-- ════════════════════════════════════════════════════════════════
 
 local OcclusionCamera = {}
 
 function OcclusionCamera.Enable()
     pcall(function()
         sethiddenproperty(Camera, "DevCameraOcclusionMode", "Invisicam")
-        Utils.Log("Occlusion Camera enabled (Invisicam)")
     end)
 end
 
@@ -69,6 +121,10 @@ function OcclusionCamera.Disable()
         sethiddenproperty(Camera, "DevCameraOcclusionMode", "Zoom")
     end)
 end
+
+-- ════════════════════════════════════════════════════════════════
+-- UTILITY FUNCTIONS
+-- ════════════════════════════════════════════════════════════════
 
 local Utils = {}
 
@@ -114,6 +170,10 @@ function Utils.Log(message)
     print("[ATM FARM] " .. message)
 end
 
+-- ════════════════════════════════════════════════════════════════
+-- NOCLIP SYSTEM
+-- ════════════════════════════════════════════════════════════════
+
 local Noclip = {}
 
 function Noclip.Enable()
@@ -130,8 +190,6 @@ function Noclip.Enable()
             end
         end)
     end)
-    
-    Utils.Log("Noclip enabled")
 end
 
 function Noclip.Disable()
@@ -149,9 +207,41 @@ function Noclip.Disable()
             end
         end
     end)
-    
-    Utils.Log("Noclip disabled")
 end
+
+-- ════════════════════════════════════════════════════════════════
+-- CFRAME LOOP SYSTEM (FLOATING)
+-- ════════════════════════════════════════════════════════════════
+
+local CFrameLoop = {}
+
+function CFrameLoop.Start(targetCFrame)
+    CFrameLoop.Stop() -- Stop any existing loop
+    
+    STATE.cframeLoopConnection = RunService.Heartbeat:Connect(function()
+        pcall(function()
+            if Utils.IsValidCharacter(LocalPlayer.Character) then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = targetCFrame
+                LocalPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+                LocalPlayer.Character.HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
+            end
+        end)
+    end)
+    
+    Utils.Log("CFrame loop started (Floating mode)")
+end
+
+function CFrameLoop.Stop()
+    if STATE.cframeLoopConnection then
+        STATE.cframeLoopConnection:Disconnect()
+        STATE.cframeLoopConnection = nil
+        Utils.Log("CFrame loop stopped")
+    end
+end
+
+-- ════════════════════════════════════════════════════════════════
+-- WEBHOOK SYSTEM (ENHANCED)
+-- ════════════════════════════════════════════════════════════════
 
 local Webhook = {}
 
@@ -335,7 +425,7 @@ function CashAura.Stop()
     Utils.Log("Cash Aura deactivated")
 end
 
-function CashAura.CheckNearbyDrops()
+function CashAura.GetNearbyCount()
     local count = 0
     
     pcall(function()
@@ -358,38 +448,72 @@ function CashAura.CheckNearbyDrops()
 end
 
 -- ════════════════════════════════════════════════════════════════
+-- SMART WAIT SYSTEM
+-- ════════════════════════════════════════════════════════════════
+
+local SmartWait = {}
+
+function SmartWait.ForCashCollection()
+    Utils.Log("💰 Collecting cash drops...")
+    
+    STATE.lastCashCount = CashAura.GetNearbyCount()
+    STATE.noCashChangeTime = 0
+    
+    while STATE.isRunning do
+        task.wait(0.5)
+        
+        local currentCashCount = CashAura.GetNearbyCount()
+        
+        -- If cash count changed, reset timer
+        if currentCashCount ~= STATE.lastCashCount then
+            STATE.lastCashCount = currentCashCount
+            STATE.noCashChangeTime = 0
+            Utils.Log("   💵 Cash nearby: " .. currentCashCount)
+        else
+            STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
+        end
+        
+        -- If no cash nearby and no change for 2 seconds, we're done
+        if currentCashCount == 0 and STATE.noCashChangeTime >= 2 then
+            Utils.Log("✅ All cash collected!")
+            break
+        end
+        
+        -- Safety timeout: 15 seconds max
+        if STATE.noCashChangeTime >= 15 then
+            Utils.Log("⏱️ Collection timeout - moving on")
+            break
+        end
+    end
+end
+
+-- ════════════════════════════════════════════════════════════════
 -- ATM DETECTION SYSTEM (VAULT FILTERED)
 -- ════════════════════════════════════════════════════════════════
 
 local ATM = {}
 
 function ATM.IsVault(cashier)
-    -- Check if it's a VAULT (filter out)
     return string.find(string.upper(cashier.Name), "VAULT") ~= nil
 end
 
 function ATM.IsATMFilled(cashier)
-    -- Filter out VAULT
     if ATM.IsVault(cashier) then
         return false, nil
     end
     
-    -- Method 1: Check "Open" part with specific size
     local open = cashier:FindFirstChild("Open")
     if open and open:IsA("BasePart") then
         local size = open.Size
-        -- Check if size is approximately 2.6, 0.5, 0.1
         if math.abs(size.X - 2.6) < 0.1 and math.abs(size.Y - 0.5) < 0.1 and math.abs(size.Z - 0.1) < 0.1 then
             return true, open
         end
     end
     
-    -- Method 2: Check for any part named "Open" (regardless of size)
     if open then
         return true, open
     end
     
-    -- Method 3: Look for largest part (backup method)
     local largestPart = nil
     local largestSize = 0
     
@@ -419,7 +543,6 @@ function ATM.ScanAll()
         Utils.Log("Scanning " .. #cashiers:GetChildren() .. " cashiers...")
         
         for index, cashier in ipairs(cashiers:GetChildren()) do
-            -- Skip VAULT and already processed
             if not ATM.IsVault(cashier) and not STATE.processedATMs[cashier.Name] then
                 local isFilled, targetPart = ATM.IsATMFilled(cashier)
                 
@@ -448,55 +571,44 @@ function ATM.Break(atmData)
         Utils.Log("═══════════════════════════════")
         Utils.Log("Breaking ATM: " .. atmData.Name)
         Utils.Log("═══════════════════════════════")
-
-        local hrp = LocalPlayer.Character.HumanoidRootPart
-            
-        task.wait(0.2)
         
-        -- Teleport 4 studs below ATM
+        -- Enable noclip
+        Noclip.Enable()
+        
+        -- Calculate position: 4 studs below ATM, lying down, face up
         local targetPos = atmData.Position - Vector3.new(0, 4, 0)
+        local targetCFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(90), 0, 0)
         
-        if Utils.IsValidCharacter(LocalPlayer.Character) then
-            
-            -- Position character lying down, facing sky
-            hrp.CFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(90), 0, 0)
-
-            wait(0.5)
-
-            hrp.Anchored = true
-            hrp.AssemblyLinearVelocity = Vector3.zero
-            hrp.AssemblyAngularVelocity = Vector3.zero
-
-            Noclip.Enable()
-                
-            task.wait(0.3)
-            
-            -- Equip Combat
-            Utils.EquipCombat()
-            task.wait(0.3)
-            
-            -- First charge attack
-            Utils.Log("⚡ Charge attack 1/2")
-            MainEvent:FireServer("ChargeButton")
-            task.wait(3.5)
-            
-            -- Second charge attack
-            Utils.Log("⚡ Charge attack 2/2")
-            MainEvent:FireServer("ChargeButton")
-            task.wait(3.5)
-            
-            -- Unfreeze character
-            hrp.Anchored = false
-            
-            -- Disable noclip
-            Noclip.Disable()
-            
-            -- Mark as processed
-            STATE.processedATMs[atmData.Name] = true
-            STATE.atmRobbed = STATE.atmRobbed + 1
-            
-            Utils.Log("✅ ATM broken successfully! Total: " .. STATE.atmRobbed)
-        end
+        -- Start CFrame loop (floating)
+        CFrameLoop.Start(targetCFrame)
+        
+        task.wait(0.3)
+        
+        -- Equip Combat
+        Utils.EquipCombat()
+        task.wait(0.3)
+        
+        -- First charge attack
+        Utils.Log("⚡ Charge attack 1/2")
+        MainEvent:FireServer("ChargeButton")
+        task.wait(3.5)
+        
+        -- Second charge attack
+        Utils.Log("⚡ Charge attack 2/2")
+        MainEvent:FireServer("ChargeButton")
+        task.wait(3.5)
+        
+        -- Stop CFrame loop
+        CFrameLoop.Stop()
+        
+        -- Disable noclip
+        Noclip.Disable()
+        
+        -- Mark as processed
+        STATE.processedATMs[atmData.Name] = true
+        STATE.atmRobbed = STATE.atmRobbed + 1
+        
+        Utils.Log("✅ ATM broken successfully! Total: " .. STATE.atmRobbed)
         
         return true
     end)
@@ -536,9 +648,8 @@ end
 function ServerHop.CheckNoATMs()
     if CONFIG.ServerHop then
         Utils.Log("⚠️ No ATMs found - preparing to server hop...")
-        task.wait(30) -- Wait 30 seconds before hopping
+        task.wait(30)
         
-        -- Check again
         local atms = ATM.ScanAll()
         if #atms == 0 then
             ServerHop.Execute()
@@ -573,8 +684,8 @@ function Farm.Start()
     Utils.Log("FPS: " .. CONFIG.Fps)
     Utils.Log("Server Hop: " .. tostring(CONFIG.ServerHop))
     Utils.Log("Webhook: " .. tostring(CONFIG.WebhookEnabled))
-    Utils.Log("Occlusion Camera: Enabled")
-    Utils.Log("Noclip: Ready")
+    Utils.Log("Mode: CFrame Loop (Floating)")
+    Utils.Log("Wait: Smart Collection")
     Utils.Log("═══════════════════════════════════════")
     
     OcclusionCamera.Enable()
@@ -590,15 +701,13 @@ function Farm.Start()
                 local filledATMs = ATM.ScanAll()
                 
                 if #filledATMs == 0 then
-                    Utils.Log("⏳ No new filled ATMs. Waiting...")
-                    Utils.Log("   (Processed: " .. STATE.atmRobbed .. " ATMs so far)")
+                    Utils.Log("⏳ No new filled ATMs.")
+                    Utils.Log("   (Processed: " .. STATE.atmRobbed .. " ATMs)")
                     
-                    -- Server hop if enabled
                     ServerHop.CheckNoATMs()
                     
                     task.wait(15)
                     
-                    -- Reset processed ATMs every 5 minutes
                     if (os.time() - STATE.sessionStartTime) % 300 < 15 then
                         STATE.processedATMs = {}
                         Utils.Log("🔄 Reset processed ATMs list")
@@ -614,38 +723,23 @@ function Farm.Start()
                     
                     STATE.currentATMIndex = i
                     
+                    -- Break ATM
                     local breakSuccess, breakErr = ATM.Break(atmData)
                     
                     if breakSuccess then
-                        Utils.Log("💰 Waiting for cash drops...")
-                        
-                        local maxWaitTime = 15
-                        local waitedTime = 0
-                        
-                        while waitedTime < maxWaitTime and STATE.isRunning do
-                            local nearbyDrops = CashAura.CheckNearbyDrops()
-                            
-                            if nearbyDrops > 0 then
-                                Utils.Log("   Cash nearby: " .. nearbyDrops)
-                            end
-                            
-                            if nearbyDrops == 0 and waitedTime > 3 then
-                                Utils.Log("✅ All cash collected!")
-                                break
-                            end
-                            
-                            task.wait(1)
-                            waitedTime = waitedTime + 1
-                        end
+                        -- Smart wait for cash collection
+                        SmartWait.ForCashCollection()
                     else
                         Utils.Log("❌ Failed to break ATM: " .. tostring(breakErr))
                     end
                     
-                    task.wait(2)
+                    -- Small delay before next ATM
+                    task.wait(1)
                 end
                 
+                -- All ATMs done
                 Utils.Log("🔄 All visible ATMs processed. Rescanning...")
-                Webhook.Send("🔄 Scanning", "All ATMs processed. Rescanning for new ones...", 3447003)
+                Webhook.Send("🔄 Scanning", "All ATMs processed. Rescanning...", 3447003)
                 task.wait(10)
             end)
             
@@ -660,17 +754,16 @@ end
 function Farm.Stop()
     STATE.isRunning = false
     CashAura.Stop()
+    CFrameLoop.Stop()
     Noclip.Disable()
-    
-    pcall(function()
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.Anchored = false
-        end
-    end)
     
     Utils.Log("🛑 Farm stopped!")
     Webhook.Send("🛑 Farm Stopped", "Session ended. Total profit: $" .. STATE.totalCashCollected, 15158332)
 end
+
+-- ════════════════════════════════════════════════════════════════
+-- CHARACTER HANDLERS
+-- ════════════════════════════════════════════════════════════════
 
 LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
@@ -688,13 +781,17 @@ LocalPlayer.CharacterAdded:Connect(function(character)
     
     Camera = Workspace.CurrentCamera
     OcclusionCamera.Enable()
-    
     Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
     
+    CFrameLoop.Stop()
     Noclip.Disable()
 end)
 
-task.spawn(function() -- antiafk
+-- ════════════════════════════════════════════════════════════════
+-- ANTI-AFK
+-- ════════════════════════════════════════════════════════════════
+
+task.spawn(function()
     local vu = game:GetService("VirtualUser")
     LocalPlayer.Idled:Connect(function()
         vu:Button2Down(Vector2.new(0,0), Camera.CFrame)
@@ -703,6 +800,10 @@ task.spawn(function() -- antiafk
     end)
 end)
 
+-- ════════════════════════════════════════════════════════════════
+-- DEBUG
+-- ════════════════════════════════════════════════════════════════
+
 getgenv().DebugATM = function()
     Utils.Log("=== DEBUG INFO ===")
     local cashiers = Workspace:FindFirstChild("Cashiers")
@@ -710,37 +811,28 @@ getgenv().DebugATM = function()
         Utils.Log("Cashiers found: " .. #cashiers:GetChildren())
         for i, cashier in ipairs(cashiers:GetChildren()) do
             local isVault = ATM.IsVault(cashier)
-            Utils.Log("Cashier #" .. i .. ": " .. cashier.Name .. (isVault and " [VAULT - FILTERED]" or ""))
-            
-            if not isVault then
-                local open = cashier:FindFirstChild("Open")
-                if open then
-                    Utils.Log("  Size: " .. tostring(open.Size))
-                    Utils.Log("  Position: " .. tostring(open.Position))
-                else
-                    Utils.Log("  No 'Open' part found")
-                end
-            end
+            Utils.Log("Cashier #" .. i .. ": " .. cashier.Name .. (isVault and " [VAULT]" or ""))
         end
     else
-        Utils.Log("Cashiers folder NOT FOUND")
+        Utils.Log("Cashiers NOT FOUND")
     end
 end
 
+-- ════════════════════════════════════════════════════════════════
+-- AUTO START
+-- ════════════════════════════════════════════════════════════════
+
 task.wait(2)
 Farm.Start()
+
+-- ════════════════════════════════════════════════════════════════
+-- GLOBAL FUNCTIONS
+-- ════════════════════════════════════════════════════════════════
 
 getgenv().ATMFarm = {
     Start = Farm.Start,
     Stop = Farm.Stop,
     Debug = getgenv().DebugATM,
-    ToggleOcclusion = function()
-        if Camera.DevCameraOcclusionMode == Enum.DevCameraOcclusionMode.Invisicam then
-            OcclusionCamera.Disable()
-        else
-            OcclusionCamera.Enable()
-        end
-    end,
     GetStats = function()
         local sessionTime = os.time() - STATE.sessionStartTime
         return {
@@ -754,20 +846,12 @@ getgenv().ATMFarm = {
             CashPerHour = math.floor(STATE.totalCashCollected / (sessionTime / 3600)),
             ATMPerHour = STATE.atmRobbed / (sessionTime / 3600),
             IsRunning = STATE.isRunning,
-            CashAuraActive = STATE.cashAuraActive,
         }
     end,
-    ResetProcessed = function()
-        STATE.processedATMs = {}
-        Utils.Log("Processed ATMs reset!")
-    end
 }
 
 print("═══════════════════════════════════════")
-print("[ATM FARM] Ultimate Version - v4.0")
-print("[Features] Vault Filter, Noclip, Lying Attack")
-print("[Webhook] Enhanced Statistics")
-print("[Commands]")
-print("  getgenv().DebugATM()")
-print("  getgenv().ATMFarm.GetStats()")
+print("[ATM FARM] Optimized - v5.0")
+print("[Mode] CFrame Loop (Floating)")
+print("[Wait] Smart Collection System")
 print("═══════════════════════════════════════")
