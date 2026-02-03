@@ -1,7 +1,13 @@
 --[[
-    Da Hood ATM Farm System - FIXED VERSION
-    All errors resolved
+    Da Hood ATM Farm System - FINAL FIXED VERSION
+    All bugs resolved, profit tracking fixed, camera occlusion working
 ]]
+
+-- ════════════════════════════════════════════════════════════════
+-- SECRET DEBUG MODE
+-- ════════════════════════════════════════════════════════════════
+
+getgenv().secretDebug = getgenv().secretDebug or false
 
 -- ════════════════════════════════════════════════════════════════
 -- CONFIGURATION
@@ -91,7 +97,9 @@ function Utils.FormatTime(seconds)
 end
 
 function Utils.Log(message)
-    print("[ATM FARM] " .. message)
+    if getgenv().secretDebug then
+        print("[ATM FARM] " .. message)
+    end
 end
 
 -- ════════════════════════════════════════════════════════════════
@@ -136,7 +144,7 @@ Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
 local STATE = {
     currentATMIndex = 1,
     deathCount = 0,
-    totalCashCollected = 0,
+    startingCash = Utils.GetCurrentCash(), -- İLK PARA KAYDI
     atmRobbed = 0,
     sessionStartTime = os.time(),
     isRunning = false,
@@ -148,6 +156,7 @@ local STATE = {
     lastCashCount = 0,
     noCashChangeTime = 0,
     useCameraAura = (DETECTED_EXECUTOR == "SOLARA" or DETECTED_EXECUTOR == "XENO"),
+    lastProcessedReset = os.time(),
 }
 
 -- ════════════════════════════════════════════════════════════════
@@ -231,18 +240,27 @@ Workspace.DescendantAdded:Connect(function(obj)
 end)
 
 -- ════════════════════════════════════════════════════════════════
--- CAMERA SYSTEM
+-- CAMERA SYSTEM (FIXED OCCLUSION)
 -- ════════════════════════════════════════════════════════════════
 
 local CameraClip = {}
 
 function CameraClip.Enable()
     pcall(function()
-        sethiddenproperty(Camera, "DevCameraOcclusionMode", "Invisicam")
+        -- Invisicam for wall penetration
+        sethiddenproperty(Camera, "DevCameraOcclusionMode", Enum.DevCameraOcclusionMode.Invisicam)
+        
+        -- Infinite zoom
         LocalPlayer.CameraMaxZoomDistance = 9e9
         LocalPlayer.CameraMinZoomDistance = 0
         LocalPlayer.CameraMode = Enum.CameraMode.Classic
-        Utils.Log("Camera noclip enabled")
+        
+        -- Additional camera settings for better clipping
+        pcall(function()
+            Camera.FieldOfView = 70
+        end)
+        
+        Utils.Log("Camera occlusion enabled (Invisicam)")
     end)
 end
 
@@ -313,7 +331,7 @@ function CFrameLoop.Stop()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- WEBHOOK
+-- WEBHOOK (FIXED PROFIT CALCULATION)
 -- ════════════════════════════════════════════════════════════════
 
 local Webhook = {}
@@ -332,6 +350,7 @@ function Webhook.Send(title, description, color)
             
             local sessionTime = os.time() - STATE.sessionStartTime
             local currentCash = Utils.GetCurrentCash()
+            local profit = currentCash - STATE.startingCash  -- FIXED PROFIT
             local playersInServer = #Players:GetPlayers()
             
             local embed = {
@@ -353,14 +372,14 @@ function Webhook.Send(title, description, color)
                         {
                             ["name"] = "💰 Auto Farm Info",
                             ["value"] = string.format("Profit: **$%d**\nRobbed: **%d**\nWallet: **$%d**\nElapsed: **%s**",
-                                STATE.totalCashCollected, STATE.atmRobbed, currentCash, Utils.FormatTime(sessionTime)),
+                                profit, STATE.atmRobbed, currentCash, Utils.FormatTime(sessionTime)),
                             ["inline"] = false
                         },
                         {
                             ["name"] = "📊 Statistics",
                             ["value"] = string.format("Deaths: **%d**\nCash/Hour: **$%d**\nATM/Hour: **%.1f**",
                                 STATE.deathCount,
-                                math.floor(STATE.totalCashCollected / math.max(sessionTime / 3600, 0.01)),
+                                math.floor(profit / math.max(sessionTime / 3600, 0.01)),
                                 STATE.atmRobbed / math.max(sessionTime / 3600, 0.01)),
                             ["inline"] = false
                         },
@@ -377,7 +396,7 @@ function Webhook.Send(title, description, color)
                 Body = HttpService:JSONEncode(embed)
             })
             
-            Utils.Log("Webhook sent!")
+            Utils.Log("Webhook sent! Profit: $" .. profit)
         end)
         
         if not success then
@@ -451,7 +470,6 @@ function CashAuraCamera.Start()
                             Camera.CameraSubject = LocalPlayer.Character.Humanoid
                             
                             isProcessingCamera = false
-                            STATE.totalCashCollected = STATE.totalCashCollected + 10
                         end
                     end
                 end
@@ -508,7 +526,6 @@ function CashAuraSimple.Start()
                         
                         if distance < 12 then
                             fireclickdetector(drop.ClickDetector)
-                            STATE.totalCashCollected = STATE.totalCashCollected + 10
                         end
                     end
                 end
@@ -626,7 +643,7 @@ function ATMPositioning.GetOffset(atmPosition)
 end
 
 -- ════════════════════════════════════════════════════════════════
--- ATM DETECTION
+-- ATM DETECTION (FIXED)
 -- ════════════════════════════════════════════════════════════════
 
 local ATM = {}
@@ -643,7 +660,7 @@ function ATM.IsATMFilled(cashier)
     local open = cashier:FindFirstChild("Open")
     if open and open:IsA("BasePart") then
         local size = open.Size
-        if math.abs(size.X - 2.6) < 0.1 and math.abs(size.Y - 0.5) < 0.1 and math.abs(size.Z - 0.1) < 0.1 then
+        if math.abs(size.X - 2.6) < 0.2 and math.abs(size.Y - 0.5) < 0.2 and math.abs(size.Z - 0.1) < 0.2 then
             return true, open
         end
     end
@@ -652,20 +669,7 @@ function ATM.IsATMFilled(cashier)
         return true, open
     end
     
-    local largestPart = nil
-    local largestSize = 0
-    
-    for _, child in ipairs(cashier:GetChildren()) do
-        if child:IsA("BasePart") then
-            local size = child.Size.X * child.Size.Y * child.Size.Z
-            if size > largestSize then
-                largestSize = size
-                largestPart = child
-            end
-        end
-    end
-    
-    return largestPart ~= nil, largestPart
+    return false, nil
 end
 
 function ATM.ScanAll()
@@ -698,7 +702,7 @@ function ATM.ScanAll()
             end
         end
         
-        Utils.Log("Total: " .. #filledATMs)
+        Utils.Log("Total found: " .. #filledATMs)
     end)
     
     return filledATMs
@@ -782,7 +786,7 @@ function ServerHop.CheckDeath()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- MAIN FARM
+-- MAIN FARM (FIXED RESCAN TIMING)
 -- ════════════════════════════════════════════════════════════════
 
 local Farm = {}
@@ -795,11 +799,14 @@ function Farm.Start()
     
     STATE.isRunning = true
     STATE.sessionStartTime = os.time()
+    STATE.startingCash = Utils.GetCurrentCash()  -- Reset starting cash
     STATE.processedATMs = {}
+    STATE.lastProcessedReset = os.time()
     
     Utils.Log("═══════════════════════════════════════")
     Utils.Log("🏧 ATM Farm Started!")
     Utils.Log("Executor: " .. DETECTED_EXECUTOR)
+    Utils.Log("Starting Cash: $" .. STATE.startingCash)
     Utils.Log("Cash Aura: " .. (STATE.useCameraAura and "Camera" or "Simple"))
     Utils.Log("FPS: " .. CONFIG.Fps)
     Utils.Log("═══════════════════════════════════════")
@@ -814,19 +821,21 @@ function Farm.Start()
     task.spawn(function()
         while STATE.isRunning do
             local success, err = pcall(function()
+                -- Reset processed ATMs every 3 minutes (ATMs refill)
+                if os.time() - STATE.lastProcessedReset >= 180 then
+                    STATE.processedATMs = {}
+                    STATE.lastProcessedReset = os.time()
+                    Utils.Log("🔄 Reset processed ATMs (3 min elapsed)")
+                end
+                
                 local filledATMs = ATM.ScanAll()
                 
                 if #filledATMs == 0 then
-                    Utils.Log("⏳ No ATMs (Processed: " .. STATE.atmRobbed .. ")")
+                    Utils.Log("⏳ No ATMs (Robbed: " .. STATE.atmRobbed .. ")")
                     
                     ServerHop.CheckNoATMs()
                     
-                    task.wait(15)
-                    
-                    if (os.time() - STATE.sessionStartTime) % 300 < 15 then
-                        STATE.processedATMs = {}
-                        Utils.Log("🔄 Reset processed list")
-                    end
+                    task.wait(20)  -- Wait 20 seconds before rescanning
                     return
                 end
                 
@@ -848,9 +857,9 @@ function Farm.Start()
                     task.wait(1)
                 end
                 
-                Utils.Log("🔄 Rescanning...")
-                Webhook.Send("🔄 Scanning", "All ATMs processed", 3447003)
-                task.wait(10)
+                Utils.Log("🔄 Rescanning in 15s...")
+                Webhook.Send("🔄 Scanning", "All visible ATMs processed", 3447003)
+                task.wait(15)  -- Wait 15 seconds before next scan
             end)
             
             if not success then
@@ -867,8 +876,10 @@ function Farm.Stop()
     CFrameLoop.Stop()
     Noclip.Disable()
     
+    local profit = Utils.GetCurrentCash() - STATE.startingCash
+    
     Utils.Log("🛑 Stopped!")
-    Webhook.Send("🛑 Stopped", "Profit: $" .. STATE.totalCashCollected, 15158332)
+    Webhook.Send("🛑 Stopped", "Profit: $" .. profit, 15158332)
 end
 
 -- ════════════════════════════════════════════════════════════════
@@ -919,12 +930,15 @@ getgenv().ATMFarm = {
     Stop = Farm.Stop,
     SafeZone = teleportToSafeZone,
     GetStats = function()
+        local profit = Utils.GetCurrentCash() - STATE.startingCash
         return {
             Executor = DETECTED_EXECUTOR,
-            TotalCash = STATE.totalCashCollected,
+            StartingCash = STATE.startingCash,
+            CurrentCash = Utils.GetCurrentCash(),
+            Profit = profit,
             ATMRobbed = STATE.atmRobbed,
-            Wallet = Utils.GetCurrentCash(),
             SessionTime = Utils.FormatTime(os.time() - STATE.sessionStartTime),
+            DeathCount = STATE.deathCount,
         }
     end,
 }
@@ -936,8 +950,11 @@ getgenv().ATMFarm = {
 task.wait(2)
 Farm.Start()
 
-print("═══════════════════════════════════════")
-print("[ATM FARM] Loaded - v6.1")
-print("[Executor] " .. DETECTED_EXECUTOR)
-print("[Cash Aura] " .. (STATE.useCameraAura and "Camera" or "Simple"))
-print("═══════════════════════════════════════")
+if getgenv().secretDebug then
+    print("═══════════════════════════════════════")
+    print("[ATM FARM] Loaded - v7.0 FINAL")
+    print("[Executor] " .. DETECTED_EXECUTOR)
+    print("[Starting Cash] $" .. STATE.startingCash)
+    print("[Debug Mode] Enabled")
+    print("═══════════════════════════════════════")
+end
