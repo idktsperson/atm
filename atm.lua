@@ -1,12 +1,32 @@
+local plrr = game.Players.LocalPlayer
+
 local function validateSettings()
     if not getgenv()._ATMFARM then
-        LocalPlayer:Kick("Invalid Configuration - Missing _ATMFARM")
+        plrr:Kick("Invalid Configuration - Missing _ATMFARM")
         return false
     end
     
-    local expectedHash = "ATM_FARM_V10_FINAL_2026"
+    local expectedHash = "ATM_FARM_V10_BY_ETHZ"
     if getgenv()._ATMFARM.Hash ~= expectedHash then
-        LocalPlayer:Kick("Tampering Detected - Configuration Modified")
+        plrr:Kick("Tampering Detected - Configuration Modified")
+        return false
+    end
+
+    local expectedDiscord = "Made by _ethz on Discord."
+    if getgenv()._ATMFARM.Discord ~= expectedDiscord then
+        plrr:Kick("Tampering Detected - Configuration Modified")
+        return false
+    end
+
+    local expectedWarning = "If you paid for this script, you got scammed! This is FREE."
+    if getgenv()._ATMFARM.Warning ~= expectedWarning then
+        plrr:Kick("Tampering Detected - Configuration Modified")
+        return false
+    end
+
+    local expectedExecute = "DO NOT edit _ATMFARM or you'll be kicked. Good Boy."
+    if getgenv()._ATMFARM.Execute ~= expectedExecute then
+        plrr:Kick("Tampering Detected - Configuration Modified")
         return false
     end
     
