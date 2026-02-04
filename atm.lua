@@ -801,7 +801,7 @@ function ATM.Break(atmData)
             MainEvent:FireServer("ChargeButton")
             
             -- Wait for crash sound (2.2 seconds timeout)
-            crashDetected = CrashDetector.WaitForCrash(5)
+            crashDetected = CrashDetector.WaitForCrash(15)
             
             if crashDetected then
                 Utils.Log("  ✅ ATM broken successfully!")
