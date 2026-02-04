@@ -123,11 +123,10 @@ local function createNotificationBar()
     local messages = {
         config.Discord or "Discord: Not Set",
         config.Warning or "Warning: Read Documentation",
-        config.Update or "Update: Check Discord",
         config.Execute or "Execute: Follow Instructions"
     }
     
-    local scrollText = table.concat(messages, "  •  ") .. "  •  "
+    local scrollText = table.concat(messages, "  •  ") .. "  •            "
     textLabel.Text = scrollText .. scrollText
     
     task.spawn(function()
