@@ -1,6 +1,6 @@
 --[[
-    Da Hood ATM Farm System - FINAL CLEAN VERSION
-    Crash detection removed, webhook interval fixed
+    Da Hood ATM Farm System - FINAL OPTIMIZED
+    ATM Positioning fixed, Permanent CFrame loop
 ]]
 
 -- ════════════════════════════════════════════════════════════════
@@ -18,7 +18,7 @@ getgenv().Configuration = getgenv().Configuration or {
     ['ServerHopNum'] = 5,
     ['WebhookEnabled'] = false,
     ['Webhook'] = "",
-    ['WebhookInterval'] = 2,  -- Minutes
+    ['WebhookInterval'] = 2,
     ['Fps'] = 15,
 }
 
@@ -158,6 +158,7 @@ local STATE = {
     noCashChangeTime = 0,
     useCameraAura = (DETECTED_EXECUTOR == "SOLARA" or DETECTED_EXECUTOR == "XENO"),
     lastProcessedReset = os.time(),
+    currentTargetCFrame = nil,  -- NEW: Store current target position
 }
 
 -- ════════════════════════════════════════════════════════════════
@@ -198,7 +199,8 @@ local function teleportToSafeZone()
         end
         
         if Utils.IsValidCharacter(LocalPlayer.Character) then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(SAFE_ZONE.Position + Vector3.new(0, 3, 0))
+            -- Update CFrame loop to safe zone
+            STATE.currentTargetCFrame = CFrame.new(SAFE_ZONE.Position + Vector3.new(0, 3, 0))
             Utils.Log("Teleported to safe zone")
         end
     end)
@@ -210,6 +212,9 @@ end
 
 setfpscap(CONFIG.Fps)
 settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+
+pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
+pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
 
 Lighting.GlobalShadows = false
 Lighting.FogEnd = 100
@@ -281,6 +286,8 @@ function Noclip.Enable()
             end
         end)
     end)
+    
+    Utils.Log("Noclip enabled")
 end
 
 function Noclip.Disable()
@@ -298,37 +305,52 @@ function Noclip.Disable()
             end
         end
     end)
+    
+    Utils.Log("Noclip disabled")
 end
 
 -- ════════════════════════════════════════════════════════════════
--- CFRAME LOOP
+-- PERMANENT CFRAME LOOP
 -- ════════════════════════════════════════════════════════════════
 
 local CFrameLoop = {}
 
-function CFrameLoop.Start(targetCFrame)
-    CFrameLoop.Stop()
+function CFrameLoop.Start()
+    if STATE.cframeLoopConnection then return end
+    
+    -- Start at safe zone initially
+    STATE.currentTargetCFrame = CFrame.new(SAFE_ZONE.Position + Vector3.new(0, 3, 0))
     
     STATE.cframeLoopConnection = RunService.Heartbeat:Connect(function()
         pcall(function()
-            if Utils.IsValidCharacter(LocalPlayer.Character) then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = targetCFrame
+            if Utils.IsValidCharacter(LocalPlayer.Character) and STATE.currentTargetCFrame then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = STATE.currentTargetCFrame
                 LocalPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
                 LocalPlayer.Character.HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
             end
         end)
     end)
+    
+    Utils.Log("Permanent CFrame loop started")
+end
+
+function CFrameLoop.UpdatePosition(newCFrame)
+    STATE.currentTargetCFrame = newCFrame
+    Utils.Log("CFrame position updated")
 end
 
 function CFrameLoop.Stop()
     if STATE.cframeLoopConnection then
         STATE.cframeLoopConnection:Disconnect()
         STATE.cframeLoopConnection = nil
+        STATE.currentTargetCFrame = nil
     end
+    
+    Utils.Log("CFrame loop stopped")
 end
 
 -- ════════════════════════════════════════════════════════════════
--- WEBHOOK (FIXED INTERVAL)
+-- WEBHOOK
 -- ════════════════════════════════════════════════════════════════
 
 local Webhook = {}
@@ -338,7 +360,6 @@ function Webhook.Send(title, description, color, forceUpdate)
     
     task.spawn(function()
         local success, err = pcall(function()
-            -- Check interval (skip if not forced and interval not passed)
             if not forceUpdate then
                 local currentTime = os.time()
                 local timeSinceLastWebhook = currentTime - STATE.lastWebhookSent
@@ -410,12 +431,12 @@ function Webhook.Send(title, description, color, forceUpdate)
 end
 
 -- ════════════════════════════════════════════════════════════════
--- PERIODIC WEBHOOK SENDER
+-- PERIODIC WEBHOOK
 -- ════════════════════════════════════════════════════════════════
 
 task.spawn(function()
     while true do
-        task.wait(60)  -- Check every minute
+        task.wait(60)
         
         if STATE.isRunning and CONFIG.WebhookEnabled then
             Webhook.Send("📊 Farm Update", "Periodic status update", 3447003, false)
@@ -424,7 +445,7 @@ task.spawn(function()
 end)
 
 -- ════════════════════════════════════════════════════════════════
--- CASH AURA (CAMERA MODE - WITH PAUSE)
+-- CASH AURA (CAMERA MODE)
 -- ════════════════════════════════════════════════════════════════
 
 local CashAuraCamera = {}
@@ -662,25 +683,31 @@ function SmartWait.ForCashCollection()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- ATM POSITIONING
+-- ATM POSITIONING (FIXED)
 -- ════════════════════════════════════════════════════════════════
 
 local ATMPositioning = {}
 
 function ATMPositioning.GetOffset(atmPosition)
-    local x = math.floor(atmPosition.X)
-    local z = math.floor(atmPosition.Z)
+    -- Round to nearest integer for comparison
+    local x = math.floor(atmPosition.X + 0.5)
+    local z = math.floor(atmPosition.Z + 0.5)
     
-    if (x == -624 or x == -625) and (z == -286 or z == -287) then
-        Utils.Log("  Left ATM → offset right")
+    Utils.Log("  ATM Position: X=" .. x .. " Z=" .. z)
+    
+    -- Left ATM: X ≈ -624 or -625, Z ≈ -286 or -287
+    if (x >= -625 and x <= -624) and (z >= -287 and z <= -286) then
+        Utils.Log("  → Left ATM detected, offsetting +3 studs RIGHT")
         return Vector3.new(3, 0, 0)
     end
     
-    if (x == -627 or x == -628) and (z == -286 or z == -287) then
-        Utils.Log("  Right ATM → offset left")
+    -- Right ATM: X ≈ -627 or -628, Z ≈ -286 or -287
+    if (x >= -628 and x <= -627) and (z >= -287 and z <= -286) then
+        Utils.Log("  → Right ATM detected, offsetting -3 studs LEFT")
         return Vector3.new(-3, 0, 0)
     end
     
+    Utils.Log("  → Normal ATM, no offset")
     return Vector3.new(0, 0, 0)
 end
 
@@ -739,7 +766,7 @@ function ATM.ScanAll()
                         TargetPart = targetPart,
                     })
                     
-                    Utils.Log("  ✓ " .. cashier.Name)
+                    Utils.Log("  ✓ " .. cashier.Name .. " at " .. tostring(targetPart.Position))
                 end
             end
         end
@@ -758,11 +785,15 @@ function ATM.Break(atmData)
         CashAura.Pause()
         Noclip.Enable()
         
+        -- Apply positioning offset
         local positionOffset = ATMPositioning.GetOffset(atmData.Position)
+        
+        -- Calculate target position: 4 studs below + offset
         local targetPos = atmData.Position - Vector3.new(0, 4, 0) + positionOffset
         local targetCFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(90), 0, 0)
         
-        CFrameLoop.Start(targetCFrame)
+        -- Update CFrame loop position
+        CFrameLoop.UpdatePosition(targetCFrame)
         task.wait(0.3)
         
         Utils.EquipCombat()
@@ -776,7 +807,6 @@ function ATM.Break(atmData)
         MainEvent:FireServer("ChargeButton")
         task.wait(3.5)
         
-        CFrameLoop.Stop()
         Noclip.Disable()
         
         STATE.processedATMs[atmData.Name] = true
@@ -847,7 +877,7 @@ function Farm.Start()
     STATE.startingCash = Utils.GetCurrentCash()
     STATE.processedATMs = {}
     STATE.lastProcessedReset = os.time()
-    STATE.lastWebhookSent = 0  -- Reset webhook timer
+    STATE.lastWebhookSent = 0
     
     Utils.Log("═══════════════════════════════════════")
     Utils.Log("🏧 ATM Farm Started!")
@@ -860,6 +890,8 @@ function Farm.Start()
     
     CameraClip.Enable()
     createSafeZone()
+    Noclip.Enable()  -- Enable noclip permanently
+    CFrameLoop.Start()  -- Start permanent CFrame loop
     
     Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
     
@@ -949,8 +981,9 @@ LocalPlayer.CharacterAdded:Connect(function(character)
     CameraClip.Enable()
     Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
     
-    CFrameLoop.Stop()
-    Noclip.Disable()
+    -- Restart permanent systems
+    Noclip.Enable()
+    CFrameLoop.Start()
 end)
 
 -- ════════════════════════════════════════════════════════════════
@@ -988,6 +1021,8 @@ getgenv().ATMFarm = {
             SessionTime = Utils.FormatTime(os.time() - STATE.sessionStartTime),
             DeathCount = STATE.deathCount,
             NextWebhook = Utils.FormatTime(math.max(0, (STATE.lastWebhookSent + (CONFIG.WebhookInterval * 60)) - os.time())),
+            CFrameActive = STATE.cframeLoopConnection ~= nil,
+            NoclipActive = STATE.noclipConnection ~= nil,
         }
     end,
 }
@@ -1001,9 +1036,11 @@ Farm.Start()
 
 if getgenv().secretDebug then
     print("═══════════════════════════════════════")
-    print("[ATM FARM] Loaded - v9.0 FINAL")
+    print("[ATM FARM] Loaded - v10.0 FINAL")
     print("[Executor] " .. DETECTED_EXECUTOR)
     print("[Starting Cash] $" .. STATE.startingCash)
+    print("[Permanent CFrame] Enabled")
+    print("[Permanent Noclip] Enabled")
     print("[Debug Mode] Enabled")
     print("═══════════════════════════════════════")
 end
