@@ -97,7 +97,7 @@ local function createNotificationBar()
     textLabel.Parent = frame
     
     local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim2.new(0, 10)
+    padding.PaddingLeft = UDim.new(0, 10)
     padding.Parent = textLabel
     
     local messages = {
