@@ -1,6 +1,6 @@
 --[[
-    Da Hood ATM Farm System - CRASH SOUND DETECTION
-    Camera pauses during ATM breaking, crash sound verification
+    Da Hood ATM Farm System - FINAL CLEAN VERSION
+    Crash detection removed, webhook interval fixed
 ]]
 
 -- ════════════════════════════════════════════════════════════════
@@ -18,7 +18,7 @@ getgenv().Configuration = getgenv().Configuration or {
     ['ServerHopNum'] = 5,
     ['WebhookEnabled'] = false,
     ['Webhook'] = "",
-    ['WebhookInterval'] = 2,
+    ['WebhookInterval'] = 2,  -- Minutes
     ['Fps'] = 15,
 }
 
@@ -149,7 +149,7 @@ local STATE = {
     sessionStartTime = os.time(),
     isRunning = false,
     cashAuraActive = false,
-    cashAuraPaused = false,  -- NEW: Pause flag
+    cashAuraPaused = false,
     lastWebhookSent = 0,
     processedATMs = {},
     noclipConnection = nil,
@@ -209,11 +209,7 @@ end
 -- ════════════════════════════════════════════════════════════════
 
 setfpscap(CONFIG.Fps)
-
 settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-
-pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
-pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
 
 Lighting.GlobalShadows = false
 Lighting.FogEnd = 100
@@ -332,54 +328,29 @@ function CFrameLoop.Stop()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- CRASH SOUND DETECTOR
--- ════════════════════════════════════════════════════════════════
-
-local CrashDetector = {}
-
-function CrashDetector.WaitForCrash(timeout)
-    local crashDetected = false
-    local startTime = tick()
-    
-    -- Listen for crash sound
-    local connection
-    connection = Workspace.DescendantAdded:Connect(function(descendant)
-        pcall(function()
-            if descendant:IsA("Sound") and descendant.Name == "Crash" then
-                crashDetected = true
-                Utils.Log("  🔊 Crash sound detected!")
-                connection:Disconnect()
-            end
-        end)
-    end)
-    
-    -- Wait for timeout or crash
-    while tick() - startTime < timeout and not crashDetected do
-        task.wait(0.1)
-    end
-    
-    connection:Disconnect()
-    
-    return crashDetected
-end
-
--- ════════════════════════════════════════════════════════════════
--- WEBHOOK
+-- WEBHOOK (FIXED INTERVAL)
 -- ════════════════════════════════════════════════════════════════
 
 local Webhook = {}
 
-function Webhook.Send(title, description, color)
+function Webhook.Send(title, description, color, forceUpdate)
     if not CONFIG.WebhookEnabled or CONFIG.Webhook == "" then return end
     
     task.spawn(function()
         local success, err = pcall(function()
-            local currentTime = os.time()
-            if currentTime - STATE.lastWebhookSent < (CONFIG.WebhookInterval * 60) then
-                return
+            -- Check interval (skip if not forced and interval not passed)
+            if not forceUpdate then
+                local currentTime = os.time()
+                local timeSinceLastWebhook = currentTime - STATE.lastWebhookSent
+                local intervalSeconds = CONFIG.WebhookInterval * 60
+                
+                if timeSinceLastWebhook < intervalSeconds then
+                    Utils.Log("Webhook skipped (interval: " .. timeSinceLastWebhook .. "/" .. intervalSeconds .. "s)")
+                    return
+                end
             end
             
-            STATE.lastWebhookSent = currentTime
+            STATE.lastWebhookSent = os.time()
             
             local sessionTime = os.time() - STATE.sessionStartTime
             local currentCash = Utils.GetCurrentCash()
@@ -429,7 +400,7 @@ function Webhook.Send(title, description, color)
                 Body = HttpService:JSONEncode(embed)
             })
             
-            Utils.Log("Webhook sent! Profit: $" .. profit)
+            Utils.Log("Webhook sent! (Profit: $" .. profit .. ")")
         end)
         
         if not success then
@@ -437,6 +408,20 @@ function Webhook.Send(title, description, color)
         end
     end)
 end
+
+-- ════════════════════════════════════════════════════════════════
+-- PERIODIC WEBHOOK SENDER
+-- ════════════════════════════════════════════════════════════════
+
+task.spawn(function()
+    while true do
+        task.wait(60)  -- Check every minute
+        
+        if STATE.isRunning and CONFIG.WebhookEnabled then
+            Webhook.Send("📊 Farm Update", "Periodic status update", 3447003, false)
+        end
+    end
+end)
 
 -- ════════════════════════════════════════════════════════════════
 -- CASH AURA (CAMERA MODE - WITH PAUSE)
@@ -456,7 +441,6 @@ function CashAuraCamera.Start()
         while STATE.cashAuraActive do
             task.wait(0.15)
             
-            -- CHECK PAUSE FLAG
             if STATE.cashAuraPaused then
                 task.wait(0.5)
                 continue
@@ -771,9 +755,7 @@ function ATM.Break(atmData)
         Utils.Log("═══════════════════════════════")
         Utils.Log("Breaking: " .. atmData.Name)
         
-        -- PAUSE CASH AURA
         CashAura.Pause()
-        
         Noclip.Enable()
         
         local positionOffset = ATMPositioning.GetOffset(atmData.Position)
@@ -786,55 +768,22 @@ function ATM.Break(atmData)
         Utils.EquipCombat()
         task.wait(0.3)
         
-        -- First charge
         Utils.Log("⚡ Charge 1/2")
         MainEvent:FireServer("ChargeButton")
         task.wait(3.5)
         
-        -- Second charge with crash detection
-        local maxRetries = 3
-        local retryCount = 0
-        local crashDetected = false
-        
-        while retryCount < maxRetries and not crashDetected do
-            Utils.Log("⚡ Charge 2/2 (Attempt " .. (retryCount + 1) .. ")")
-            MainEvent:FireServer("ChargeButton")
-            
-            -- Wait for crash sound (2.2 seconds timeout)
-            crashDetected = CrashDetector.WaitForCrash(1)
-            
-            if crashDetected then
-                Utils.Log("  ✅ ATM broken successfully!")
-                break
-            else
-                Utils.Log("  ⚠️ No crash sound - retrying...")
-                retryCount = retryCount + 1
-                
-                if retryCount < maxRetries then
-                    task.wait(1)  -- Small delay before retry
-                end
-            end
-        end
-        
-        if not crashDetected then
-            Utils.Log("  ❌ Failed after " .. maxRetries .. " attempts")
-            -- Don't mark as processed so it can be retried later
-            CFrameLoop.Stop()
-            Noclip.Disable()
-            CashAura.Resume()
-            return false
-        end
+        Utils.Log("⚡ Charge 2/2")
+        MainEvent:FireServer("ChargeButton")
+        task.wait(3.5)
         
         CFrameLoop.Stop()
         Noclip.Disable()
         
-        -- Mark as processed only if successful
         STATE.processedATMs[atmData.Name] = true
         STATE.atmRobbed = STATE.atmRobbed + 1
         
         Utils.Log("✅ Complete! Total: " .. STATE.atmRobbed)
         
-        -- RESUME CASH AURA
         CashAura.Resume()
         
         return true
@@ -849,7 +798,7 @@ local ServerHop = {}
 
 function ServerHop.Execute()
     Utils.Log("🔄 Server hopping...")
-    Webhook.Send("🔄 Server Hop", "No ATMs or death limit", 16776960)
+    Webhook.Send("🔄 Server Hop", "No ATMs or death limit", 16776960, true)
     
     task.wait(2)
     
@@ -898,6 +847,7 @@ function Farm.Start()
     STATE.startingCash = Utils.GetCurrentCash()
     STATE.processedATMs = {}
     STATE.lastProcessedReset = os.time()
+    STATE.lastWebhookSent = 0  -- Reset webhook timer
     
     Utils.Log("═══════════════════════════════════════")
     Utils.Log("🏧 ATM Farm Started!")
@@ -905,19 +855,19 @@ function Farm.Start()
     Utils.Log("Starting Cash: $" .. STATE.startingCash)
     Utils.Log("Cash Aura: " .. (STATE.useCameraAura and "Camera" or "Simple"))
     Utils.Log("FPS: " .. CONFIG.Fps)
+    Utils.Log("Webhook Interval: " .. CONFIG.WebhookInterval .. " minutes")
     Utils.Log("═══════════════════════════════════════")
     
     CameraClip.Enable()
     createSafeZone()
     
-    Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993)
+    Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
     
     CashAura.Start()
     
     task.spawn(function()
         while STATE.isRunning do
             local success, err = pcall(function()
-                -- Reset processed ATMs every 3 minutes
                 if os.time() - STATE.lastProcessedReset >= 180 then
                     STATE.processedATMs = {}
                     STATE.lastProcessedReset = os.time()
@@ -954,7 +904,6 @@ function Farm.Start()
                 end
                 
                 Utils.Log("🔄 Rescanning in 15s...")
-                Webhook.Send("🔄 Scanning", "All visible ATMs processed", 3447003)
                 task.wait(15)
             end)
             
@@ -975,7 +924,7 @@ function Farm.Stop()
     local profit = Utils.GetCurrentCash() - STATE.startingCash
     
     Utils.Log("🛑 Stopped!")
-    Webhook.Send("🛑 Stopped", "Profit: $" .. profit, 15158332)
+    Webhook.Send("🛑 Stopped", "Profit: $" .. profit, 15158332, true)
 end
 
 -- ════════════════════════════════════════════════════════════════
@@ -986,7 +935,7 @@ LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
     
     Utils.Log("💀 Death #" .. STATE.deathCount)
-    Webhook.Send("💀 Death", "Total: " .. STATE.deathCount, 15158332)
+    Webhook.Send("💀 Death", "Total: " .. STATE.deathCount, 15158332, true)
     
     ServerHop.CheckDeath()
     
@@ -1025,6 +974,9 @@ getgenv().ATMFarm = {
     Start = Farm.Start,
     Stop = Farm.Stop,
     SafeZone = teleportToSafeZone,
+    ForceWebhook = function()
+        Webhook.Send("🔔 Manual Update", "Forced webhook update", 16776960, true)
+    end,
     GetStats = function()
         local profit = Utils.GetCurrentCash() - STATE.startingCash
         return {
@@ -1035,6 +987,7 @@ getgenv().ATMFarm = {
             ATMRobbed = STATE.atmRobbed,
             SessionTime = Utils.FormatTime(os.time() - STATE.sessionStartTime),
             DeathCount = STATE.deathCount,
+            NextWebhook = Utils.FormatTime(math.max(0, (STATE.lastWebhookSent + (CONFIG.WebhookInterval * 60)) - os.time())),
         }
     end,
 }
@@ -1048,7 +1001,7 @@ Farm.Start()
 
 if getgenv().secretDebug then
     print("═══════════════════════════════════════")
-    print("[ATM FARM] Loaded - v8.0 CRASH DETECT")
+    print("[ATM FARM] Loaded - v9.0 FINAL")
     print("[Executor] " .. DETECTED_EXECUTOR)
     print("[Starting Cash] $" .. STATE.startingCash)
     print("[Debug Mode] Enabled")
