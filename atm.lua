@@ -1,6 +1,6 @@
 --[[
-    Da Hood ATM Farm System - FINAL FIXED VERSION
-    All bugs resolved, profit tracking fixed, camera occlusion working
+    Da Hood ATM Farm System - CRASH SOUND DETECTION
+    Camera pauses during ATM breaking, crash sound verification
 ]]
 
 -- ════════════════════════════════════════════════════════════════
@@ -53,7 +53,7 @@ end
 local Camera = Workspace.CurrentCamera
 
 -- ════════════════════════════════════════════════════════════════
--- UTILITY FUNCTIONS (FIRST!)
+-- UTILITY FUNCTIONS
 -- ════════════════════════════════════════════════════════════════
 
 local Utils = {}
@@ -144,11 +144,12 @@ Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
 local STATE = {
     currentATMIndex = 1,
     deathCount = 0,
-    startingCash = Utils.GetCurrentCash(), -- İLK PARA KAYDI
+    startingCash = Utils.GetCurrentCash(),
     atmRobbed = 0,
     sessionStartTime = os.time(),
     isRunning = false,
     cashAuraActive = false,
+    cashAuraPaused = false,  -- NEW: Pause flag
     lastWebhookSent = 0,
     processedATMs = {},
     noclipConnection = nil,
@@ -240,27 +241,23 @@ Workspace.DescendantAdded:Connect(function(obj)
 end)
 
 -- ════════════════════════════════════════════════════════════════
--- CAMERA SYSTEM (FIXED OCCLUSION)
+-- CAMERA SYSTEM
 -- ════════════════════════════════════════════════════════════════
 
 local CameraClip = {}
 
 function CameraClip.Enable()
     pcall(function()
-        -- Invisicam for wall penetration
         sethiddenproperty(Camera, "DevCameraOcclusionMode", Enum.DevCameraOcclusionMode.Invisicam)
-        
-        -- Infinite zoom
         LocalPlayer.CameraMaxZoomDistance = 9e9
         LocalPlayer.CameraMinZoomDistance = 0
         LocalPlayer.CameraMode = Enum.CameraMode.Classic
         
-        -- Additional camera settings for better clipping
         pcall(function()
             Camera.FieldOfView = 70
         end)
         
-        Utils.Log("Camera occlusion enabled (Invisicam)")
+        Utils.Log("Camera occlusion enabled")
     end)
 end
 
@@ -331,7 +328,39 @@ function CFrameLoop.Stop()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- WEBHOOK (FIXED PROFIT CALCULATION)
+-- CRASH SOUND DETECTOR
+-- ════════════════════════════════════════════════════════════════
+
+local CrashDetector = {}
+
+function CrashDetector.WaitForCrash(timeout)
+    local crashDetected = false
+    local startTime = tick()
+    
+    -- Listen for crash sound
+    local connection
+    connection = Workspace.DescendantAdded:Connect(function(descendant)
+        pcall(function()
+            if descendant:IsA("Sound") and descendant.Name == "Crash" then
+                crashDetected = true
+                Utils.Log("  🔊 Crash sound detected!")
+                connection:Disconnect()
+            end
+        end)
+    end)
+    
+    -- Wait for timeout or crash
+    while tick() - startTime < timeout and not crashDetected do
+        task.wait(0.1)
+    end
+    
+    connection:Disconnect()
+    
+    return crashDetected
+end
+
+-- ════════════════════════════════════════════════════════════════
+-- WEBHOOK
 -- ════════════════════════════════════════════════════════════════
 
 local Webhook = {}
@@ -350,7 +379,7 @@ function Webhook.Send(title, description, color)
             
             local sessionTime = os.time() - STATE.sessionStartTime
             local currentCash = Utils.GetCurrentCash()
-            local profit = currentCash - STATE.startingCash  -- FIXED PROFIT
+            local profit = currentCash - STATE.startingCash
             local playersInServer = #Players:GetPlayers()
             
             local embed = {
@@ -406,7 +435,7 @@ function Webhook.Send(title, description, color)
 end
 
 -- ════════════════════════════════════════════════════════════════
--- CASH AURA (CAMERA MODE)
+-- CASH AURA (CAMERA MODE - WITH PAUSE)
 -- ════════════════════════════════════════════════════════════════
 
 local CashAuraCamera = {}
@@ -423,6 +452,12 @@ function CashAuraCamera.Start()
         while STATE.cashAuraActive do
             task.wait(0.15)
             
+            -- CHECK PAUSE FLAG
+            if STATE.cashAuraPaused then
+                task.wait(0.5)
+                continue
+            end
+            
             pcall(function()
                 if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
                 if not Drops then
@@ -433,7 +468,7 @@ function CashAuraCamera.Start()
                 local playerPos = LocalPlayer.Character.HumanoidRootPart.Position
                 
                 for _, drop in pairs(Drops:GetChildren()) do
-                    if drop.Name == "MoneyDrop" and not isProcessingCamera then
+                    if drop.Name == "MoneyDrop" and not isProcessingCamera and not STATE.cashAuraPaused then
                         local distance = (drop.Position - playerPos).Magnitude
                         
                         if distance <= 12 then
@@ -450,6 +485,8 @@ function CashAuraCamera.Start()
                             repeat
                                 task.wait()
                                 
+                                if STATE.cashAuraPaused then break end
+                                
                                 local offset = Vector3.new(math.random(-30, 30) / 100, 2, math.random(-30, 30) / 100)
                                 Camera.CFrame = CFrame.lookAt(drop.Position + offset, drop.Position)
                                 
@@ -464,7 +501,7 @@ function CashAuraCamera.Start()
                                     break
                                 end
                                 
-                            until not drop or drop.Parent == nil or distance > 12
+                            until not drop or drop.Parent == nil or distance > 12 or STATE.cashAuraPaused
                             
                             Camera.CameraType = Enum.CameraType.Custom
                             Camera.CameraSubject = LocalPlayer.Character.Humanoid
@@ -487,6 +524,7 @@ end
 
 function CashAuraCamera.Stop()
     STATE.cashAuraActive = false
+    STATE.cashAuraPaused = false
     pcall(function()
         Camera.CameraType = Enum.CameraType.Custom
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -511,6 +549,11 @@ function CashAuraSimple.Start()
         while STATE.cashAuraActive do
             task.wait(0.1)
             
+            if STATE.cashAuraPaused then
+                task.wait(0.5)
+                continue
+            end
+            
             pcall(function()
                 if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
                 if not Drops then
@@ -521,7 +564,7 @@ function CashAuraSimple.Start()
                 local playerPos = LocalPlayer.Character.HumanoidRootPart.Position
                 
                 for _, drop in pairs(Drops:GetChildren()) do
-                    if drop.Name == "MoneyDrop" and drop:FindFirstChild("ClickDetector") then
+                    if drop.Name == "MoneyDrop" and drop:FindFirstChild("ClickDetector") and not STATE.cashAuraPaused then
                         local distance = (drop.Position - playerPos).Magnitude
                         
                         if distance < 12 then
@@ -536,6 +579,7 @@ end
 
 function CashAuraSimple.Stop()
     STATE.cashAuraActive = false
+    STATE.cashAuraPaused = false
 end
 
 -- ════════════════════════════════════════════════════════════════
@@ -558,6 +602,16 @@ function CashAura.Stop()
     else
         CashAuraSimple.Stop()
     end
+end
+
+function CashAura.Pause()
+    STATE.cashAuraPaused = true
+    Utils.Log("Cash Aura paused")
+end
+
+function CashAura.Resume()
+    STATE.cashAuraPaused = false
+    Utils.Log("Cash Aura resumed")
 end
 
 function CashAura.GetNearbyCount()
@@ -643,7 +697,7 @@ function ATMPositioning.GetOffset(atmPosition)
 end
 
 -- ════════════════════════════════════════════════════════════════
--- ATM DETECTION (FIXED)
+-- ATM DETECTION
 -- ════════════════════════════════════════════════════════════════
 
 local ATM = {}
@@ -713,6 +767,9 @@ function ATM.Break(atmData)
         Utils.Log("═══════════════════════════════")
         Utils.Log("Breaking: " .. atmData.Name)
         
+        -- PAUSE CASH AURA
+        CashAura.Pause()
+        
         Noclip.Enable()
         
         local positionOffset = ATMPositioning.GetOffset(atmData.Position)
@@ -725,21 +782,56 @@ function ATM.Break(atmData)
         Utils.EquipCombat()
         task.wait(0.3)
         
+        -- First charge
         Utils.Log("⚡ Charge 1/2")
         MainEvent:FireServer("ChargeButton")
         task.wait(3.5)
         
-        Utils.Log("⚡ Charge 2/2")
-        MainEvent:FireServer("ChargeButton")
-        task.wait(3.5)
+        -- Second charge with crash detection
+        local maxRetries = 3
+        local retryCount = 0
+        local crashDetected = false
+        
+        while retryCount < maxRetries and not crashDetected do
+            Utils.Log("⚡ Charge 2/2 (Attempt " .. (retryCount + 1) .. ")")
+            MainEvent:FireServer("ChargeButton")
+            
+            -- Wait for crash sound (2.2 seconds timeout)
+            crashDetected = CrashDetector.WaitForCrash(2.2)
+            
+            if crashDetected then
+                Utils.Log("  ✅ ATM broken successfully!")
+                break
+            else
+                Utils.Log("  ⚠️ No crash sound - retrying...")
+                retryCount = retryCount + 1
+                
+                if retryCount < maxRetries then
+                    task.wait(1)  -- Small delay before retry
+                end
+            end
+        end
+        
+        if not crashDetected then
+            Utils.Log("  ❌ Failed after " .. maxRetries .. " attempts")
+            -- Don't mark as processed so it can be retried later
+            CFrameLoop.Stop()
+            Noclip.Disable()
+            CashAura.Resume()
+            return false
+        end
         
         CFrameLoop.Stop()
         Noclip.Disable()
         
+        -- Mark as processed only if successful
         STATE.processedATMs[atmData.Name] = true
         STATE.atmRobbed = STATE.atmRobbed + 1
         
-        Utils.Log("✅ Done! Total: " .. STATE.atmRobbed)
+        Utils.Log("✅ Complete! Total: " .. STATE.atmRobbed)
+        
+        -- RESUME CASH AURA
+        CashAura.Resume()
         
         return true
     end)
@@ -786,7 +878,7 @@ function ServerHop.CheckDeath()
 end
 
 -- ════════════════════════════════════════════════════════════════
--- MAIN FARM (FIXED RESCAN TIMING)
+-- MAIN FARM
 -- ════════════════════════════════════════════════════════════════
 
 local Farm = {}
@@ -799,7 +891,7 @@ function Farm.Start()
     
     STATE.isRunning = true
     STATE.sessionStartTime = os.time()
-    STATE.startingCash = Utils.GetCurrentCash()  -- Reset starting cash
+    STATE.startingCash = Utils.GetCurrentCash()
     STATE.processedATMs = {}
     STATE.lastProcessedReset = os.time()
     
@@ -821,11 +913,11 @@ function Farm.Start()
     task.spawn(function()
         while STATE.isRunning do
             local success, err = pcall(function()
-                -- Reset processed ATMs every 3 minutes (ATMs refill)
+                -- Reset processed ATMs every 3 minutes
                 if os.time() - STATE.lastProcessedReset >= 180 then
                     STATE.processedATMs = {}
                     STATE.lastProcessedReset = os.time()
-                    Utils.Log("🔄 Reset processed ATMs (3 min elapsed)")
+                    Utils.Log("🔄 Reset processed ATMs (3 min)")
                 end
                 
                 local filledATMs = ATM.ScanAll()
@@ -835,7 +927,7 @@ function Farm.Start()
                     
                     ServerHop.CheckNoATMs()
                     
-                    task.wait(20)  -- Wait 20 seconds before rescanning
+                    task.wait(20)
                     return
                 end
                 
@@ -859,7 +951,7 @@ function Farm.Start()
                 
                 Utils.Log("🔄 Rescanning in 15s...")
                 Webhook.Send("🔄 Scanning", "All visible ATMs processed", 3447003)
-                task.wait(15)  -- Wait 15 seconds before next scan
+                task.wait(15)
             end)
             
             if not success then
@@ -952,7 +1044,7 @@ Farm.Start()
 
 if getgenv().secretDebug then
     print("═══════════════════════════════════════")
-    print("[ATM FARM] Loaded - v7.0 FINAL")
+    print("[ATM FARM] Loaded - v8.0 CRASH DETECT")
     print("[Executor] " .. DETECTED_EXECUTOR)
     print("[Starting Cash] $" .. STATE.startingCash)
     print("[Debug Mode] Enabled")
