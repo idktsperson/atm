@@ -38,7 +38,7 @@ if not validateSettings() then
     return
 end
 
-getgenv().secretDebug = getgenv().secretDebug or false
+getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 
 getgenv().Configuration = getgenv().Configuration or {
     ['ServerHop'] = false,
@@ -191,7 +191,7 @@ function Utils.FormatTime(seconds)
 end
 
 function Utils.Log(message)
-    if getgenv().secretDebug then
+    if getgenv()._secretDebugVar then
         print("[ATM FARM] " .. message)
     end
 end
@@ -963,6 +963,7 @@ function Farm.Start()
                 end
                 
                 Utils.Log("🔄 Rescanning in 15s...")
+                teleportToSafeZone()
                 task.wait(15)
             end)
             
@@ -1048,7 +1049,7 @@ getgenv().ATMFarm = {
 task.wait(2)
 Farm.Start()
 
-if getgenv().secretDebug then
+if getgenv()._secretDebugVar then
     print("═══════════════════════════════════════")
     print("[ATM FARM] Loaded - v10.0 FINAL")
     print("[Executor] " .. DETECTED_EXECUTOR)
