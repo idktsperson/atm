@@ -1,17 +1,24 @@
---[[
-    Da Hood ATM Farm System - FINAL OPTIMIZED
-    ATM Positioning fixed, Permanent CFrame loop
-]]
+local function validateSettings()
+    if not getgenv()._ATMFARM then
+        LocalPlayer:Kick("Invalid Configuration - Missing _ATMFARM")
+        return false
+    end
+    
+    local expectedHash = "ATM_FARM_V10_FINAL_2026"
+    if getgenv()._ATMFARM.Hash ~= expectedHash then
+        LocalPlayer:Kick("Tampering Detected - Configuration Modified")
+        return false
+    end
+    
+    return true
+end
 
--- ════════════════════════════════════════════════════════════════
--- SECRET DEBUG MODE
--- ════════════════════════════════════════════════════════════════
+task.wait(0.5)
+if not validateSettings() then
+    return
+end
 
 getgenv().secretDebug = getgenv().secretDebug or false
-
--- ════════════════════════════════════════════════════════════════
--- CONFIGURATION
--- ════════════════════════════════════════════════════════════════
 
 getgenv().Configuration = getgenv().Configuration or {
     ['ServerHop'] = false,
@@ -23,10 +30,6 @@ getgenv().Configuration = getgenv().Configuration or {
 }
 
 local CONFIG = getgenv().Configuration
-
--- ════════════════════════════════════════════════════════════════
--- SERVICES
--- ════════════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -41,10 +44,8 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local MainEvent = ReplicatedStorage:WaitForChild("MainEvent", 10)
 
--- Wait for game to load
 repeat task.wait(0.1) until game:IsLoaded() and LocalPlayer
 
--- Wait for character to fully load
 if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("FULLY_LOADED_CHAR") then 
     repeat task.wait(0.5) until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("FULLY_LOADED_CHAR")
     task.wait(1)
@@ -52,9 +53,83 @@ end
 
 local Camera = Workspace.CurrentCamera
 
--- ════════════════════════════════════════════════════════════════
--- UTILITY FUNCTIONS
--- ════════════════════════════════════════════════════════════════
+local function createNotificationBar()
+    local config = getgenv()._ATMFARM
+    
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "ATMFarmNotify"
+    gui.DisplayOrder = 999999
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+    
+    local success = pcall(function()
+        gui.Parent = game:GetService("CoreGui")
+    end)
+    
+    if not success then
+        gui.Parent = LocalPlayer.PlayerGui
+    end
+    
+    local frame = Instance.new("Frame")
+    frame.Name = "NotifyBar"
+    frame.BackgroundColor3 = Color3.fromRGB(18, 18, 18) 
+    frame.BorderSizePixel = 0
+    frame.Size = UDim2.new(1, 0, 0, 25)
+    frame.Position = UDim2.new(0, 0, 0, 5)
+    frame.Parent = gui
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(35, 35, 35)
+    stroke.Thickness = 1
+    stroke.Parent = frame
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Name = "ScrollingText"
+    textLabel.BackgroundTransparency = 1
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.Position = UDim2.new(0, 0, 0, 0)
+    textLabel.Font = Enum.Font.FredokaOne
+    textLabel.TextSize = 14
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.TextYAlignment = Enum.TextYAlignment.Center
+    textLabel.ClipsDescendants = false
+    textLabel.Parent = frame
+    
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim2.new(0, 10)
+    padding.Parent = textLabel
+    
+    local messages = {
+        config.Discord or "Discord: Not Set",
+        config.Warning or "Warning: Read Documentation",
+        config.Update or "Update: Check Discord",
+        config.Execute or "Execute: Follow Instructions"
+    }
+    
+    local scrollText = table.concat(messages, "  •  ") .. "  •  "
+    textLabel.Text = scrollText .. scrollText
+    
+    task.spawn(function()
+        local textSize = textLabel.TextBounds.X / 2
+        local duration = textSize / 50
+        
+        while textLabel and textLabel.Parent do
+            local tween = TweenService:Create(textLabel, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+                Position = UDim2.new(0, -textSize, 0, 0)
+            })
+            
+            tween:Play()
+            tween.Completed:Wait()
+            
+            textLabel.Position = UDim2.new(0, 0, 0, 0)
+        end
+    end)
+    
+    return gui
+end
+
+createNotificationBar()
 
 local Utils = {}
 
@@ -102,10 +177,6 @@ function Utils.Log(message)
     end
 end
 
--- ════════════════════════════════════════════════════════════════
--- EXECUTOR DETECTION
--- ════════════════════════════════════════════════════════════════
-
 local EXECUTOR_TYPE = "UNKNOWN"
 
 local function detectExecutor()
@@ -137,10 +208,6 @@ end
 local DETECTED_EXECUTOR = detectExecutor()
 Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
 
--- ════════════════════════════════════════════════════════════════
--- STATE MANAGEMENT
--- ════════════════════════════════════════════════════════════════
-
 local STATE = {
     currentATMIndex = 1,
     deathCount = 0,
@@ -158,12 +225,8 @@ local STATE = {
     noCashChangeTime = 0,
     useCameraAura = (DETECTED_EXECUTOR == "SOLARA" or DETECTED_EXECUTOR == "XENO"),
     lastProcessedReset = os.time(),
-    currentTargetCFrame = nil,  -- NEW: Store current target position
+    currentTargetCFrame = nil,
 }
-
--- ════════════════════════════════════════════════════════════════
--- SAFE AFK ZONE
--- ════════════════════════════════════════════════════════════════
 
 local SAFE_ZONE = {
     Position = Vector3.new(-3363.70337, 91784.7188, 11727.2256),
@@ -199,22 +262,18 @@ local function teleportToSafeZone()
         end
         
         if Utils.IsValidCharacter(LocalPlayer.Character) then
-            -- Update CFrame loop to safe zone
             STATE.currentTargetCFrame = CFrame.new(SAFE_ZONE.Position + Vector3.new(0, 3, 0))
             Utils.Log("Teleported to safe zone")
         end
     end)
 end
 
--- ════════════════════════════════════════════════════════════════
--- OPTIMIZATION
--- ════════════════════════════════════════════════════════════════
-
 setfpscap(CONFIG.Fps)
-settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 
 pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
 pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
+
+settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 
 Lighting.GlobalShadows = false
 Lighting.FogEnd = 100
@@ -245,10 +304,6 @@ Workspace.DescendantAdded:Connect(function(obj)
     end
 end)
 
--- ════════════════════════════════════════════════════════════════
--- CAMERA SYSTEM
--- ════════════════════════════════════════════════════════════════
-
 local CameraClip = {}
 
 function CameraClip.Enable()
@@ -265,10 +320,6 @@ function CameraClip.Enable()
         Utils.Log("Camera occlusion enabled")
     end)
 end
-
--- ════════════════════════════════════════════════════════════════
--- NOCLIP SYSTEM
--- ════════════════════════════════════════════════════════════════
 
 local Noclip = {}
 
@@ -309,16 +360,11 @@ function Noclip.Disable()
     Utils.Log("Noclip disabled")
 end
 
--- ════════════════════════════════════════════════════════════════
--- PERMANENT CFRAME LOOP
--- ════════════════════════════════════════════════════════════════
-
 local CFrameLoop = {}
 
 function CFrameLoop.Start()
     if STATE.cframeLoopConnection then return end
     
-    -- Start at safe zone initially
     STATE.currentTargetCFrame = CFrame.new(SAFE_ZONE.Position + Vector3.new(0, 3, 0))
     
     STATE.cframeLoopConnection = RunService.Heartbeat:Connect(function()
@@ -349,14 +395,18 @@ function CFrameLoop.Stop()
     Utils.Log("CFrame loop stopped")
 end
 
--- ════════════════════════════════════════════════════════════════
--- WEBHOOK
--- ════════════════════════════════════════════════════════════════
-
 local Webhook = {}
 
 function Webhook.Send(title, description, color, forceUpdate)
-    if not CONFIG.WebhookEnabled or CONFIG.Webhook == "" then return end
+    if CONFIG.WebhookEnabled and (CONFIG.Webhook == "" or CONFIG.Webhook == nil) then
+        Utils.Log("⚠️ Webhook enabled but URL is empty!")
+        return
+    end
+    
+    if not CONFIG.WebhookEnabled then
+        Utils.Log("Webhook disabled, skipping send")
+        return
+    end
     
     task.spawn(function()
         local success, err = pcall(function()
@@ -409,7 +459,7 @@ function Webhook.Send(title, description, color, forceUpdate)
                             ["inline"] = false
                         },
                     },
-                    ["footer"] = {["text"] = "Da Hood ATM Farm • " .. os.date("%H:%M:%S")},
+                    ["footer"] = {["text"] = "Made by _ethz on Discord! • " .. os.date("%H:%M:%S")},
                     ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
                 }}
             }
@@ -430,10 +480,6 @@ function Webhook.Send(title, description, color, forceUpdate)
     end)
 end
 
--- ════════════════════════════════════════════════════════════════
--- PERIODIC WEBHOOK
--- ════════════════════════════════════════════════════════════════
-
 task.spawn(function()
     while true do
         task.wait(60)
@@ -443,10 +489,6 @@ task.spawn(function()
         end
     end
 end)
-
--- ════════════════════════════════════════════════════════════════
--- CASH AURA (CAMERA MODE)
--- ════════════════════════════════════════════════════════════════
 
 local CashAuraCamera = {}
 local Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
@@ -542,10 +584,6 @@ function CashAuraCamera.Stop()
     end)
 end
 
--- ════════════════════════════════════════════════════════════════
--- CASH AURA (SIMPLE MODE)
--- ════════════════════════════════════════════════════════════════
-
 local CashAuraSimple = {}
 
 function CashAuraSimple.Start()
@@ -590,10 +628,6 @@ function CashAuraSimple.Stop()
     STATE.cashAuraActive = false
     STATE.cashAuraPaused = false
 end
-
--- ════════════════════════════════════════════════════════════════
--- UNIFIED CASH AURA
--- ════════════════════════════════════════════════════════════════
 
 local CashAura = {}
 
@@ -645,10 +679,6 @@ function CashAura.GetNearbyCount()
     return count
 end
 
--- ════════════════════════════════════════════════════════════════
--- SMART WAIT
--- ════════════════════════════════════════════════════════════════
-
 local SmartWait = {}
 
 function SmartWait.ForCashCollection()
@@ -682,26 +712,19 @@ function SmartWait.ForCashCollection()
     end
 end
 
--- ════════════════════════════════════════════════════════════════
--- ATM POSITIONING (FIXED)
--- ════════════════════════════════════════════════════════════════
-
 local ATMPositioning = {}
 
 function ATMPositioning.GetOffset(atmPosition)
-    -- Round to nearest integer for comparison
     local x = math.floor(atmPosition.X + 0.5)
     local z = math.floor(atmPosition.Z + 0.5)
     
     Utils.Log("  ATM Position: X=" .. x .. " Z=" .. z)
     
-    -- Left ATM: X ≈ -624 or -625, Z ≈ -286 or -287
     if (x >= -625 and x <= -624) and (z >= -287 and z <= -286) then
         Utils.Log("  → Left ATM detected, offsetting +3 studs RIGHT")
         return Vector3.new(3, 0, 0)
     end
     
-    -- Right ATM: X ≈ -627 or -628, Z ≈ -286 or -287
     if (x >= -628 and x <= -627) and (z >= -287 and z <= -286) then
         Utils.Log("  → Right ATM detected, offsetting -3 studs LEFT")
         return Vector3.new(-3, 0, 0)
@@ -710,10 +733,6 @@ function ATMPositioning.GetOffset(atmPosition)
     Utils.Log("  → Normal ATM, no offset")
     return Vector3.new(0, 0, 0)
 end
-
--- ════════════════════════════════════════════════════════════════
--- ATM DETECTION
--- ════════════════════════════════════════════════════════════════
 
 local ATM = {}
 
@@ -785,14 +804,11 @@ function ATM.Break(atmData)
         CashAura.Pause()
         Noclip.Enable()
         
-        -- Apply positioning offset
         local positionOffset = ATMPositioning.GetOffset(atmData.Position)
         
-        -- Calculate target position: 4 studs below + offset
         local targetPos = atmData.Position - Vector3.new(0, 4, 0) + positionOffset
         local targetCFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(90), 0, 0)
         
-        -- Update CFrame loop position
         CFrameLoop.UpdatePosition(targetCFrame)
         task.wait(0.3)
         
@@ -819,10 +835,6 @@ function ATM.Break(atmData)
         return true
     end)
 end
-
--- ════════════════════════════════════════════════════════════════
--- SERVER HOP
--- ════════════════════════════════════════════════════════════════
 
 local ServerHop = {}
 
@@ -860,10 +872,6 @@ function ServerHop.CheckDeath()
     end
 end
 
--- ════════════════════════════════════════════════════════════════
--- MAIN FARM
--- ════════════════════════════════════════════════════════════════
-
 local Farm = {}
 
 function Farm.Start()
@@ -890,8 +898,8 @@ function Farm.Start()
     
     CameraClip.Enable()
     createSafeZone()
-    Noclip.Enable()  -- Enable noclip permanently
-    CFrameLoop.Start()  -- Start permanent CFrame loop
+    Noclip.Enable()
+    CFrameLoop.Start()
     
     Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
     
@@ -959,10 +967,6 @@ function Farm.Stop()
     Webhook.Send("🛑 Stopped", "Profit: $" .. profit, 15158332, true)
 end
 
--- ════════════════════════════════════════════════════════════════
--- CHARACTER HANDLER
--- ════════════════════════════════════════════════════════════════
-
 LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
     
@@ -981,7 +985,6 @@ LocalPlayer.CharacterAdded:Connect(function(character)
     CameraClip.Enable()
     Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
     
-    -- Restart permanent systems
     Noclip.Enable()
     CFrameLoop.Start()
 end)
@@ -998,10 +1001,6 @@ task.spawn(function()
         vu:Button2Up(Vector2.new(0,0), Camera.CFrame)
     end)
 end)
-
--- ════════════════════════════════════════════════════════════════
--- GLOBAL FUNCTIONS
--- ════════════════════════════════════════════════════════════════
 
 getgenv().ATMFarm = {
     Start = Farm.Start,
@@ -1026,10 +1025,6 @@ getgenv().ATMFarm = {
         }
     end,
 }
-
--- ════════════════════════════════════════════════════════════════
--- AUTO START
--- ════════════════════════════════════════════════════════════════
 
 task.wait(2)
 Farm.Start()
