@@ -753,3 +753,5 @@ end
 -- ════════════════════════════════════════════════════════════════
 
 return screenGui
+
+setclipboard("discord.gg/aTb4K8Euta")
