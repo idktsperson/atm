@@ -1,6 +1,7 @@
 -- ════════════════════════════════════════════════════════════════
 -- RYSIFY ATM FARM GUI
 -- ════════════════════════════════════════════════════════════════
+setclipboard("discord.gg/aTb4K8Euta")
 
 local G2L = {};
 
@@ -754,4 +755,4 @@ end
 
 return screenGui
 
-setclipboard("discord.gg/aTb4K8Euta")
+
