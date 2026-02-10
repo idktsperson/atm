@@ -290,7 +290,7 @@ setfpscap(CONFIG.Fps)
 
 pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
 pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
---pcall(function()loadstring(game:HttpGet(""))()end) GUI HERE
+pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/atm/refs/heads/main/gui.lua"))()end)
 
 settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 
@@ -377,6 +377,31 @@ function Noclip.Disable()
     end)
     
     Utils.Log("Noclip disabled")
+end
+
+local TransparencySystem = {}
+
+function TransparencySystem.Enable()
+    task.spawn(function()
+        while STATE.isRunning do
+            task.wait(0.1)
+            
+            pcall(function()
+                if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
+                
+                local humanoidRootPart = LocalPlayer.Character.HumanoidRootPart
+                local touchingParts = humanoidRootPart:GetTouchingParts()
+                
+                for _, part in pairs(touchingParts) do
+                    if part ~= humanoidRootPart and part.Parent ~= LocalPlayer.Character then
+                        if part:IsA("BasePart") then
+                            part.Transparency = 0.8
+                        end
+                    end
+                end
+            end)
+        end
+    end)
 end
 
 local CFrameLoop = {}
@@ -891,6 +916,32 @@ function ServerHop.CheckDeath()
     end
 end
 
+getgenv().GUIData = {
+    Wallet = 0,
+    Profit = 0,
+    Elapsed = "00:00:00"
+}
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        
+        pcall(function()
+            if STATE.isRunning then
+                local currentCash = Utils.GetCurrentCash()
+                local profit = currentCash - STATE.startingCash
+                local sessionTime = os.time() - STATE.sessionStartTime
+                
+                getgenv().GUIData = {
+                    Wallet = currentCash,
+                    Profit = profit,
+                    Elapsed = Utils.FormatTime(sessionTime)
+                }
+            end
+        end)
+    end
+end)
+
 local Farm = {}
 
 function Farm.Start()
@@ -919,6 +970,7 @@ function Farm.Start()
     createSafeZone()
     Noclip.Enable()
     CFrameLoop.Start()
+    TransparencySystem.Enable()
     
     Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
     
