@@ -286,6 +286,32 @@ local function teleportToSafeZone()
     end)
 end
 
+getgenv().GUIData = {
+    Wallet = 0,
+    Profit = 0,
+    Elapsed = "00:00:00"
+}
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        
+        pcall(function()
+            if STATE.isRunning then
+                local currentCash = Utils.GetCurrentCash()
+                local profit = currentCash - STATE.startingCash
+                local sessionTime = os.time() - STATE.sessionStartTime
+                
+                getgenv().GUIData = {
+                    Wallet = currentCash,
+                    Profit = profit,
+                    Elapsed = Utils.FormatTime(sessionTime)
+                }
+            end
+        end)
+    end
+end)
+
 setfpscap(CONFIG.Fps)
 
 pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
@@ -915,32 +941,6 @@ function ServerHop.CheckDeath()
         ServerHop.Execute()
     end
 end
-
-getgenv().GUIData = {
-    Wallet = 0,
-    Profit = 0,
-    Elapsed = "00:00:00"
-}
-
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        
-        pcall(function()
-            if STATE.isRunning then
-                local currentCash = Utils.GetCurrentCash()
-                local profit = currentCash - STATE.startingCash
-                local sessionTime = os.time() - STATE.sessionStartTime
-                
-                getgenv().GUIData = {
-                    Wallet = currentCash,
-                    Profit = profit,
-                    Elapsed = Utils.FormatTime(sessionTime)
-                }
-            end
-        end)
-    end
-end)
 
 local Farm = {}
 
