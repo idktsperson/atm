@@ -1463,21 +1463,27 @@ function ServerHop.CheckDeath()
     end
 end
 
-task.spawn(function()
-    while true do
-        task.wait(0.5)
+local function updateGUI()
+    pcall(function()
+        local currentCash = Utils.GetCurrentCash()
+        local profit = currentCash - STATE.startingCash
+        local sessionTime = os.time() - STATE.sessionStartTime
         
-        pcall(function()
-            if STATE.isRunning then
-                local currentCash = Utils.GetCurrentCash()
-                local profit = currentCash - STATE.startingCash
-                local sessionTime = os.time() - STATE.sessionStartTime
-                
-                walletLabel.Text = Utils.FormatCash(currentCash)
-                profitLabel.Text = Utils.FormatCash(profit)
-                elapsedLabel.Text = Utils.FormatTime(sessionTime)
-            end
-        end)
+        -- Update labels with raw values first (no formatting issues)
+        walletLabel.Text = "$" .. tostring(currentCash)
+        profitLabel.Text = "$" .. tostring(profit)
+        elapsedLabel.Text = Utils.FormatTime(sessionTime)
+        
+        Utils.Log("[GUI] Updated - Cash: $" .. currentCash .. " | Profit: $" .. profit)
+    end)
+end
+
+task.spawn(function()
+    while task.wait(0.5) do
+        updateGUI()
+        print(Utils.GetCurrentCash())
+        print(walletLabel.Text)
+        print(profitLabel.Text)
     end
 end)
 
