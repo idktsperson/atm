@@ -1291,7 +1291,7 @@ function SmartWait.ForCashCollection()
             STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
         end
         
-        if currentCashCount == 0 and STATE.noCashChangeTime >= 1 then
+        if currentCashCount == 0 and STATE.noCashChangeTime >= 0.5 then
             Utils.Log("✅ Complete!")
             break
         end
