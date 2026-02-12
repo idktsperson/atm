@@ -948,9 +948,11 @@ end
 local TransparencySystem = {}
 
 function TransparencySystem.Enable()
+    print("hi")
+    --[[
     task.spawn(function()
         while STATE.isRunning do
-            task.wait(1)  -- Daha hızlı kontrol
+            task.wait(1)
             
             pcall(function()
                 if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
@@ -972,6 +974,7 @@ function TransparencySystem.Enable()
             end)
         end
     end)
+    ]]
 end
 
 
