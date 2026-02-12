@@ -945,47 +945,9 @@ end
 
 local TransparencySystem = {}
 
-local PlayerService = game:GetService("Players")
-local World = game:GetService("Workspace")
-
-local Client = PlayerService.LocalPlayer
-local MAX_DISTANCE = 20
-local MIN_ALPHA = 0.65
-
-local radiusParams = OverlapParams.new()
-radiusParams.FilterType = Enum.RaycastFilterType.Blacklist
-
 function TransparencySystem.Enable()
-    task.spawn(function()
-        while SYSTEM_FLAGS.active do
-            task.wait(0.15)
-
-            pcall(function()
-                local charModel = Client.Character
-                if not Utils.IsValidCharacter(charModel) then return end
-
-                local root = charModel:FindFirstChild("HumanoidRootPart")
-                if not root then return end
-
-                radiusParams.FilterDescendantsInstances = { charModel }
-
-                local partsInRange = World:GetPartBoundsInRadius(
-                    root.Position,
-                    MAX_DISTANCE,
-                    radiusParams
-                )
-
-                for _, obj in ipairs(partsInRange) do
-                    if obj:IsA("BasePart") and obj.Transparency < MIN_ALPHA then
-                        obj.Transparency = MIN_ALPHA
-                    end
-                end
-            end)
-        end
-    end)
+    setclipboard("https://discord.gg/aTb4K8Euta")
 end
-
-return TransparencySystem
 
 
 local CFrameLoop = {}
