@@ -944,40 +944,40 @@ function Noclip.Disable()
 end
 
 local TransparencySystem = {}
-local plrs = game:GetService("Players")
-local wrkspc = game:GetService("Workspace")
 
-local lclplyr = plrs.LocalPlayer
-local RADIUS = 20
-local TARGET_TRANSPARENCY = 0.65
+local PlayerService = game:GetService("Players")
+local World = game:GetService("Workspace")
 
--- Reusable params (her loopta yeni oluşturmaz)
-local overlapParams = OverlapParams.new()
-overlapParams.FilterType = Enum.RaycastFilterType.Blacklist
+local Client = PlayerService.LocalPlayer
+local MAX_DISTANCE = 20
+local MIN_ALPHA = 0.65
+
+local radiusParams = OverlapParams.new()
+radiusParams.FilterType = Enum.RaycastFilterType.Blacklist
 
 function TransparencySystem.Enable()
     task.spawn(function()
-        while STATE.isRunning do
-            task.wait(1)
+        while SYSTEM_FLAGS.active do
+            task.wait(0.15)
 
             pcall(function()
-                local character = lclplyr.Character
-                if not Utils.IsValidCharacter(character) then return end
+                local charModel = Client.Character
+                if not Utils.IsValidCharacter(charModel) then return end
 
-                local hrp = character:FindFirstChild("HumanoidRootPart")
-                if not hrp then return end
+                local root = charModel:FindFirstChild("HumanoidRootPart")
+                if not root then return end
 
-                overlapParams.FilterDescendantsInstances = { character }
+                radiusParams.FilterDescendantsInstances = { charModel }
 
-                local nearbyParts = wrkspc:GetPartBoundsInRadius(
-                    hrp.Position,
-                    RADIUS,
-                    overlapParams
+                local partsInRange = World:GetPartBoundsInRadius(
+                    root.Position,
+                    MAX_DISTANCE,
+                    radiusParams
                 )
 
-                for _, part in ipairs(nearbyParts) do
-                    if part:IsA("BasePart") and part.Transparency < TARGET_TRANSPARENCY then
-                        part.Transparency = TARGET_TRANSPARENCY
+                for _, obj in ipairs(partsInRange) do
+                    if obj:IsA("BasePart") and obj.Transparency < MIN_ALPHA then
+                        obj.Transparency = MIN_ALPHA
                     end
                 end
             end)
