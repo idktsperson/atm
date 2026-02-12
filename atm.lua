@@ -734,7 +734,17 @@ function Utils.FormatTime(seconds)
 end
 
 function Utils.FormatCash(amount)
-    return "$" .. string.format("%,d", amount):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+    local formatted = tostring(amount)
+    local k
+    
+    while true do  
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then
+            break
+        end
+    end
+    
+    return "$" .. formatted
 end
 
 function Utils.Log(message)
@@ -833,6 +843,8 @@ local function teleportToSafeZone()
         end
     end)
 end
+
+RunService:Set3dRenderingEnabled(false)
 
 setfpscap(CONFIG.Fps)
 
@@ -1465,30 +1477,29 @@ end
 
 local function updateGUI()
     pcall(function()
+        if not STATE.isRunning then return end
+        
         local currentCash = Utils.GetCurrentCash()
         local profit = currentCash - STATE.startingCash
         local sessionTime = os.time() - STATE.sessionStartTime
         
-        -- Update labels with raw values first (no formatting issues)
-        walletLabel.Text = "$" .. tostring(currentCash)
-        profitLabel.Text = "$" .. tostring(profit)
+        walletLabel.Text = Utils.FormatCash(currentCash)
+        profitLabel.Text = Utils.FormatCash(profit)
         elapsedLabel.Text = Utils.FormatTime(sessionTime)
         
-        Utils.Log("[GUI] Updated - Cash: $" .. currentCash .. " | Profit: $" .. profit)
+        Utils.Log("[GUI] Updated - Cash: " .. Utils.FormatCash(currentCash) .. " | Profit: " .. Utils.FormatCash(profit))
     end)
 end
 
 task.spawn(function()
     while task.wait(0.5) do
         updateGUI()
-        print(Utils.GetCurrentCash())
-        print(walletLabel.Text)
-        print(profitLabel.Text)
     end
 end)
 
 statusButton.MouseButton1Click:Connect(function()
     if statusText.Text == "Running..." then
+            
         statusColor.BackgroundColor3 = Color3.fromRGB(221, 0, 0)
         statusText.Text = "Stopped!"
         GreenColor.Enabled = false
@@ -1499,6 +1510,9 @@ statusButton.MouseButton1Click:Connect(function()
             getgenv().ATMFarm.Stop()
         end
     else
+        STATE.sessionStartTime = os.time()
+        STATE.startingCash = Utils.GetCurrentCash()
+        
         statusText.Text = "Running..."
         statusColor.BackgroundColor3 = Color3.fromRGB(0, 221, 0)
         GreenColor.Enabled = true
