@@ -592,7 +592,7 @@ G2L["51"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["51"]["Size"] = UDim2.new(2, 0, 2, 0);
 G2L["51"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["51"]["Name"] = [[Background]];
-G2L["51"]["BackgroundTransparency"] = 0.06;
+G2L["51"]["BackgroundTransparency"] = 0; -- 0.06
 
 task.spawn(function()
     local userId = LocalPlayer.UserId
@@ -804,8 +804,8 @@ local STATE = {
     currentTargetCFrame = nil,
     
     farmLoopRunning = false,
-    pausedSessionTime = 0,
-    pausedProfit = 0,
+    totalElapsedTime = 0,
+    lastStopTime = 0,
     renderingEnabled = false,
 }
 
@@ -953,13 +953,10 @@ function TransparencySystem.Enable()
             pcall(function()
                 if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
                 
-                local humanoidRootPart = LocalPlayer.Character.HumanoidRootPart
-                local touchingParts = humanoidRootPart:GetTouchingParts()
-                
-                for _, part in pairs(touchingParts) do
-                    if part ~= humanoidRootPart and part.Parent ~= LocalPlayer.Character then
-                        if part:IsA("BasePart") and part.Transparency < 0.8 then
-                            part.Transparency = 0.8
+                for _, part in pairs(Workspace:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Parent ~= LocalPlayer.Character then
+                        if part.Transparency < 0.65 then
+                            part.Transparency = 0.65
                         end
                     end
                 end
@@ -1482,22 +1479,20 @@ end
 
 local function updateGUI()
     pcall(function()
-        if not STATE.isRunning then 
-            if STATE.pausedSessionTime > 0 then
-                walletLabel.Text = Utils.FormatCash(Utils.GetCurrentCash())
-                profitLabel.Text = Utils.FormatCash(STATE.pausedProfit)
-                elapsedLabel.Text = Utils.FormatTime(STATE.pausedSessionTime)
-            end
-            return 
-        end
-        
         local currentCash = Utils.GetCurrentCash()
         local profit = currentCash - STATE.startingCash
-        local sessionTime = os.time() - STATE.sessionStartTime
         
-        walletLabel.Text = Utils.FormatCash(currentCash)
-        profitLabel.Text = Utils.FormatCash(profit)
-        elapsedLabel.Text = Utils.FormatTime(sessionTime)
+        if STATE.isRunning then
+            local currentSessionTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
+            
+            walletLabel.Text = Utils.FormatCash(currentCash)
+            profitLabel.Text = Utils.FormatCash(profit)
+            elapsedLabel.Text = Utils.FormatTime(currentSessionTime)
+        else
+            walletLabel.Text = Utils.FormatCash(currentCash)
+            profitLabel.Text = Utils.FormatCash(profit)
+            elapsedLabel.Text = Utils.FormatTime(STATE.totalElapsedTime)
+        end
     end)
 end
 
@@ -1511,8 +1506,9 @@ statusButton.MouseButton1Click:Connect(function()
     if STATE.isRunning then
         Utils.Log("🛑 Stopping farm...")
         
-        STATE.pausedSessionTime = os.time() - STATE.sessionStartTime
-        STATE.pausedProfit = Utils.GetCurrentCash() - STATE.startingCash
+        local sessionDuration = os.time() - STATE.sessionStartTime
+        STATE.totalElapsedTime = STATE.totalElapsedTime + sessionDuration
+        STATE.lastStopTime = os.time()
         
         statusColor.BackgroundColor3 = Color3.fromRGB(221, 0, 0)
         statusText.Text = "Stopped!"
@@ -1524,19 +1520,14 @@ statusButton.MouseButton1Click:Connect(function()
     else
         Utils.Log("▶️ Starting farm...")
         
-        STATE.pausedSessionTime = 0
-        STATE.pausedProfit = 0
-        
         STATE.sessionStartTime = os.time()
-        STATE.startingCash = Utils.GetCurrentCash()
-        STATE.atmRobbed = 0
         
         statusText.Text = "Running..."
         statusColor.BackgroundColor3 = Color3.fromRGB(0, 221, 0)
         GreenColor.Enabled = true
         RedColor.Enabled = false
         statusButtonText.Text = "Stop The Farm"
-
+        
         Farm.Start()
     end
 end)
@@ -1570,19 +1561,20 @@ function Farm.Start()
         return
     end
     
+    -- FLAGS
     STATE.isRunning = true
-    STATE.farmLoopRunning = true  -- ← YENİ
+    STATE.farmLoopRunning = true
     STATE.processedATMs = {}
     STATE.lastProcessedReset = os.time()
-    STATE.lastWebhookSent = 0
     
     Utils.Log("═══════════════════════════════════════")
     Utils.Log("🏧 ATM Farm Started!")
     Utils.Log("Executor: " .. DETECTED_EXECUTOR)
     Utils.Log("Starting Cash: " .. Utils.FormatCash(STATE.startingCash))
+    Utils.Log("Current Profit: " .. Utils.FormatCash(Utils.GetCurrentCash() - STATE.startingCash))
+    Utils.Log("Total Elapsed: " .. Utils.FormatTime(STATE.totalElapsedTime))
     Utils.Log("Cash Aura: " .. (STATE.useCameraAura and "Camera" or "Simple"))
     Utils.Log("FPS: " .. CONFIG.Fps)
-    Utils.Log("Webhook Interval: " .. CONFIG.WebhookInterval .. " minutes")
     Utils.Log("═══════════════════════════════════════")
     
     CameraClip.Enable()
@@ -1591,17 +1583,18 @@ function Farm.Start()
     CFrameLoop.Start()
     TransparencySystem.Enable()
     
-    Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
+    Webhook.Send("✅ Farm Started/Resumed", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
     
     CashAura.Start()
-
+    
     task.spawn(function()
-        while STATE.farmLoopRunning do 
-            task.wait(1)
-            
+        while STATE.farmLoopRunning do
             if not STATE.isRunning then 
-                break 
+                Utils.Log("⏸️ Farm loop paused (isRunning = false)")
+                break
             end
+            
+            task.wait(1)
             
             local success, err = pcall(function()
                 if os.time() - STATE.lastProcessedReset >= 180 then
@@ -1622,7 +1615,10 @@ function Farm.Start()
                 Utils.Log("🎯 Processing " .. #filledATMs .. " ATMs...")
                 
                 for i, atmData in ipairs(filledATMs) do
-                    if not STATE.isRunning then break end  -- Stop kontrolü
+                    if not STATE.isRunning then 
+                        Utils.Log("⏸️ Stopping ATM processing (farm stopped)")
+                        break 
+                    end
                     
                     STATE.currentATMIndex = i
                     
@@ -1637,9 +1633,11 @@ function Farm.Start()
                     task.wait(1)
                 end
                 
-                Utils.Log("🔄 Rescanning in 15s...")
-                teleportToSafeZone()
-                task.wait(15)
+                if STATE.isRunning then
+                    Utils.Log("🔄 Rescanning in 15s...")
+                    teleportToSafeZone()
+                    task.wait(15)
+                end
             end)
             
             if not success then
@@ -1655,20 +1653,21 @@ end
 function Farm.Stop()
     Utils.Log("🛑 Stopping all farm operations...")
     
+    -- FLAGS
     STATE.isRunning = false
     STATE.farmLoopRunning = false
+    
+    task.wait(0.5)
     
     CashAura.Stop()
     CFrameLoop.Stop()
     Noclip.Disable()
     
     local profit = Utils.GetCurrentCash() - STATE.startingCash
-    STATE.pausedProfit = profit
-    STATE.pausedSessionTime = os.time() - STATE.sessionStartTime
     
     Utils.Log("🛑 Farm stopped!")
-    Utils.Log("  💰 Final Profit: " .. Utils.FormatCash(profit))
-    Utils.Log("  ⏱️ Final Elapsed: " .. Utils.FormatTime(STATE.pausedSessionTime))
+    Utils.Log("  💰 Total Profit: " .. Utils.FormatCash(profit))
+    Utils.Log("  ⏱️ Total Elapsed: " .. Utils.FormatTime(STATE.totalElapsedTime))
     
     Webhook.Send("🛑 Stopped", "Profit: " .. Utils.FormatCash(profit), 15158332, true)
 end
