@@ -88,6 +88,7 @@ G2L["1"]["ScreenInsets"] = Enum.ScreenInsets.DeviceSafeInsets;
 G2L["1"]["Name"] = [[AutoFarm]];
 G2L["1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling;
 G2L["1"]["ResetOnSpawn"] = false;
+G2L["1"]["DisplayOrder"] = 999999999
 
 G2L["3"] = Instance.new("Frame", G2L["1"]);
 G2L["3"]["ZIndex"] = 2;
@@ -947,7 +948,30 @@ end
 local TransparencySystem = {}
 
 function TransparencySystem.Enable()
-    setclipboard("https://discord.gg/aTb4K8Euta")
+    task.spawn(function()
+        while STATE.isRunning do
+            task.wait(1)  -- Daha hızlı kontrol
+            
+            pcall(function()
+                if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
+                
+                local characterPos = LocalPlayer.Character.HumanoidRootPart.Position
+                
+                -- Workspace'deki partları kontrol et
+                for _, part in pairs(Workspace:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Parent ~= LocalPlayer.Character then
+                        local distance = (part.Position - characterPos).Magnitude
+                        
+                        if distance <= 25 then  -- 25 studs yakında
+                            if part.Transparency < 0.8 then
+                                part.Transparency = 0.8
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
 end
 
 
@@ -986,6 +1010,20 @@ function CFrameLoop.Stop()
     Utils.Log("CFrame loop stopped")
 end
 
+function Utils.FormatCashWebhook(amount)
+    local formatted = tostring(amount)
+    local k
+    
+    while true do  
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then
+            break
+        end
+    end
+    
+    return formatted  -- $ işareti olmadan
+end
+
 local Webhook = {}
 
 function Webhook.Send(title, description, color, forceUpdate)
@@ -1014,10 +1052,15 @@ function Webhook.Send(title, description, color, forceUpdate)
             
             STATE.lastWebhookSent = os.time()
             
-            local sessionTime = os.time() - STATE.sessionStartTime
+            -- GUI ile aynı değerler kullan
             local currentCash = Utils.GetCurrentCash()
             local profit = currentCash - STATE.startingCash
+            local sessionTime = STATE.isRunning and ((os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime) or STATE.totalElapsedTime
             local playersInServer = #Players:GetPlayers()
+            
+            -- Cash/Hour ve ATM/Hour hesaplamaları
+            local cashPerHour = sessionTime > 0 and math.floor(profit / (sessionTime / 3600)) or 0
+            local atmPerHour = sessionTime > 0 and (STATE.atmRobbed / (sessionTime / 3600)) or 0
             
             local embed = {
                 ["embeds"] = {{
@@ -1027,7 +1070,7 @@ function Webhook.Send(title, description, color, forceUpdate)
                     ["fields"] = {
                         {
                             ["name"] = "🖥️ Server Info",
-                            ["value"] = string.format("Players in Server: **%d**", playersInServer),
+                            ["value"] = string.format("Players in Server: **%s**", Utils.FormatCashWebhook(playersInServer)),
                             ["inline"] = false
                         },
                         {
@@ -1037,16 +1080,19 @@ function Webhook.Send(title, description, color, forceUpdate)
                         },
                         {
                             ["name"] = "💰 Auto Farm Info",
-                            ["value"] = string.format("Profit: **$%d**\nRobbed: **%d**\nWallet: **$%d**\nElapsed: **%s**",
-                                profit, STATE.atmRobbed, currentCash, Utils.FormatTime(sessionTime)),
+                            ["value"] = string.format("Profit: **$%s**\nRobbed: **%s**\nWallet: **$%s**\nElapsed: **%s**",
+                                Utils.FormatCashWebhook(profit),
+                                Utils.FormatCashWebhook(STATE.atmRobbed),
+                                Utils.FormatCashWebhook(currentCash),
+                                Utils.FormatTime(sessionTime)),
                             ["inline"] = false
                         },
                         {
                             ["name"] = "📊 Statistics",
-                            ["value"] = string.format("Deaths: **%d**\nCash/Hour: **$%d**\nATM/Hour: **%.1f**",
-                                STATE.deathCount,
-                                math.floor(profit / math.max(sessionTime / 3600, 0.01)),
-                                STATE.atmRobbed / math.max(sessionTime / 3600, 0.01)),
+                            ["value"] = string.format("Deaths: **%s**\nCash/Hour: **$%s**\nATM/Hour: **%.1f**",
+                                Utils.FormatCashWebhook(STATE.deathCount),
+                                Utils.FormatCashWebhook(cashPerHour),
+                                atmPerHour),
                             ["inline"] = false
                         },
                     },
@@ -1082,9 +1128,6 @@ task.spawn(function()
 end)
 
 local CashAuraCamera = {}
-local Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
-local isProcessingCamera = false
-
 function CashAuraCamera.Start()
     if STATE.cashAuraActive then return end
     
@@ -1093,7 +1136,7 @@ function CashAuraCamera.Start()
     
     task.spawn(function()
         while STATE.cashAuraActive do
-            task.wait(0.15)
+            task.wait(0.05)  -- ← 0.15'ten 0.05'e düşür (3x hızlı)
             
             if STATE.cashAuraPaused then
                 task.wait(0.5)
@@ -1125,7 +1168,7 @@ function CashAuraCamera.Start()
                             Camera.CameraType = Enum.CameraType.Scriptable
                             
                             repeat
-                                task.wait()
+                                task.wait(0.02)  -- ← 0.15'ten 0.02'ye düşür (7x hızlı)
                                 
                                 if STATE.cashAuraPaused then break end
                                 
@@ -1134,7 +1177,7 @@ function CashAuraCamera.Start()
                                 
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
-                                task.wait(0.15)
+                                task.wait(0.05)  -- ← 0.15'ten 0.05'e düşür
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
                                 
                                 if Utils.IsValidCharacter(LocalPlayer.Character) then
@@ -1521,7 +1564,7 @@ function Farm.Start()
     -- FLAGS
     STATE.isRunning = true
     STATE.farmLoopRunning = true
-    STATE.processedATMs = {}
+    -- STATE.processedATMs = {}  ← KALDIR! (Boş yere vurmayı önler)
     STATE.lastProcessedReset = os.time()
     
     Utils.Log("═══════════════════════════════════════")
@@ -1554,6 +1597,7 @@ function Farm.Start()
             task.wait(1)
             
             local success, err = pcall(function()
+                -- 3 dakikada bir processed ATMs'i sıfırla (eski ATM'ler tekrar dolu olabilir)
                 if os.time() - STATE.lastProcessedReset >= 180 then
                     STATE.processedATMs = {}
                     STATE.lastProcessedReset = os.time()
