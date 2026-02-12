@@ -944,26 +944,49 @@ function Noclip.Disable()
 end
 
 local TransparencySystem = {}
+local plrs = game:GetService("Players")
+local wrkspc = game:GetService("Workspace")
+
+local lclplyr = plrs.LocalPlayer
+local RADIUS = 20
+local TARGET_TRANSPARENCY = 0.65
+
+-- Reusable params (her loopta yeni oluşturmaz)
+local overlapParams = OverlapParams.new()
+overlapParams.FilterType = Enum.RaycastFilterType.Blacklist
 
 function TransparencySystem.Enable()
     task.spawn(function()
         while STATE.isRunning do
-            task.wait(0.1)
-            
+            task.wait(1)
+
             pcall(function()
-                if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
-                
-                for _, part in pairs(Workspace:GetDescendants()) do
-                    if part:IsA("BasePart") and part.Parent ~= LocalPlayer.Character then
-                        if part.Transparency < 0.65 then
-                            part.Transparency = 0.65
-                        end
+                local character = lclplyr.Character
+                if not Utils.IsValidCharacter(character) then return end
+
+                local hrp = character:FindFirstChild("HumanoidRootPart")
+                if not hrp then return end
+
+                overlapParams.FilterDescendantsInstances = { character }
+
+                local nearbyParts = wrkspc:GetPartBoundsInRadius(
+                    hrp.Position,
+                    RADIUS,
+                    overlapParams
+                )
+
+                for _, part in ipairs(nearbyParts) do
+                    if part:IsA("BasePart") and part.Transparency < TARGET_TRANSPARENCY then
+                        part.Transparency = TARGET_TRANSPARENCY
                     end
                 end
             end)
         end
     end)
 end
+
+return TransparencySystem
+
 
 local CFrameLoop = {}
 
