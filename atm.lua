@@ -1487,35 +1487,6 @@ task.spawn(function()
     end
 end)
 
-statusButton.MouseButton1Click:Connect(function()
-    if STATE.isRunning then
-        Utils.Log("🛑 Stopping farm...")
-        
-        local sessionDuration = os.time() - STATE.sessionStartTime
-        STATE.totalElapsedTime = STATE.totalElapsedTime + sessionDuration
-        STATE.lastStopTime = os.time()
-        
-        statusColor.BackgroundColor3 = Color3.fromRGB(221, 0, 0)
-        statusText.Text = "Stopped!"
-        GreenColor.Enabled = false
-        RedColor.Enabled = true
-        statusButtonText.Text = "Start The Farm"
-        
-        Farm.Stop()
-    else
-        Utils.Log("▶️ Starting farm...")
-        
-        STATE.sessionStartTime = os.time()
-        
-        statusText.Text = "Running..."
-        statusColor.BackgroundColor3 = Color3.fromRGB(0, 221, 0)
-        GreenColor.Enabled = true
-        RedColor.Enabled = false
-        statusButtonText.Text = "Stop The Farm"
-        
-        Farm.Start()
-    end
-end)
 
 if getgenv()._secretDebugVar then
     local guiVisible = true
@@ -1714,6 +1685,37 @@ getgenv().ATMFarm = {
 
 task.wait(2)
 Farm.Start()
+
+statusButton.MouseButton1Click:Connect(function()
+    if STATE.isRunning then
+        Utils.Log("🛑 Stopping farm...")
+        
+        local sessionDuration = os.time() - STATE.sessionStartTime
+        STATE.totalElapsedTime = STATE.totalElapsedTime + sessionDuration
+        STATE.lastStopTime = os.time()
+        
+        statusColor.BackgroundColor3 = Color3.fromRGB(221, 0, 0)
+        statusText.Text = "Stopped!"
+        GreenColor.Enabled = false
+        RedColor.Enabled = true
+        statusButtonText.Text = "Start The Farm"
+        
+        Farm.Stop()
+    else
+        Utils.Log("▶️ Starting farm...")
+        
+        STATE.sessionStartTime = os.time()
+        
+        statusText.Text = "Running..."
+        statusColor.BackgroundColor3 = Color3.fromRGB(0, 221, 0)
+        GreenColor.Enabled = true
+        RedColor.Enabled = false
+        statusButtonText.Text = "Stop The Farm"
+        
+        Farm.Start()
+    end
+end)
+
 
 if getgenv()._secretDebugVar then
     print("═══════════════════════════════════════")
