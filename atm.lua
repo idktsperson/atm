@@ -615,7 +615,6 @@ local RedColor = G2L["38"]
 local walletLabel = G2L["1a"]
 local elapsedLabel = G2L["28"]
 local profitLabel = G2L["47"]
-mainFrame.DisplayOrder = 999999
 background.DisplayOrder = 999999
 screenGui.DisplayOrder = 999999
 
@@ -624,7 +623,7 @@ local function createNotificationBar()
     
     local gui = Instance.new("ScreenGui")
     gui.Name = "ATMFarmNotify"
-    gui.DisplayOrder = 999999
+    gui.DisplayOrder = 9999999
     gui.ResetOnSpawn = false
     gui.IgnoreGuiInset = true
     
