@@ -1,6 +1,7 @@
 -- ═══════════════════════════════════════════════════════════
--- ATM FARM v12.0 HYBRID (Bizim + LDHC)
--- Modern Animasyonlu GUI + Anti-Cheat Bypass + Advanced Features
+-- ATM FARM v13.0 FINAL COMPLETE
+-- Yeni Modern GUI + LDHC Features + Dynamic Per Hour Graph
+-- TEK DOSYA - TAM ENTEGRASYON
 -- ═══════════════════════════════════════════════════════════
 
 local plrr = game.Players.LocalPlayer
@@ -12,32 +13,14 @@ local plrr = game.Players.LocalPlayer
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
 local Lua_Hook = hookfunction 
-local Lua_Hook_Method = hookmetamethod
-local Lua_Unhook = restorefunction
-local Lua_Replace_Function = replaceclosure
 local Lua_Set_Upvalue = setupvalue
-local Lua_Clone_Function = clonefunction
 
 local Game_RunService = game:GetService("RunService")
 local Game_LogService = game:GetService("LogService")
 local Game_LogService_MessageOut = Game_LogService.MessageOut
 
-local String_Lower = string.lower
-local Table_Find = table.find
-local Get_Type = type
-
 local Current_Connections = {};
 local Hooked_Connections = {};
-
-local function Test_Table(Table, Return_Type)
-    for TABLE_INDEX, TABLE_VALUE in Table do
-        if type(TABLE_VALUE) == String_Lower(Return_Type) then
-            return TABLE_VALUE, TABLE_INDEX
-        end
-        continue
-    end
-end
-
 local good_check = 0
 
 function auth_heart()
@@ -137,30 +120,6 @@ local function validateSettings()
         return false
     end
 
-    local expectedDiscord = "Made by _ethz on Discord."
-    if getgenv()._ATMFARM.Discord ~= expectedDiscord then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-
-    local expectedServer = "https://discord.gg/aTb4K8Euta"
-    if getgenv()._ATMFARM.Server ~= expectedServer then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-
-    local expectedWarning = "If you paid for this script, you got scammed! This is FREE."
-    if getgenv()._ATMFARM.Warning ~= expectedWarning then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-
-    local expectedExecute = "DO NOT edit _ATMFARM or you'll be kicked. Good Boy."
-    if getgenv()._ATMFARM.Execute ~= expectedExecute then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-    
     return true
 end
 
@@ -196,6 +155,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
 
 local LocalPlayer = Players.LocalPlayer
 local MainEvent = ReplicatedStorage:WaitForChild("MainEvent", 10)
@@ -213,12 +173,12 @@ local Camera = Workspace.CurrentCamera
 -- 3. DATA PERSISTENCE (LDHC SYSTEM)
 -- ═══════════════════════════════════════════════════════════
 
-local function saveUserData(userid, walletValue, profitValue, elapsedTime, timestamp)
+local function saveUserData(userid, walletValue, profitValue, elapsedTime, timestamp, atmRobbed)
     local userFolder = "userdata/"..userid
     if not isfolder("userdata") then makefolder("userdata") end
     if not isfolder(userFolder) then makefolder(userFolder) end
 
-    local data = string.format("%s,%s,%s", walletValue, profitValue, elapsedTime)
+    local data = string.format("%s,%s,%s,%s", walletValue, profitValue, elapsedTime, atmRobbed)
     writefile(userFolder.."/data.txt", data)
     writefile(userFolder.."/timestamp.txt", tostring(timestamp))
 end
@@ -232,52 +192,38 @@ local function loadUserData(userid)
     if not lastSave or (tick() - lastSave > 180) then return nil end
 
     local data = readfile(userFolder.."/data.txt")
-    local wallet, profit, elapsed = string.match(data, "([^,]+),([^,]+),([^,]+)")
-    return tonumber(wallet), tonumber(profit), tonumber(elapsed)
+    local wallet, profit, elapsed, robbed = string.match(data, "([^,]+),([^,]+),([^,]+),([^,]+)")
+    return tonumber(wallet), tonumber(profit), tonumber(elapsed), tonumber(robbed) or 0
 end
 
 -- ═══════════════════════════════════════════════════════════
--- MODERN ANIMASYONLU GUI
+-- YENİ MODERN GUI (DOCUMENT 3'TEN TAM ENTEGRASYON)
 -- ═══════════════════════════════════════════════════════════
+
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
 local G2L = {};
 
+-- StarterGui.AutoFarm
 G2L["1"] = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"));
 G2L["1"]["IgnoreGuiInset"] = true;
 G2L["1"]["ScreenInsets"] = Enum.ScreenInsets.DeviceSafeInsets;
 G2L["1"]["Name"] = [[AutoFarm]];
 G2L["1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling;
-G2L["1"]["ResetOnSpawn"] = false;
 G2L["1"]["DisplayOrder"] = 999999999;
 
--- Background
-G2L["51"] = Instance.new("Frame", G2L["1"]);
-G2L["51"]["BorderSizePixel"] = 0;
-G2L["51"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["51"]["Size"] = UDim2.new(2, 0, 2, 0);
-G2L["51"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["51"]["Name"] = [[Background]];
-G2L["51"]["BackgroundTransparency"] = 0.3;
-
--- Main Frame
+-- StarterGui.AutoFarm.MainFrame
 G2L["3"] = Instance.new("Frame", G2L["1"]);
 G2L["3"]["ZIndex"] = 2;
 G2L["3"]["BorderSizePixel"] = 0;
-G2L["3"]["BackgroundColor3"] = Color3.fromRGB(18, 18, 18);
+G2L["3"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["3"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
-G2L["3"]["Size"] = UDim2.new(0.476, 0, 0.725, 0);
-G2L["3"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+G2L["3"]["Size"] = UDim2.new(0.5235, 0, 0.7494, 0);
+G2L["3"]["Position"] = UDim2.new(0.49732, 0, 0.50597, 0);
 G2L["3"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["3"]["Name"] = [[MainFrame]];
 
-G2L["4"] = Instance.new("UICorner", G2L["3"]);
-G2L["4"]["CornerRadius"] = UDim.new(0, 16);
-
-G2L["stroke"] = Instance.new("UIStroke", G2L["3"]);
-G2L["stroke"]["Color"] = Color3.fromRGB(0, 255, 0);
-G2L["stroke"]["Thickness"] = 2;
-
--- Title
+-- StarterGui.AutoFarm.MainFrame.Title
 G2L["5"] = Instance.new("TextLabel", G2L["3"]);
 G2L["5"]["TextWrapped"] = true;
 G2L["5"]["ZIndex"] = 10;
@@ -289,378 +235,634 @@ G2L["5"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["5"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
 G2L["5"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["5"]["BackgroundTransparency"] = 1;
-G2L["5"]["Size"] = UDim2.new(0.53454, 0, 0.08839, 0);
+G2L["5"]["Size"] = UDim2.new(0.38095, 0, 0.08259, 0);
 G2L["5"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["5"]["Text"] = [[Rysify ATM Farm v12.0]];
+G2L["5"]["Text"] = [[Rysify ATM Farm]];
 G2L["5"]["Name"] = [[Title]];
 G2L["5"]["Position"] = UDim2.new(0.02254, 0, 0.02412, 0);
 
-G2L["6"] = Instance.new("UIGradient", G2L["5"]);
-G2L["6"]["Rotation"] = -90;
-G2L["6"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+G2L["7"] = Instance.new("UIGradient", G2L["5"]);
+G2L["7"]["Rotation"] = -90;
+G2L["7"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
-G2L["7"] = Instance.new("UITextSizeConstraint", G2L["5"]);
-G2L["7"]["MaxTextSize"] = 49;
+G2L["8"] = Instance.new("UITextSizeConstraint", G2L["5"]);
+G2L["8"]["MaxTextSize"] = 49;
 
--- Username Frame
-G2L["9"] = Instance.new("Frame", G2L["3"]);
-G2L["9"]["BorderSizePixel"] = 0;
-G2L["9"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["9"]["Size"] = UDim2.new(0.472, 0, 0.232, 0);
-G2L["9"]["Position"] = UDim2.new(0.02211, 0, 0.2027, 0);
-G2L["9"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["9"]["Name"] = [[UsernameFrame]];
+G2L["9"] = Instance.new("UIAspectRatioConstraint", G2L["5"]);
+G2L["9"]["AspectRatio"] = 6.46321;
 
-G2L["a"] = Instance.new("UICorner", G2L["9"]);
-G2L["a"]["CornerRadius"] = UDim.new(0, 16);
+-- StarterGui.AutoFarm.MainFrame.UsernameFrame
+G2L["a"] = Instance.new("Frame", G2L["3"]);
+G2L["a"]["BorderSizePixel"] = 0;
+G2L["a"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["a"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
+G2L["a"]["Position"] = UDim2.new(0.02159, 0, 0.18949, 0);
+G2L["a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["a"]["Name"] = [[UsernameFrame]];
 
-G2L["b"] = Instance.new("UIStroke", G2L["9"]);
-G2L["b"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["b"] = Instance.new("UICorner", G2L["a"]);
+G2L["b"]["CornerRadius"] = UDim.new(0, 16);
 
-G2L["c"] = Instance.new("TextLabel", G2L["9"]);
-G2L["c"]["TextWrapped"] = true;
-G2L["c"]["TextStrokeTransparency"] = 0;
-G2L["c"]["ZIndex"] = 10;
-G2L["c"]["BorderSizePixel"] = 0;
-G2L["c"]["TextSize"] = 14;
-G2L["c"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["c"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
-G2L["c"]["TextScaled"] = true;
-G2L["c"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["c"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["c"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["c"]["BackgroundTransparency"] = 1;
-G2L["c"]["Size"] = UDim2.new(0.99482, 0, 0.23074, 0);
-G2L["c"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["c"]["Text"] = LocalPlayer.Name;
-G2L["c"]["Name"] = [[Username]];
-G2L["c"]["Position"] = UDim2.new(0.01835, 0, 0.52701, 0);
+G2L["c"] = Instance.new("UIStroke", G2L["a"]);
+G2L["c"]["Color"] = Color3.fromRGB(94, 94, 94);
 
-G2L["d"] = Instance.new("UIGradient", G2L["c"]);
-G2L["d"]["Rotation"] = -90;
-G2L["d"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+G2L["d"] = Instance.new("TextLabel", G2L["a"]);
+G2L["d"]["TextWrapped"] = true;
+G2L["d"]["TextStrokeTransparency"] = 0;
+G2L["d"]["ZIndex"] = 10;
+G2L["d"]["BorderSizePixel"] = 0;
+G2L["d"]["TextSize"] = 14;
+G2L["d"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["d"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["d"]["TextScaled"] = true;
+G2L["d"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["d"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["d"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["d"]["BackgroundTransparency"] = 1;
+G2L["d"]["Size"] = UDim2.new(0.8744, 0, 0.25, 0);
+G2L["d"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["d"]["Text"] = LocalPlayer.Name;
+G2L["d"]["Name"] = [[Username]];
+G2L["d"]["Position"] = UDim2.new(0.03382, 0, 0.57258, 0);
 
-G2L["10"] = Instance.new("TextLabel", G2L["9"]);
-G2L["10"]["TextWrapped"] = true;
-G2L["10"]["TextStrokeTransparency"] = 0;
-G2L["10"]["ZIndex"] = 10;
-G2L["10"]["BorderSizePixel"] = 0;
-G2L["10"]["TextSize"] = 14;
-G2L["10"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["10"]["TextScaled"] = true;
-G2L["10"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["10"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["10"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["10"]["BackgroundTransparency"] = 1;
-G2L["10"]["Size"] = UDim2.new(0.51548, 0, 0.47809, 0);
-G2L["10"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["10"]["Text"] = [[Username]];
-G2L["10"]["Name"] = [[Title]];
-G2L["10"]["Position"] = UDim2.new(0.00915, 0, -0.0002, 0);
+G2L["e"] = Instance.new("UIGradient", G2L["d"]);
+G2L["e"]["Rotation"] = -90;
+G2L["e"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
--- Wallet Frame
-G2L["17"] = Instance.new("Frame", G2L["3"]);
-G2L["17"]["BorderSizePixel"] = 0;
-G2L["17"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["17"]["Size"] = UDim2.new(0.472, 0, 0.232, 0);
-G2L["17"]["Position"] = UDim2.new(0.02211, 0, 0.45451, 0);
-G2L["17"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["17"]["Name"] = [[CashFrame]];
+G2L["f"] = Instance.new("UIAspectRatioConstraint", G2L["d"]);
+G2L["f"]["AspectRatio"] = 11.67742;
 
-G2L["18"] = Instance.new("UICorner", G2L["17"]);
-G2L["18"]["CornerRadius"] = UDim.new(0, 16);
+G2L["10"] = Instance.new("UITextSizeConstraint", G2L["d"]);
+G2L["10"]["MaxTextSize"] = 31;
 
-G2L["19"] = Instance.new("UIStroke", G2L["17"]);
-G2L["19"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["11"] = Instance.new("TextLabel", G2L["a"]);
+G2L["11"]["TextWrapped"] = true;
+G2L["11"]["TextStrokeTransparency"] = 0;
+G2L["11"]["ZIndex"] = 10;
+G2L["11"]["BorderSizePixel"] = 0;
+G2L["11"]["TextSize"] = 14;
+G2L["11"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["11"]["TextScaled"] = true;
+G2L["11"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["11"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["11"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["11"]["BackgroundTransparency"] = 1;
+G2L["11"]["Size"] = UDim2.new(0.71256, 0, 0.46774, 0);
+G2L["11"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["11"]["Text"] = [[Username]];
+G2L["11"]["Name"] = [[Title]];
+G2L["11"]["Position"] = UDim2.new(0.02899, 0, 0.03226, 0);
 
-G2L["1a"] = Instance.new("TextLabel", G2L["17"]);
-G2L["1a"]["TextWrapped"] = true;
-G2L["1a"]["TextStrokeTransparency"] = 0;
-G2L["1a"]["ZIndex"] = 10;
-G2L["1a"]["BorderSizePixel"] = 0;
-G2L["1a"]["TextSize"] = 14;
-G2L["1a"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["1a"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
-G2L["1a"]["TextScaled"] = true;
-G2L["1a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1a"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["1a"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1a"]["BackgroundTransparency"] = 1;
-G2L["1a"]["Size"] = UDim2.new(0.91457, 0, 0.2521, 0);
-G2L["1a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1a"]["Text"] = [[$0]];
-G2L["1a"]["Name"] = [[Wallet]];
-G2L["1a"]["Position"] = UDim2.new(0.01568, 0, 0.5733, 0);
+G2L["12"] = Instance.new("UIAspectRatioConstraint", G2L["11"]);
+G2L["12"]["AspectRatio"] = 5.08621;
 
-G2L["1b"] = Instance.new("UIGradient", G2L["1a"]);
-G2L["1b"]["Rotation"] = -90;
-G2L["1b"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+G2L["13"] = Instance.new("UITextSizeConstraint", G2L["11"]);
+G2L["13"]["MaxTextSize"] = 58;
 
-G2L["1e"] = Instance.new("TextLabel", G2L["17"]);
-G2L["1e"]["TextWrapped"] = true;
-G2L["1e"]["TextStrokeTransparency"] = 0;
-G2L["1e"]["ZIndex"] = 10;
-G2L["1e"]["BorderSizePixel"] = 0;
-G2L["1e"]["TextSize"] = 14;
-G2L["1e"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["1e"]["TextScaled"] = true;
-G2L["1e"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1e"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["1e"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1e"]["BackgroundTransparency"] = 1;
-G2L["1e"]["Size"] = UDim2.new(0.37688, 0, 0.50771, 0);
-G2L["1e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1e"]["Text"] = [[Wallet]];
-G2L["1e"]["Name"] = [[Title]];
-G2L["1e"]["Position"] = UDim2.new(0.01701, 0, 0.01523, 0);
+G2L["14"] = Instance.new("UIAspectRatioConstraint", G2L["a"]);
+G2L["14"]["AspectRatio"] = 3.33871;
 
--- Elapsed Frame
-G2L["22"] = Instance.new("Frame", G2L["3"]);
-G2L["22"]["BorderSizePixel"] = 0;
-G2L["22"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["22"]["Size"] = UDim2.new(0.472, 0, 0.232, 0);
-G2L["22"]["Position"] = UDim2.new(0.50645, 0, 0.20433, 0);
-G2L["22"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["22"]["Name"] = [[ElapsedFrame]];
+-- StarterGui.AutoFarm.MainFrame.Title2
+G2L["15"] = Instance.new("TextLabel", G2L["3"]);
+G2L["15"]["TextWrapped"] = true;
+G2L["15"]["ZIndex"] = 10;
+G2L["15"]["BorderSizePixel"] = 0;
+G2L["15"]["TextSize"] = 14;
+G2L["15"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["15"]["TextScaled"] = true;
+G2L["15"]["BackgroundColor3"] = Color3.fromRGB(114, 114, 114);
+G2L["15"]["FontFace"] = Font.new([[rbxasset://fonts/families/Nunito.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["15"]["TextColor3"] = Color3.fromRGB(191, 191, 191);
+G2L["15"]["BackgroundTransparency"] = 1;
+G2L["15"]["Size"] = UDim2.new(0.46003, 0, 0.03221, 0);
+G2L["15"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["15"]["Text"] = [[discord.gg/aTb4K8Euta]];
+G2L["15"]["Name"] = [[Title2]];
+G2L["15"]["Position"] = UDim2.new(0.02632, 0, 0.11987, 0);
 
-G2L["23"] = Instance.new("UICorner", G2L["22"]);
-G2L["23"]["CornerRadius"] = UDim.new(0, 16);
+G2L["16"] = Instance.new("UITextSizeConstraint", G2L["15"]);
+G2L["16"]["MaxTextSize"] = 18;
 
-G2L["24"] = Instance.new("UIStroke", G2L["22"]);
-G2L["24"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["17"] = Instance.new("UIAspectRatioConstraint", G2L["15"]);
+G2L["17"]["AspectRatio"] = 20.01554;
 
-G2L["25"] = Instance.new("TextLabel", G2L["22"]);
-G2L["25"]["TextWrapped"] = true;
-G2L["25"]["TextStrokeTransparency"] = 0;
-G2L["25"]["ZIndex"] = 10;
-G2L["25"]["BorderSizePixel"] = 0;
-G2L["25"]["TextSize"] = 14;
-G2L["25"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["25"]["TextScaled"] = true;
-G2L["25"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["25"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["25"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["25"]["BackgroundTransparency"] = 1;
-G2L["25"]["Size"] = UDim2.new(0.39893, 0, 0.47684, 0);
-G2L["25"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["25"]["Text"] = [[Elapsed]];
-G2L["25"]["Name"] = [[Title]];
-G2L["25"]["Position"] = UDim2.new(0.03455, 0, 0.03066, 0);
+-- StarterGui.AutoFarm.MainFrame.CashFrame
+G2L["18"] = Instance.new("Frame", G2L["3"]);
+G2L["18"]["BorderSizePixel"] = 0;
+G2L["18"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["18"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
+G2L["18"]["Position"] = UDim2.new(0.02159, 0, 0.40446, 0);
+G2L["18"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["18"]["Name"] = [[CashFrame]];
 
-G2L["28"] = Instance.new("TextLabel", G2L["22"]);
-G2L["28"]["TextWrapped"] = true;
-G2L["28"]["TextStrokeTransparency"] = 0;
-G2L["28"]["ZIndex"] = 10;
-G2L["28"]["BorderSizePixel"] = 0;
-G2L["28"]["TextSize"] = 14;
-G2L["28"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["28"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
-G2L["28"]["TextScaled"] = true;
-G2L["28"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["28"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["28"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["28"]["BackgroundTransparency"] = 1;
-G2L["28"]["Size"] = UDim2.new(0.89472, 0, 0.23564, 0);
-G2L["28"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["28"]["Text"] = [[00:00:00]];
-G2L["28"]["Name"] = [[Elapsed]];
-G2L["28"]["Position"] = UDim2.new(0.03589, 0, 0.58102, 0);
+G2L["19"] = Instance.new("TextLabel", G2L["18"]);
+G2L["19"]["TextWrapped"] = true;
+G2L["19"]["TextStrokeTransparency"] = 0;
+G2L["19"]["ZIndex"] = 10;
+G2L["19"]["BorderSizePixel"] = 0;
+G2L["19"]["TextSize"] = 14;
+G2L["19"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["19"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["19"]["TextScaled"] = true;
+G2L["19"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["19"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["19"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["19"]["BackgroundTransparency"] = 1;
+G2L["19"]["Size"] = UDim2.new(0.91304, 0, 0.25, 0);
+G2L["19"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["19"]["Text"] = [[$0]];
+G2L["19"]["Name"] = [[Wallet]];
+G2L["19"]["Position"] = UDim2.new(0.01449, 0, 0.57258, 0);
 
-G2L["29"] = Instance.new("UIGradient", G2L["28"]);
-G2L["29"]["Rotation"] = -90;
-G2L["29"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+G2L["1a"] = Instance.new("UIGradient", G2L["19"]);
+G2L["1a"]["Rotation"] = -90;
+G2L["1a"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
--- Profit Frame
-G2L["44"] = Instance.new("Frame", G2L["3"]);
-G2L["44"]["BorderSizePixel"] = 0;
-G2L["44"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["44"]["Size"] = UDim2.new(0.47194, 0, 0.23231, 0);
-G2L["44"]["Position"] = UDim2.new(0.50576, 0, 0.45451, 0);
-G2L["44"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["44"]["Name"] = [[ProfitFrame]];
+G2L["1b"] = Instance.new("UIAspectRatioConstraint", G2L["19"]);
+G2L["1b"]["AspectRatio"] = 12.19355;
 
-G2L["45"] = Instance.new("UICorner", G2L["44"]);
-G2L["45"]["CornerRadius"] = UDim.new(0, 16);
+G2L["1c"] = Instance.new("UITextSizeConstraint", G2L["19"]);
+G2L["1c"]["MaxTextSize"] = 31;
 
-G2L["46"] = Instance.new("UIStroke", G2L["44"]);
-G2L["46"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["1d"] = Instance.new("UIStroke", G2L["18"]);
+G2L["1d"]["Color"] = Color3.fromRGB(94, 94, 94);
 
-G2L["47"] = Instance.new("TextLabel", G2L["44"]);
+G2L["1e"] = Instance.new("UICorner", G2L["18"]);
+G2L["1e"]["CornerRadius"] = UDim.new(0, 16);
+
+G2L["1f"] = Instance.new("TextLabel", G2L["18"]);
+G2L["1f"]["TextWrapped"] = true;
+G2L["1f"]["TextStrokeTransparency"] = 0;
+G2L["1f"]["ZIndex"] = 10;
+G2L["1f"]["BorderSizePixel"] = 0;
+G2L["1f"]["TextSize"] = 14;
+G2L["1f"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["1f"]["TextScaled"] = true;
+G2L["1f"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1f"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["1f"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1f"]["BackgroundTransparency"] = 1;
+G2L["1f"]["Size"] = UDim2.new(0.37681, 0, 0.5, 0);
+G2L["1f"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1f"]["Text"] = [[Wallet]];
+G2L["1f"]["Name"] = [[Title]];
+G2L["1f"]["Position"] = UDim2.new(0.01691, 0, 0.00806, 0);
+
+G2L["20"] = Instance.new("UIAspectRatioConstraint", G2L["1f"]);
+G2L["20"]["AspectRatio"] = 2.51613;
+
+G2L["21"] = Instance.new("UITextSizeConstraint", G2L["1f"]);
+G2L["21"]["MaxTextSize"] = 62;
+
+G2L["22"] = Instance.new("UIAspectRatioConstraint", G2L["18"]);
+G2L["22"]["AspectRatio"] = 3.33871;
+
+-- StarterGui.AutoFarm.MainFrame.ElapsedFrame
+G2L["23"] = Instance.new("Frame", G2L["3"]);
+G2L["23"]["BorderSizePixel"] = 0;
+G2L["23"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["23"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
+G2L["23"]["Position"] = UDim2.new(0.50568, 0, 0.18949, 0);
+G2L["23"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["23"]["Name"] = [[ElapsedFrame]];
+
+G2L["24"] = Instance.new("UICorner", G2L["23"]);
+G2L["24"]["CornerRadius"] = UDim.new(0, 16);
+
+G2L["25"] = Instance.new("UIStroke", G2L["23"]);
+G2L["25"]["Color"] = Color3.fromRGB(94, 94, 94);
+
+G2L["26"] = Instance.new("TextLabel", G2L["23"]);
+G2L["26"]["TextWrapped"] = true;
+G2L["26"]["TextStrokeTransparency"] = 0;
+G2L["26"]["ZIndex"] = 10;
+G2L["26"]["BorderSizePixel"] = 0;
+G2L["26"]["TextSize"] = 14;
+G2L["26"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["26"]["TextScaled"] = true;
+G2L["26"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["26"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["26"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["26"]["BackgroundTransparency"] = 1;
+G2L["26"]["Size"] = UDim2.new(0.39855, 0, 0.47581, 0);
+G2L["26"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["26"]["Text"] = [[Elapsed]];
+G2L["26"]["Name"] = [[Title]];
+G2L["26"]["Position"] = UDim2.new(0.03382, 0, 0.02419, 0);
+
+G2L["27"] = Instance.new("UIAspectRatioConstraint", G2L["26"]);
+G2L["27"]["AspectRatio"] = 2.79661;
+
+G2L["28"] = Instance.new("UITextSizeConstraint", G2L["26"]);
+G2L["28"]["MaxTextSize"] = 59;
+
+G2L["29"] = Instance.new("TextLabel", G2L["23"]);
+G2L["29"]["TextWrapped"] = true;
+G2L["29"]["TextStrokeTransparency"] = 0;
+G2L["29"]["ZIndex"] = 10;
+G2L["29"]["BorderSizePixel"] = 0;
+G2L["29"]["TextSize"] = 14;
+G2L["29"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["29"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["29"]["TextScaled"] = true;
+G2L["29"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["29"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["29"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["29"]["BackgroundTransparency"] = 1;
+G2L["29"]["Size"] = UDim2.new(0.89614, 0, 0.24194, 0);
+G2L["29"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["29"]["Text"] = [[0h 0m 0s]];
+G2L["29"]["Name"] = [[Elapsed]];
+G2L["29"]["Position"] = UDim2.new(0.03382, 0, 0.58065, 0);
+
+G2L["2a"] = Instance.new("UIGradient", G2L["29"]);
+G2L["2a"]["Rotation"] = -90;
+G2L["2a"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+
+G2L["2b"] = Instance.new("UIAspectRatioConstraint", G2L["29"]);
+G2L["2b"]["AspectRatio"] = 12.36667;
+
+G2L["2c"] = Instance.new("UITextSizeConstraint", G2L["29"]);
+G2L["2c"]["MaxTextSize"] = 30;
+
+G2L["2d"] = Instance.new("UIAspectRatioConstraint", G2L["23"]);
+G2L["2d"]["AspectRatio"] = 3.33871;
+
+-- StarterGui.AutoFarm.MainFrame.ImageLabel
+G2L["2e"] = Instance.new("ImageLabel", G2L["3"]);
+G2L["2e"]["BorderSizePixel"] = 0;
+G2L["2e"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["2e"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+G2L["2e"]["Image"] = [[rbxasset://textures/ui/GuiImagePlaceholder.png]];
+G2L["2e"]["Size"] = UDim2.new(0.08165, 0, 0.09586, 0);
+G2L["2e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["2e"]["BackgroundTransparency"] = 1;
+G2L["2e"]["Position"] = UDim2.new(0.94328, 0, 0.07194, 0);
+
+G2L["30"] = Instance.new("UICorner", G2L["2e"]);
+G2L["30"]["CornerRadius"] = UDim.new(1, 0);
+
+G2L["31"] = Instance.new("UIAspectRatioConstraint", G2L["2e"]);
+G2L["31"]["AspectRatio"] = 0.97;
+
+-- StarterGui.AutoFarm.MainFrame.UIGradient
+G2L["32"] = Instance.new("UIGradient", G2L["3"]);
+G2L["32"]["Rotation"] = -44;
+G2L["32"]["Offset"] = Vector2.new(0.2, 0);
+G2L["32"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(14, 14, 14)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(18, 18, 18))};
+
+-- StarterGui.AutoFarm.MainFrame.ProfitFrame
+G2L["33"] = Instance.new("Frame", G2L["3"]);
+G2L["33"]["BorderSizePixel"] = 0;
+G2L["33"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["33"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
+G2L["33"]["Position"] = UDim2.new(0.02159, 0, 0.62102, 0);
+G2L["33"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["33"]["Name"] = [[ProfitFrame]];
+
+G2L["34"] = Instance.new("UICorner", G2L["33"]);
+G2L["34"]["CornerRadius"] = UDim.new(0, 16);
+
+G2L["35"] = Instance.new("UIStroke", G2L["33"]);
+G2L["35"]["Color"] = Color3.fromRGB(94, 94, 94);
+
+G2L["36"] = Instance.new("TextLabel", G2L["33"]);
+G2L["36"]["TextWrapped"] = true;
+G2L["36"]["TextStrokeTransparency"] = 0;
+G2L["36"]["ZIndex"] = 10;
+G2L["36"]["BorderSizePixel"] = 0;
+G2L["36"]["TextSize"] = 14;
+G2L["36"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["36"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["36"]["TextScaled"] = true;
+G2L["36"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["36"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["36"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["36"]["BackgroundTransparency"] = 1;
+G2L["36"]["Size"] = UDim2.new(0.91304, 0, 0.25, 0);
+G2L["36"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["36"]["Text"] = [[$0]];
+G2L["36"]["Name"] = [[Profit]];
+G2L["36"]["Position"] = UDim2.new(0.01449, 0, 0.57258, 0);
+
+G2L["37"] = Instance.new("UIGradient", G2L["36"]);
+G2L["37"]["Rotation"] = -90;
+G2L["37"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+
+G2L["38"] = Instance.new("UIAspectRatioConstraint", G2L["36"]);
+G2L["38"]["AspectRatio"] = 12.19355;
+
+G2L["39"] = Instance.new("UITextSizeConstraint", G2L["36"]);
+G2L["39"]["MaxTextSize"] = 31;
+
+G2L["3a"] = Instance.new("TextLabel", G2L["33"]);
+G2L["3a"]["TextWrapped"] = true;
+G2L["3a"]["TextStrokeTransparency"] = 0;
+G2L["3a"]["ZIndex"] = 10;
+G2L["3a"]["BorderSizePixel"] = 0;
+G2L["3a"]["TextSize"] = 14;
+G2L["3a"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["3a"]["TextScaled"] = true;
+G2L["3a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["3a"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["3a"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["3a"]["BackgroundTransparency"] = 1;
+G2L["3a"]["Size"] = UDim2.new(0.33909, 0, 0.5, 0);
+G2L["3a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["3a"]["Text"] = [[Profit]];
+G2L["3a"]["Name"] = [[Title]];
+G2L["3a"]["Position"] = UDim2.new(0.01691, 0, 0, 0);
+
+G2L["3b"] = Instance.new("UIAspectRatioConstraint", G2L["3a"]);
+G2L["3b"]["AspectRatio"] = 2.26423;
+
+G2L["3c"] = Instance.new("UITextSizeConstraint", G2L["3a"]);
+G2L["3c"]["MaxTextSize"] = 62;
+
+G2L["3d"] = Instance.new("UIAspectRatioConstraint", G2L["33"]);
+G2L["3d"]["AspectRatio"] = 3.33871;
+
+-- StarterGui.AutoFarm.MainFrame.UIStroke
+G2L["3e"] = Instance.new("UIStroke", G2L["3"]);
+G2L["3e"]["Thickness"] = 5;
+G2L["3e"]["Color"] = Color3.fromRGB(166, 166, 166);
+
+G2L["3f"] = Instance.new("UIGradient", G2L["3e"]);
+G2L["3f"]["Rotation"] = -90;
+G2L["3f"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 0, 0)),ColorSequenceKeypoint.new(0.346, Color3.fromRGB(0, 0, 0)),ColorSequenceKeypoint.new(0.606, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+
+-- StarterGui.AutoFarm.MainFrame.PerHourFrame
+G2L["40"] = Instance.new("Frame", G2L["3"]);
+G2L["40"]["BorderSizePixel"] = 0;
+G2L["40"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["40"]["Size"] = UDim2.new(0.47159, 0, 0.41242, 0);
+G2L["40"]["Position"] = UDim2.new(0.50568, 0, 0.40446, 0);
+G2L["40"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["40"]["Name"] = [[PerHourFrame]];
+
+G2L["41"] = Instance.new("UICorner", G2L["40"]);
+G2L["41"]["CornerRadius"] = UDim.new(0, 16);
+
+G2L["42"] = Instance.new("UIStroke", G2L["40"]);
+G2L["42"]["Color"] = Color3.fromRGB(94, 94, 94);
+
+G2L["43"] = Instance.new("TextLabel", G2L["40"]);
+G2L["43"]["TextWrapped"] = true;
+G2L["43"]["TextStrokeTransparency"] = 0;
+G2L["43"]["ZIndex"] = 10;
+G2L["43"]["BorderSizePixel"] = 0;
+G2L["43"]["TextSize"] = 14;
+G2L["43"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["43"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["43"]["TextScaled"] = true;
+G2L["43"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["43"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["43"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["43"]["BackgroundTransparency"] = 1;
+G2L["43"]["Size"] = UDim2.new(0.34217, 0, 0.40154, 0);
+G2L["43"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["43"]["Text"] = [[$0]];
+G2L["43"]["Name"] = [[PerHour]];
+G2L["43"]["Position"] = UDim2.new(0.03373, 0, 0.11969, 0);
+
+G2L["44"] = Instance.new("UIGradient", G2L["43"]);
+G2L["44"]["Rotation"] = -90;
+G2L["44"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+
+G2L["45"] = Instance.new("UIAspectRatioConstraint", G2L["43"]);
+G2L["45"]["AspectRatio"] = 1.36538;
+
+G2L["46"] = Instance.new("UITextSizeConstraint", G2L["43"]);
+G2L["46"]["MaxTextSize"] = 33;
+
+G2L["47"] = Instance.new("TextLabel", G2L["40"]);
 G2L["47"]["TextWrapped"] = true;
 G2L["47"]["TextStrokeTransparency"] = 0;
 G2L["47"]["ZIndex"] = 10;
 G2L["47"]["BorderSizePixel"] = 0;
 G2L["47"]["TextSize"] = 14;
 G2L["47"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["47"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
 G2L["47"]["TextScaled"] = true;
 G2L["47"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["47"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["47"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
 G2L["47"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["47"]["BackgroundTransparency"] = 1;
-G2L["47"]["Size"] = UDim2.new(0.91464, 0, 0.25158, 0);
+G2L["47"]["Size"] = UDim2.new(0.35904, 0, 0.32046, 0);
 G2L["47"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["47"]["Text"] = [[$0]];
-G2L["47"]["Name"] = [[Profit]];
-G2L["47"]["Position"] = UDim2.new(0.01568, 0, 0.5733, 0);
+G2L["47"]["Text"] = [[Per Hour]];
+G2L["47"]["Name"] = [[Title]];
+G2L["47"]["Position"] = UDim2.new(0.03373, 0, -0.03861, 0);
 
-G2L["48"] = Instance.new("UIGradient", G2L["47"]);
-G2L["48"]["Rotation"] = -90;
-G2L["48"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+G2L["48"] = Instance.new("UIAspectRatioConstraint", G2L["47"]);
+G2L["48"]["AspectRatio"] = 1.79518;
 
-G2L["4b"] = Instance.new("TextLabel", G2L["44"]);
-G2L["4b"]["TextWrapped"] = true;
-G2L["4b"]["TextStrokeTransparency"] = 0;
-G2L["4b"]["ZIndex"] = 10;
-G2L["4b"]["BorderSizePixel"] = 0;
-G2L["4b"]["TextSize"] = 14;
-G2L["4b"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["4b"]["TextScaled"] = true;
-G2L["4b"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["4b"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["4b"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["4b"]["BackgroundTransparency"] = 1;
-G2L["4b"]["Size"] = UDim2.new(0.37694, 0, 0.50715, 0);
-G2L["4b"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["4b"]["Text"] = [[Profit]];
-G2L["4b"]["Name"] = [[Title]];
-G2L["4b"]["Position"] = UDim2.new(0.01701, 0, 0.01523, 0);
+G2L["49"] = Instance.new("UITextSizeConstraint", G2L["47"]);
+G2L["49"]["MaxTextSize"] = 59;
 
--- Status Frame
-G2L["2d"] = Instance.new("Frame", G2L["3"]);
-G2L["2d"]["BorderSizePixel"] = 0;
-G2L["2d"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["2d"]["Size"] = UDim2.new(0.95627, 0, 0.15, 0);
-G2L["2d"]["Position"] = UDim2.new(0.02211, 0, 0.81, 0);
-G2L["2d"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["2d"]["Name"] = [[StatusFrame]];
+-- StarterGui.AutoFarm.MainFrame.PerHourFrame.PerHourGraphFrame
+G2L["4a"] = Instance.new("Frame", G2L["40"]);
+G2L["4a"]["ZIndex"] = 15;
+G2L["4a"]["BorderSizePixel"] = 0;
+G2L["4a"]["BackgroundColor3"] = Color3.fromRGB(16, 21, 19);
+G2L["4a"]["Size"] = UDim2.new(1, 0, 0.63324, 0);
+G2L["4a"]["Position"] = UDim2.new(-0, 0, 0.36676, 0);
+G2L["4a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["4a"]["Name"] = [[PerHourGraphFrame]];
+G2L["4a"]["BackgroundTransparency"] = 1;
 
-G2L["2e"] = Instance.new("UICorner", G2L["2d"]);
-G2L["2e"]["CornerRadius"] = UDim.new(0, 16);
+G2L["4c"] = Instance.new("UICorner", G2L["4a"]);
 
-G2L["2f"] = Instance.new("UIStroke", G2L["2d"]);
-G2L["2f"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["4d"] = Instance.new("UIAspectRatioConstraint", G2L["4a"]);
+G2L["4d"]["AspectRatio"] = 2.53036;
 
-G2L["30"] = Instance.new("TextLabel", G2L["2d"]);
-G2L["30"]["TextWrapped"] = true;
-G2L["30"]["ZIndex"] = 10;
-G2L["30"]["BorderSizePixel"] = 0;
-G2L["30"]["TextSize"] = 14;
-G2L["30"]["TextScaled"] = true;
-G2L["30"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["30"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["30"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["30"]["BackgroundTransparency"] = 1;
-G2L["30"]["Size"] = UDim2.new(1, 0, 1, 0);
-G2L["30"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["30"]["Text"] = [[🟢 Farm Running...]];
-G2L["30"]["Name"] = [[StatusText]];
+G2L["4e"] = Instance.new("UIAspectRatioConstraint", G2L["40"]);
+G2L["4e"]["AspectRatio"] = 1.60232;
 
-G2L["grad"] = Instance.new("UIGradient", G2L["30"]);
-G2L["grad"]["Rotation"] = -90;
-G2L["grad"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+-- StarterGui.AutoFarm.MainFrame.StatusFrame
+G2L["4f"] = Instance.new("Frame", G2L["3"]);
+G2L["4f"]["BorderSizePixel"] = 0;
+G2L["4f"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["4f"]["Size"] = UDim2.new(0.95568, 0, 0.13057, 0);
+G2L["4f"]["Position"] = UDim2.new(0.02159, 0, 0.83758, 0);
+G2L["4f"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["4f"]["Name"] = [[StatusFrame]];
 
--- Profile Picture
+G2L["50"] = Instance.new("UICorner", G2L["4f"]);
+G2L["50"]["CornerRadius"] = UDim.new(0, 16);
+
+G2L["51"] = Instance.new("UIStroke", G2L["4f"]);
+G2L["51"]["Color"] = Color3.fromRGB(94, 94, 94);
+
+G2L["52"] = Instance.new("TextLabel", G2L["4f"]);
+G2L["52"]["TextWrapped"] = true;
+G2L["52"]["TextStrokeTransparency"] = 0;
+G2L["52"]["ZIndex"] = 10;
+G2L["52"]["BorderSizePixel"] = 0;
+G2L["52"]["TextSize"] = 14;
+G2L["52"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["52"]["TextScaled"] = true;
+G2L["52"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["52"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["52"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["52"]["BackgroundTransparency"] = 1;
+G2L["52"]["Size"] = UDim2.new(0.14605, 0, 0.53404, 0);
+G2L["52"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["52"]["Text"] = [[Status:]];
+G2L["52"]["Name"] = [[Title]];
+G2L["52"]["Position"] = UDim2.new(0.36504, 0, 0.22841, 0);
+
+G2L["53"] = Instance.new("UIAspectRatioConstraint", G2L["52"]);
+G2L["53"]["AspectRatio"] = 2.80488;
+
+G2L["54"] = Instance.new("UITextSizeConstraint", G2L["52"]);
+G2L["54"]["MaxTextSize"] = 41;
+
+G2L["55"] = Instance.new("TextLabel", G2L["4f"]);
+G2L["55"]["TextWrapped"] = true;
+G2L["55"]["TextStrokeTransparency"] = 0;
+G2L["55"]["ZIndex"] = 10;
+G2L["55"]["BorderSizePixel"] = 0;
+G2L["55"]["TextSize"] = 14;
+G2L["55"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["55"]["TextScaled"] = true;
+G2L["55"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["55"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["55"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["55"]["BackgroundTransparency"] = 1;
+G2L["55"]["Size"] = UDim2.new(0.13938, 0, 0.50965, 0);
+G2L["55"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["55"]["Text"] = [[Running...]];
+G2L["55"]["Name"] = [[Title]];
+G2L["55"]["Position"] = UDim2.new(0.52319, 0, 0.24061, 0);
+
+G2L["57"] = Instance.new("UIAspectRatioConstraint", G2L["55"]);
+G2L["57"]["AspectRatio"] = 2.80488;
+
+G2L["58"] = Instance.new("UITextSizeConstraint", G2L["55"]);
+G2L["58"]["MaxTextSize"] = 41;
+
+-- StarterGui.AutoFarm.MainFrame.UICorner
+G2L["59"] = Instance.new("UICorner", G2L["3"]);
+G2L["59"]["CornerRadius"] = UDim.new(0, 16);
+
+G2L["5a"] = Instance.new("UIAspectRatioConstraint", G2L["3"]);
+G2L["5a"]["AspectRatio"] = 1.40127;
+
+-- StarterGui.AutoFarm.MainFrame.SitationColor
+G2L["5b"] = Instance.new("Frame", G2L["3"]);
+G2L["5b"]["BorderSizePixel"] = 0;
+G2L["5b"]["BackgroundColor3"] = Color3.fromRGB(0, 222, 0);
+G2L["5b"]["Size"] = UDim2.new(0.01364, 0, 0.02707, 0);
+G2L["5b"]["Position"] = UDim2.new(0.49091, 0, 0.89331, 0);
+G2L["5b"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["5b"]["Name"] = [[SitationColor]];
+
+G2L["5c"] = Instance.new("UICorner", G2L["5b"]);
+G2L["5c"]["CornerRadius"] = UDim.new(1, 0);
+
+G2L["5d"] = Instance.new("UIAspectRatioConstraint", G2L["5b"]);
+
+-- StarterGui.AutoFarm.Background
+G2L["5e"] = Instance.new("Frame", G2L["1"]);
+G2L["5e"]["BorderSizePixel"] = 0;
+G2L["5e"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["5e"]["Size"] = UDim2.new(0, 2046, 0, 1534);
+G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["5e"]["Name"] = [[Background]];
+G2L["5e"]["BackgroundTransparency"] = 0.06;
+
+-- ═══════════════════════════════════════════════════════════
+-- GUI ANIMATIONS & SCRIPTS
+-- ═══════════════════════════════════════════════════════════
+
+-- UIStroke rotation animation
 task.spawn(function()
+    local UIGradient = G2L["3e"].UIGradient
+    local runService = game:GetService("RunService")
+    
+    runService.RenderStepped:Connect(function()
+        UIGradient.Rotation += 2
+    end)
+end)
+
+-- Title gradient rotation
+task.spawn(function()
+    local textLabel = G2L["5"]
+    local gradient = textLabel.UIGradient
+    local RunService = game:GetService("RunService")
+    
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 180, 0)),
+        ColorSequenceKeypoint.new(0.05, Color3.fromRGB(100, 255, 100)),
+        ColorSequenceKeypoint.new(0.15, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(100, 255, 100)),
+        ColorSequenceKeypoint.new(0.30, Color3.fromRGB(0, 120, 0)),
+        ColorSequenceKeypoint.new(0.35, Color3.fromRGB(0, 180, 0)),
+        ColorSequenceKeypoint.new(0.45, Color3.fromRGB(0, 120, 0)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 180, 0)),
+        ColorSequenceKeypoint.new(0.55, Color3.fromRGB(0, 120, 0)),
+        ColorSequenceKeypoint.new(0.65, Color3.fromRGB(0, 180, 0)),
+        ColorSequenceKeypoint.new(0.70, Color3.fromRGB(0, 120, 0)),
+        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(100, 255, 100)),
+        ColorSequenceKeypoint.new(0.85, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.95, Color3.fromRGB(100, 255, 100)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 180, 0))
+    }
+    
+    gradient.Offset = Vector2.new(0, 0)
+    
+    local rotation = 0
+    
+    RunService.RenderStepped:Connect(function(deltaTime)
+        rotation = rotation + (50 * deltaTime)
+        gradient.Rotation = rotation % 360
+    end)
+end)
+
+-- Profile picture
+task.spawn(function()
+    local imageLabel = G2L["2e"]
     local userId = LocalPlayer.UserId
     local thumbType = Enum.ThumbnailType.HeadShot
     local thumbSize = Enum.ThumbnailSize.Size420x420
+    
     local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
-    
-    G2L["41"] = Instance.new("ImageLabel", G2L["3"]);
-    G2L["41"]["BorderSizePixel"] = 0;
-    G2L["41"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-    G2L["41"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
-    G2L["41"]["Image"] = content;
-    G2L["41"]["Size"] = UDim2.new(0.06886, 0, 0.10371, 0);
-    G2L["41"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-    G2L["41"]["BackgroundTransparency"] = 1;
-    G2L["41"]["Position"] = UDim2.new(0.94309, 0, 0.07504, 0);
-    
-    local corner = Instance.new("UICorner", G2L["41"]);
-    corner["CornerRadius"] = UDim.new(1, 0);
+    imageLabel.Image = content
 end)
 
--- Background Gradient
-G2L["50"] = Instance.new("UIGradient", G2L["3"]);
-G2L["50"]["Rotation"] = -44;
-G2L["50"]["Offset"] = Vector2.new(0.2, 0);
-G2L["50"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(14, 14, 14)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(18, 18, 18))};
+-- Status text animation
+task.spawn(function()
+    local label = G2L["55"]
+    
+    local states = {
+        "Running...",
+        "Running..",
+        "Running.",
+        "Running",
+        "Running.",
+        "Running..",
+    }
+    
+    while true do
+        for _, text in ipairs(states) do
+            label.Text = text
+            task.wait(0.6)
+        end
+    end
+end)
 
+-- GUI Variables
 local screenGui = G2L["1"]
 local mainFrame = G2L["3"]
-local background = G2L["51"]
-local walletLabel = G2L["1a"]
-local elapsedLabel = G2L["28"]
-local profitLabel = G2L["47"]
-local statusLabel = G2L["30"]
+local background = G2L["5e"]
+local walletLabel = G2L["19"]
+local elapsedLabel = G2L["29"]
+local profitLabel = G2L["36"]
+local statusLabel = G2L["55"]
+local perHourLabel = G2L["43"]
+local graphFrame = G2L["4a"]
 
--- ═══════════════════════════════════════════════════════════
--- GUI ANIMATIONS
--- ═══════════════════════════════════════════════════════════
-
--- Fade in animation
-mainFrame.BackgroundTransparency = 1
-for i, v in pairs(mainFrame:GetDescendants()) do
-    if v:IsA("TextLabel") or v:IsA("Frame") or v:IsA("ImageLabel") then
-        if v:IsA("TextLabel") then
-            v.TextTransparency = 1
-        end
-        if v:IsA("Frame") or v:IsA("ImageLabel") then
-            v.BackgroundTransparency = 1
-        end
-    end
-end
-
-task.wait(0.5)
-
-TweenService:Create(mainFrame, TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-    BackgroundTransparency = 0
-}):Play()
-
-task.wait(0.2)
-
-for i, v in pairs(mainFrame:GetDescendants()) do
-    if v:IsA("TextLabel") then
-        TweenService:Create(v, TweenInfo.new(0.8, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-            TextTransparency = 0
-        }):Play()
-    end
-    if v:IsA("Frame") and v.Name ~= "MainFrame" then
-        TweenService:Create(v, TweenInfo.new(0.8, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-            BackgroundTransparency = 0
-        }):Play()
-    end
-    if v:IsA("ImageLabel") then
-        TweenService:Create(v, TweenInfo.new(0.8, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-            ImageTransparency = 0
-        }):Play()
-    end
-end
-
--- Rainbow stroke animation
-task.spawn(function()
-    local hue = 0
-    while task.wait(0.05) do
-        hue = (hue + 1) % 360
-        G2L["stroke"].Color = Color3.fromHSV(hue / 360, 1, 1)
-    end
-end)
-
--- Pulsing status text
-task.spawn(function()
-    while task.wait(1) do
-        TweenService:Create(statusLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
-            TextSize = 16
-        }):Play()
-        task.wait(0.5)
-        TweenService:Create(statusLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
-            TextSize = 14
-        }):Play()
-    end
-end)
-
-print("[GUI] Animasyonlu GUI yüklendi")
+print("[GUI] Modern GUI loaded with animations")
 
 -- ═══════════════════════════════════════════════════════════
 -- UTILITIES
@@ -703,7 +905,7 @@ function Utils.FormatTime(seconds)
     local hours = math.floor(seconds / 3600)
     local minutes = math.floor((seconds % 3600) / 60)
     local secs = seconds % 60
-    return string.format("%02d:%02d:%02d", hours, minutes, secs)
+    return string.format("%dh %dm %ds", hours, minutes, secs)
 end
 
 function Utils.FormatCash(amount)
@@ -735,7 +937,6 @@ function Utils.FormatCashWebhook(amount)
 end
 
 function Utils.Log(message)
-    statusLabel.Text = "🟢 " .. message
     if getgenv()._secretDebugVar then
         print("[ATM FARM] " .. message)
     end
@@ -775,29 +976,29 @@ local DETECTED_EXECUTOR = detectExecutor()
 Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
 
 -- ═══════════════════════════════════════════════════════════
--- STATE
+-- STATE + DATA PERSISTENCE
 -- ═══════════════════════════════════════════════════════════
 
--- Load previous data
 local id = tostring(LocalPlayer.UserId)
-local walletValue, profitValue, savedElapsed = loadUserData(id)
+local walletValue, profitValue, savedElapsed, savedRobbed = loadUserData(id)
 
 local data_folder = LocalPlayer:WaitForChild("DataFolder")
 walletValue = walletValue or data_folder.Currency.Value
 profitValue = profitValue or 0
 savedElapsed = savedElapsed or 0
+savedRobbed = savedRobbed or 0
 
 local STATE = {
     currentATMIndex = 1,
     deathCount = 0,
     startingCash = walletValue - profitValue,
-    atmRobbed = 0,
+    atmRobbed = savedRobbed,
     sessionStartTime = os.time(),
-    isRunning = false,
+    isRunning = true,
     cashAuraActive = false,
     cashAuraPaused = false,
     lastWebhookSent = 0,
-    processedATMs = {},
+    processedATMs = {},  -- ← processedATMs GERİ EKLENDİ
     noclipConnection = nil,
     cframeLoopConnection = nil,
     lastCashCount = 0,
@@ -806,21 +1007,426 @@ local STATE = {
     lastProcessedReset = os.time(),
     currentTargetCFrame = nil,
     
-    farmLoopRunning = false,
+    farmLoopRunning = true,
     totalElapsedTime = savedElapsed,
     lastStopTime = 0,
     renderingEnabled = false,
+    
+    -- Per hour tracking
+    profitHistory = {},
+    lastProfitUpdate = os.time(),
 }
 
 -- Auto-save every second
 task.spawn(function()
     while task.wait(1) do
-        local elapsedTime = STATE.isRunning and ((os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime) or STATE.totalElapsedTime
-        saveUserData(id, Utils.GetCurrentCash(), Utils.GetCurrentCash() - STATE.startingCash, elapsedTime, tick())
+        local elapsedTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
+        saveUserData(id, Utils.GetCurrentCash(), Utils.GetCurrentCash() - STATE.startingCash, elapsedTime, tick(), STATE.atmRobbed)
     end
 end)
 
 print("[DATA] Session loaded - Elapsed: " .. Utils.FormatTime(STATE.totalElapsedTime))
+
+-- ═══════════════════════════════════════════════════════════
+-- PER HOUR GRAPH SYSTEM (DYNAMIC DATA FROM DOCUMENT 3)
+-- ═══════════════════════════════════════════════════════════
+
+local GraphSystem = {}
+
+function GraphSystem.UpdateHistory()
+    local currentProfit = Utils.GetCurrentCash() - STATE.startingCash
+    local currentTime = os.time()
+    
+    table.insert(STATE.profitHistory, {
+        profit = currentProfit,
+        time = currentTime
+    })
+    
+    -- Keep last 9 data points
+    if #STATE.profitHistory > 9 then
+        table.remove(STATE.profitHistory, 1)
+    end
+end
+
+function GraphSystem.CalculatePerHour()
+    if #STATE.profitHistory < 2 then return 0 end
+    
+    local totalTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
+    if totalTime <= 0 then return 0 end
+    
+    local currentProfit = Utils.GetCurrentCash() - STATE.startingCash
+    local perHour = (currentProfit / totalTime) * 3600
+    
+    return math.floor(perHour)
+end
+
+function GraphSystem.DrawGraph()
+    -- Clear previous graph
+    for _, child in pairs(graphFrame:GetChildren()) do
+        if child.Name ~= "UICorner" and child.Name ~= "UIAspectRatioConstraint" then
+            child:Destroy()
+        end
+    end
+    
+    -- If not enough data, show placeholder
+    if #STATE.profitHistory < 2 then
+        local placeholder = Instance.new("TextLabel")
+        placeholder.Name = "Placeholder"
+        placeholder.Text = "Collecting data..."
+        placeholder.TextColor3 = Color3.fromRGB(180, 180, 180)
+        placeholder.BackgroundTransparency = 1
+        placeholder.Size = UDim2.new(1, 0, 1, 0)
+        placeholder.Font = Enum.Font.TitilliumWeb
+        placeholder.TextScaled = true
+        placeholder.Parent = graphFrame
+        return
+    end
+    
+    local values = {}
+    local maxProfit = 0
+    
+    for _, data in ipairs(STATE.profitHistory) do
+        table.insert(values, data.profit)
+        if data.profit > maxProfit then
+            maxProfit = data.profit
+        end
+    end
+    
+    -- Normalize values (0 to 1)
+    for i, v in ipairs(values) do
+        values[i] = maxProfit > 0 and (v / maxProfit) or 0
+    end
+    
+    local graphWidth = graphFrame.AbsoluteSize.X
+    local graphHeight = graphFrame.AbsoluteSize.Y
+    local paddingX = 20
+    local paddingY = 20
+    local drawWidth = graphWidth - (paddingX * 2)
+    local drawHeight = graphHeight - (paddingY * 2)
+    
+    -- Draw grid (dashed lines from Document 3)
+    local horizontalGridLines = 5
+    local gridColor = Color3.fromRGB(70, 70, 80)
+    local gridThickness = 1
+    
+    for i = 0, horizontalGridLines do
+        local y = paddingY + (i / horizontalGridLines) * drawHeight
+        local dashCount = 20
+        local dashWidth = drawWidth / dashCount
+        local dashLength = dashWidth * 0.6
+        
+        for j = 0, dashCount - 1 do
+            local dashX = paddingX + (j * dashWidth)
+            
+            local dash = Instance.new("Frame")
+            dash.Name = "HDash" .. i .. "_" .. j
+            dash.Size = UDim2.new(0, dashLength, 0, gridThickness)
+            dash.Position = UDim2.new(0, dashX, 0, y)
+            dash.BackgroundColor3 = gridColor
+            dash.BorderSizePixel = 0
+            dash.ZIndex = 0
+            dash.BackgroundTransparency = 0.3
+            dash.Parent = graphFrame
+        end
+    end
+    
+    -- Calculate points
+    local points = {}
+    for i, value in ipairs(values) do
+        local x = paddingX + ((i - 1) / (#values - 1)) * drawWidth
+        local y = paddingY + (1 - value) * drawHeight
+        points[i] = {x = x, y = y}
+    end
+    
+    -- Draw area fill (gradient from Document 3)
+    for i = 1, #points - 1 do
+        local p1 = points[i]
+        local p2 = points[i + 1]
+        
+        local fillHeight = (graphHeight - paddingY) - math.min(p1.y, p2.y)
+        
+        local areaFill = Instance.new("Frame")
+        areaFill.Name = "AreaFill" .. i
+        areaFill.Size = UDim2.new(0, p2.x - p1.x, 0, fillHeight + 20)
+        areaFill.Position = UDim2.new(0, p1.x, 0, math.min(p1.y, p2.y))
+        areaFill.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+        areaFill.BorderSizePixel = 0
+        areaFill.ZIndex = 0
+        areaFill.BackgroundTransparency = 0.8
+        areaFill.Parent = graphFrame
+        
+        local gradient = Instance.new("UIGradient")
+        gradient.Rotation = 90
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 150)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 60))
+        })
+        gradient.Transparency = NumberSequence.new({
+            ColorSequenceKeypoint.new(0, 0.6),
+            ColorSequenceKeypoint.new(1, 0.95)
+        })
+        gradient.Parent = areaFill
+    end
+    
+    -- Draw lines (with glow from Document 3)
+    local lineThickness = 3
+    for i = 1, #points - 1 do
+        local p1 = points[i]
+        local p2 = points[i + 1]
+        
+        local startVector = Vector2.new(p1.x, p1.y)
+        local endVector = Vector2.new(p2.x, p2.y)
+        local distance = (startVector - endVector).Magnitude
+        
+        local dx = p2.x - p1.x
+        local dy = p2.y - p1.y
+        local angle = math.atan2(dy, dx) * (180 / math.pi)
+        
+        -- Glow line
+        local glowLine = Instance.new("Frame")
+        glowLine.Name = "GlowLine" .. i
+        glowLine.AnchorPoint = Vector2.new(0.5, 0.5)
+        glowLine.Size = UDim2.new(0, distance, 0, lineThickness * 2.5)
+        glowLine.Position = UDim2.new(0, (p1.x + p2.x) / 2, 0, (p1.y + p2.y) / 2)
+        glowLine.Rotation = angle
+        glowLine.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
+        glowLine.BackgroundTransparency = 0.8
+        glowLine.BorderSizePixel = 0
+        glowLine.ZIndex = 0
+        glowLine.Parent = graphFrame
+        
+        -- Main line
+        local line = Instance.new("Frame")
+        line.Name = "Line" .. i
+        line.AnchorPoint = Vector2.new(0.5, 0.5)
+        line.Size = UDim2.new(0, distance, 0, lineThickness)
+        line.Position = UDim2.new(0, (p1.x + p2.x) / 2, 0, (p1.y + p2.y) / 2)
+        line.Rotation = angle
+        line.BackgroundColor3 = Color3.fromRGB(0, 200, 120)
+        line.BorderSizePixel = 0
+        line.ZIndex = 1
+        line.Parent = graphFrame
+        
+        local gradient = Instance.new("UIGradient")
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 150)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 220, 130)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 150))
+        })
+        gradient.Parent = line
+    end
+    
+    -- Draw points (with glow from Document 3)
+    local pointSize = 8
+    for i, point in ipairs(points) do
+        -- Outer glow
+        local outerGlow = Instance.new("Frame")
+        outerGlow.Name = "OuterGlow" .. i
+        outerGlow.Size = UDim2.new(0, pointSize * 2.5, 0, pointSize * 2.5)
+        outerGlow.Position = UDim2.new(0, point.x, 0, point.y)
+        outerGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+        outerGlow.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
+        outerGlow.BackgroundTransparency = 0.7
+        outerGlow.BorderSizePixel = 0
+        outerGlow.ZIndex = 1
+        outerGlow.Parent = graphFrame
+        
+        local outerCorner = Instance.new("UICorner")
+        outerCorner.CornerRadius = UDim.new(1, 0)
+        outerCorner.Parent = outerGlow
+        
+        -- Main dot
+        local dot = Instance.new("Frame")
+        dot.Name = "Dot" .. i
+        dot.Size = UDim2.new(0, pointSize, 0, pointSize)
+        dot.Position = UDim2.new(0, point.x, 0, point.y)
+        dot.AnchorPoint = Vector2.new(0.5, 0.5)
+        dot.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
+        dot.BorderSizePixel = 0
+        dot.ZIndex = 2
+        dot.Parent = graphFrame
+        
+        -- Inner dot
+        local innerDot = Instance.new("Frame")
+        innerDot.Name = "InnerDot"
+        innerDot.Size = UDim2.new(0.4, 0, 0.4, 0)
+        innerDot.Position = UDim2.new(0.5, 0, 0.5, 0)
+        innerDot.AnchorPoint = Vector2.new(0.5, 0.5)
+        innerDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        innerDot.BackgroundTransparency = 0.3
+        innerDot.BorderSizePixel = 0
+        innerDot.ZIndex = 3
+        innerDot.Parent = dot
+        
+        local innerCorner = Instance.new("UICorner")
+        innerCorner.CornerRadius = UDim.new(1, 0)
+        innerCorner.Parent = innerDot
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = dot
+    end
+end
+
+-- Update graph every 30 seconds
+task.spawn(function()
+    task.wait(10) -- Wait 10s before first update
+    while task.wait(30) do
+        GraphSystem.UpdateHistory()
+        GraphSystem.DrawGraph()
+    end
+end)
+
+print("[GRAPH] Per hour system loaded")
+
+-- ═══════════════════════════════════════════════════════════
+-- 2. ADVANCED SERVER HOP (LDHC SYSTEM)
+-- ═══════════════════════════════════════════════════════════
+
+if CONFIG.ServerHop then
+    local blacklistedids = {
+        163721789, 15427717, 201454243, 822999, 63794379,
+        17260230, 28357488, 93101606, 8195210, 89473551,
+        16917269, 85989579, 1553950697, 476537893, 155627580,
+        31163456, 7200829, 25717070, 1446694201, 971662350,
+        1391475335, 79242647, 81720432, 5348287604, 94102158,
+    }
+    
+    local function backup()
+        local success, result = pcall(function()
+            local response = request({
+                Url = "http://107.175.254.57/roblox/roblox.php",
+                Method = "GET",
+                Headers = {["Content-Type"] = "application/json"}
+            })
+            return HttpService:JSONDecode(response.Body)
+        end)
+
+        local servers = {}
+        if success and result and result.data then
+            for _, v in ipairs(result.data) do
+                if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                    table.insert(servers, v)
+                end
+            end
+        end
+
+        if #servers > 0 then
+            local selected = servers[math.random(1, #servers)]
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+        else
+            warn("Failed to server hop.")
+        end
+    end
+
+    local function teleportToAnotherPlace()
+        local success, servers = pcall(function()
+            local response = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+            local openServers = {}
+
+            for _, v in ipairs(response.data) do
+                if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                    table.insert(openServers, v)
+                end
+            end
+
+            return openServers
+        end)
+
+        if success and servers and #servers > 0 then
+            local selected = servers[math.random(1, #servers)]
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+        else
+            warn("Primary Server Hop Failed. Trying backup.")
+            backup()
+        end
+    end
+
+    local ismod = function(player)
+        local character = player.Character or player.CharacterAdded:Wait()
+        local fullyloaded = character:WaitForChild("FULLY_LOADED_CHAR", 5)
+        local mod = nil
+        if fullyloaded then
+            mod = player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild("AdminBan")
+        end
+        return mod
+    end
+
+    local isknown = function(player)
+        local character = player.Character or player.CharacterAdded:Wait()
+        local fullyloaded = character:WaitForChild("FULLY_LOADED_CHAR", 5)
+        local known = false
+        if fullyloaded and character:FindFirstChild("Humanoid") then
+            local displayName = character.Humanoid.DisplayName
+            if typeof(displayName) == "string" and string.sub(displayName, 1, 1) == "[" then
+                known = true
+            end
+        end
+        return known
+    end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            if table.find(blacklistedids, player.UserId) then
+                teleportToAnotherPlace()
+            end
+            
+            if ismod(player) then
+                print(player.Name .. " is a mod server hopping. ID: " .. player.UserId)
+                teleportToAnotherPlace()
+            end
+            
+            if isknown(player) then
+                print(player.Name .. " is a Known player server hopping. ID: " .. player.UserId)
+                teleportToAnotherPlace()
+            end
+        end
+    end
+
+    Players.PlayerAdded:Connect(function(player)
+        wait(1)
+        if player ~= LocalPlayer then
+            if table.find(blacklistedids, player.UserId) then
+                teleportToAnotherPlace()
+            end
+            
+            if ismod(player) then
+                print(player.Name .. " is a mod server hopping. ID: " .. player.UserId)
+                teleportToAnotherPlace()
+            end
+            
+            if isknown(player) then
+                print(player.Name .. " is a Known player server hopping. ID: " .. player.UserId)
+                teleportToAnotherPlace()
+            end
+        end
+    end)
+
+    -- Death counter
+    local deaths = 0
+    local function onPlayerDied()
+        deaths = deaths + 1
+        if deaths == CONFIG.ServerHopNum and CONFIG.ServerHopNum ~= 0 then
+            task.wait(1)
+            teleportToAnotherPlace()
+        end
+    end
+    LocalPlayer.CharacterAdded:Connect(onPlayerDied)
+
+    -- Error prompt rejoin
+    pcall(function()
+        local coregui = game:GetService("CoreGui")
+        coregui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
+            if child.Name == 'ErrorPrompt' and child:FindFirstChild('MessageArea') and child.MessageArea:FindFirstChild('ErrorFrame') then
+                task.wait(1)
+                print("Error prompt detected! Server hopping...")
+                teleportToAnotherPlace()
+            end
+        end)
+    end)
+    
+    print("[SERVER HOP] Advanced system loaded")
+end
 
 -- ═══════════════════════════════════════════════════════════
 -- SAFE ZONE
@@ -877,7 +1483,6 @@ pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idkts
 pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
 
 settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-
 Lighting.GlobalShadows = false
 Lighting.FogEnd = 100
 Lighting.Brightness = 0
@@ -896,17 +1501,731 @@ for _, obj in pairs(Workspace:GetDescendants()) do
     end
 end
 
-Workspace.DescendantAdded:Connect(function(obj)
-    if obj:IsA("BasePart") then
-        obj.Material = Enum.Material.SmoothPlastic
-        obj.CastShadow = false
-    elseif obj:IsA("Decal") or obj:IsA("Texture") then
-        obj.Transparency = 1
-    elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
-        obj.Enabled = false
+-- ═══════════════════════════════════════════════════════════
+-- CAMERA SYSTEMS
+-- ═══════════════════════════════════════════════════════════
+
+local CameraClip = {}
+
+function CameraClip.Enable()
+    pcall(function()
+        sethiddenproperty(Camera, "DevCameraOcclusionMode", Enum.DevCameraOcclusionMode.Invisicam)
+        LocalPlayer.CameraMaxZoomDistance = 9e9
+        LocalPlayer.CameraMinZoomDistance = 0
+        LocalPlayer.CameraMode = Enum.CameraMode.Classic
+        pcall(function()
+            Camera.FieldOfView = 70
+        end)
+        Utils.Log("Camera occlusion enabled")
+    end)
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- NOCLIP
+-- ═══════════════════════════════════════════════════════════
+
+local Noclip = {}
+
+function Noclip.Enable()
+    if STATE.noclipConnection then return end
+    
+    STATE.noclipConnection = RunService.Stepped:Connect(function()
+        pcall(function()
+            if LocalPlayer.Character then
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end)
+    
+    Utils.Log("Noclip enabled")
+end
+
+function Noclip.Disable()
+    if STATE.noclipConnection then
+        STATE.noclipConnection:Disconnect()
+        STATE.noclipConnection = nil
+    end
+    
+    pcall(function()
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end)
+    
+    Utils.Log("Noclip disabled")
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- CFRAME LOOP
+-- ═══════════════════════════════════════════════════════════
+
+local CFrameLoop = {}
+
+function CFrameLoop.Start()
+    if STATE.cframeLoopConnection then return end
+    
+    STATE.currentTargetCFrame = CFrame.new(SAFE_ZONE.Position + Vector3.new(0, 3, 0))
+    
+    STATE.cframeLoopConnection = RunService.Heartbeat:Connect(function()
+        pcall(function()
+            if Utils.IsValidCharacter(LocalPlayer.Character) and STATE.currentTargetCFrame then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = STATE.currentTargetCFrame
+                LocalPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+                LocalPlayer.Character.HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
+            end
+        end)
+    end)
+    
+    Utils.Log("CFrame loop started")
+end
+
+function CFrameLoop.UpdatePosition(newCFrame)
+    STATE.currentTargetCFrame = newCFrame
+end
+
+function CFrameLoop.Stop()
+    if STATE.cframeLoopConnection then
+        STATE.cframeLoopConnection:Disconnect()
+        STATE.cframeLoopConnection = nil
+        STATE.currentTargetCFrame = nil
+    end
+    
+    Utils.Log("CFrame loop stopped")
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- WEBHOOK
+-- ═══════════════════════════════════════════════════════════
+
+local Webhook = {}
+
+function Webhook.Send(title, description, color, forceUpdate)
+    if CONFIG.WebhookEnabled and (CONFIG.Webhook == "" or CONFIG.Webhook == nil) then
+        Utils.Log("⚠️ Webhook enabled but URL is empty!")
+        return
+    end
+    
+    if not CONFIG.WebhookEnabled then
+        return
+    end
+    
+    task.spawn(function()
+        local success, err = pcall(function()
+            if not forceUpdate then
+                local currentTime = os.time()
+                local timeSinceLastWebhook = currentTime - STATE.lastWebhookSent
+                local intervalSeconds = CONFIG.WebhookInterval * 60
+                
+                if timeSinceLastWebhook < intervalSeconds then
+                    return
+                end
+            end
+            
+            STATE.lastWebhookSent = os.time()
+            
+            local sessionTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
+            local currentCash = Utils.GetCurrentCash()
+            local profit = currentCash - STATE.startingCash
+            local playersInServer = #Players:GetPlayers()
+            local perHour = GraphSystem.CalculatePerHour()
+            
+            local embed = {
+                ["embeds"] = {{
+                    ["title"] = title,
+                    ["description"] = description,
+                    ["color"] = color or 3447003,
+                    ["fields"] = {
+                        {
+                            ["name"] = "🖥️ Server Info",
+                            ["value"] = string.format("Players in Server: **%s**", Utils.FormatCashWebhook(playersInServer)),
+                            ["inline"] = false
+                        },
+                        {
+                            ["name"] = "👤 Player Info",
+                            ["value"] = string.format("Username: **%s**\nDisplay Name: **%s**", LocalPlayer.Name, LocalPlayer.DisplayName),
+                            ["inline"] = false
+                        },
+                        {
+                            ["name"] = "💰 Auto Farm Info",
+                            ["value"] = string.format("Profit: **$%s**\nPer Hour: **$%s**\nRobbed: **%s**\nWallet: **$%s**\nElapsed: **%s**",
+                                Utils.FormatCashWebhook(profit),
+                                Utils.FormatCashWebhook(perHour),
+                                Utils.FormatCashWebhook(STATE.atmRobbed),
+                                Utils.FormatCashWebhook(currentCash),
+                                Utils.FormatTime(sessionTime)),
+                            ["inline"] = false
+                        },
+                        {
+                            ["name"] = "📊 Statistics",
+                            ["value"] = string.format("Deaths: **%s**\nExecutor: **%s**",
+                                Utils.FormatCashWebhook(STATE.deathCount),
+                                DETECTED_EXECUTOR),
+                            ["inline"] = false
+                        },
+                    },
+                    ["footer"] = {["text"] = "Made by _ethz on Discord! • " .. os.date("%H:%M:%S")},
+                    ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
+                }}
+            }
+            
+            request({
+                Url = CONFIG.Webhook,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode(embed)
+            })
+            
+            Utils.Log("Webhook sent!")
+        end)
+        
+        if not success then
+            Utils.Log("Webhook error: " .. tostring(err))
+        end
+    end)
+end
+
+task.spawn(function()
+    while true do
+        task.wait(60)
+        if CONFIG.WebhookEnabled then
+            Webhook.Send("📊 Farm Update", "Periodic status update", 3447003, false)
+        end
     end
 end)
 
 -- ═══════════════════════════════════════════════════════════
--- SYSTEMS (continuing in next message due to length...)
+-- CASH AURA (DUAL SYSTEM)
 -- ═══════════════════════════════════════════════════════════
+
+local CashAuraCamera = {}
+local Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
+local isProcessingCamera = false
+
+function CashAuraCamera.Start()
+    if STATE.cashAuraActive then return end
+    
+    STATE.cashAuraActive = true
+    Utils.Log("Cash Aura (Camera) activated")
+    
+    task.spawn(function()
+        while STATE.cashAuraActive do
+            task.wait(0.05)
+            
+            if STATE.cashAuraPaused then
+                task.wait(0.5)
+                continue
+            end
+            
+            pcall(function()
+                if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
+                if not Drops then
+                    Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
+                    return
+                end
+                
+                local playerPos = LocalPlayer.Character.HumanoidRootPart.Position
+                
+                for _, drop in pairs(Drops:GetChildren()) do
+                    if drop.Name == "MoneyDrop" and not isProcessingCamera and not STATE.cashAuraPaused then
+                        local distance = (drop.Position - playerPos).Magnitude
+                        
+                        if distance <= 12 then
+                            isProcessingCamera = true
+                            
+                            for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
+                                if tool:IsA("Tool") then
+                                    tool.Parent = LocalPlayer.Backpack
+                                end
+                            end
+                            
+                            Camera.CameraType = Enum.CameraType.Scriptable
+                            
+                            repeat
+                                task.wait(0.02)
+                                
+                                if STATE.cashAuraPaused then break end
+                                
+                                local offset = Vector3.new(math.random(-30, 30) / 100, 2, math.random(-30, 30) / 100)
+                                Camera.CFrame = CFrame.lookAt(drop.Position + offset, drop.Position)
+                                
+                                local viewportCenter = Camera.ViewportSize / 2
+                                VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
+                                task.wait(0.05)
+                                VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
+                                
+                                if Utils.IsValidCharacter(LocalPlayer.Character) then
+                                    distance = (drop.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                                else
+                                    break
+                                end
+                                
+                            until not drop or drop.Parent == nil or distance > 12 or STATE.cashAuraPaused
+                            
+                            Camera.CameraType = Enum.CameraType.Custom
+                            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+                            
+                            isProcessingCamera = false
+                        end
+                    end
+                end
+            end)
+        end
+        
+        pcall(function()
+            Camera.CameraType = Enum.CameraType.Custom
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                Camera.CameraSubject = LocalPlayer.Character.Humanoid
+            end
+        end)
+    end)
+end
+
+function CashAuraCamera.Stop()
+    STATE.cashAuraActive = false
+    STATE.cashAuraPaused = false
+    pcall(function()
+        Camera.CameraType = Enum.CameraType.Custom
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+        end
+    end)
+end
+
+local CashAuraSimple = {}
+
+function CashAuraSimple.Start()
+    if STATE.cashAuraActive then return end
+    
+    STATE.cashAuraActive = true
+    Utils.Log("Cash Aura (Simple) activated")
+    
+    task.spawn(function()
+        while STATE.cashAuraActive do
+            task.wait(0.1)
+            
+            if STATE.cashAuraPaused then
+                task.wait(0.5)
+                continue
+            end
+            
+            pcall(function()
+                if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
+                if not Drops then
+                    Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
+                    return
+                end
+                
+                local playerPos = LocalPlayer.Character.HumanoidRootPart.Position
+                
+                for _, drop in pairs(Drops:GetChildren()) do
+                    if drop.Name == "MoneyDrop" and drop:FindFirstChild("ClickDetector") and not STATE.cashAuraPaused then
+                        local distance = (drop.Position - playerPos).Magnitude
+                        
+                        if distance < 12 then
+                            fireclickdetector(drop.ClickDetector)
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+function CashAuraSimple.Stop()
+    STATE.cashAuraActive = false
+    STATE.cashAuraPaused = false
+end
+
+local CashAura = {}
+
+function CashAura.Start()
+    if STATE.useCameraAura then
+        CashAuraCamera.Start()
+    else
+        CashAuraSimple.Start()
+    end
+end
+
+function CashAura.Stop()
+    if STATE.useCameraAura then
+        CashAuraCamera.Stop()
+    else
+        CashAuraSimple.Stop()
+    end
+end
+
+function CashAura.Pause()
+    STATE.cashAuraPaused = true
+end
+
+function CashAura.Resume()
+    STATE.cashAuraPaused = false
+end
+
+function CashAura.GetNearbyCount()
+    local count = 0
+    pcall(function()
+        if not Utils.IsValidCharacter(LocalPlayer.Character) then return end
+        if not Drops then return end
+        
+        local playerPos = LocalPlayer.Character.HumanoidRootPart.Position
+        
+        for _, drop in pairs(Drops:GetChildren()) do
+            if drop.Name == "MoneyDrop" then
+                local distance = (drop.Position - playerPos).Magnitude
+                if distance < 12 then
+                    count = count + 1
+                end
+            end
+        end
+    end)
+    return count
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- SMART WAIT
+-- ═══════════════════════════════════════════════════════════
+
+local SmartWait = {}
+
+function SmartWait.ForCashCollection()
+    Utils.Log("Collecting cash...")
+    
+    STATE.lastCashCount = CashAura.GetNearbyCount()
+    STATE.noCashChangeTime = 0
+    
+    while STATE.isRunning do
+        task.wait(0.5)
+        
+        local currentCashCount = CashAura.GetNearbyCount()
+        
+        if currentCashCount ~= STATE.lastCashCount then
+            STATE.lastCashCount = currentCashCount
+            STATE.noCashChangeTime = 0
+        else
+            STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
+        end
+        
+        if currentCashCount == 0 and STATE.noCashChangeTime >= 0.5 then
+            Utils.Log("Collection complete!")
+            break
+        end
+        
+        if STATE.noCashChangeTime >= 15 then
+            Utils.Log("Collection timeout")
+            break
+        end
+    end
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- ATM SYSTEMS
+-- ═══════════════════════════════════════════════════════════
+
+local ATMPositioning = {}
+
+function ATMPositioning.GetOffset(atmPosition)
+    local x = math.floor(atmPosition.X + 0.5)
+    local z = math.floor(atmPosition.Z + 0.5)
+    
+    if (x >= -625 and x <= -624) and (z >= -287 and z <= -286) then
+        return Vector3.new(3, 0, 0)
+    end
+    
+    if (x >= -628 and x <= -627) and (z >= -287 and z <= -286) then
+        return Vector3.new(-3, 0, 0)
+    end
+    
+    return Vector3.new(0, 0, 0)
+end
+
+local ATM = {}
+
+function ATM.IsVault(cashier)
+    return string.find(string.upper(cashier.Name), "VAULT") ~= nil
+end
+
+function ATM.IsATMFilled(cashier)
+    if ATM.IsVault(cashier) then
+        return false, nil
+    end
+    
+    local open = cashier:FindFirstChild("Open")
+    if open and open:IsA("BasePart") then
+        local size = open.Size
+        if math.abs(size.X - 2.6) < 0.2 and math.abs(size.Y - 0.5) < 0.2 and math.abs(size.Z - 0.1) < 0.2 then
+            return true, open
+        end
+    end
+    
+    if open then
+        return true, open
+    end
+    
+    return false, nil
+end
+
+function ATM.ScanAll()
+    local filledATMs = {}
+    
+    pcall(function()
+        local cashiers = Workspace:FindFirstChild("Cashiers")
+        if not cashiers then
+            return
+        end
+        
+        for index, cashier in ipairs(cashiers:GetChildren()) do
+            -- ✅ DAHA SIKICI KONTROL: VAULT değil VE işlenmemiş VE DOLU olmalı
+            if not ATM.IsVault(cashier) and not STATE.processedATMs[cashier.Name] then
+                local isFilled, targetPart = ATM.IsATMFilled(cashier)
+                
+                -- ✅ Cashier health kontrolü de ekle
+                if isFilled and targetPart and cashier:FindFirstChild("Humanoid") then
+                    if cashier.Humanoid.Health > 0 then
+                        table.insert(filledATMs, {
+                            Index = index,
+                            Name = cashier.Name,
+                            Position = targetPart.Position,
+                            Cashier = cashier,
+                            TargetPart = targetPart,
+                        })
+                    end
+                end
+            end
+        end
+    end)
+    
+    return filledATMs
+end
+
+function ATM.Break(atmData)
+    return pcall(function()
+        Utils.Log("Breaking ATM: " .. atmData.Name)
+        
+        CashAura.Pause()
+        Noclip.Enable()
+        
+        local positionOffset = ATMPositioning.GetOffset(atmData.Position)
+        local targetPos = atmData.Position - Vector3.new(0, 4, 0) + positionOffset
+        local targetCFrame = CFrame.new(targetPos) * CFrame.Angles(math.rad(90), 0, 0)
+        
+        CFrameLoop.UpdatePosition(targetCFrame)
+        task.wait(0.3)
+        
+        Utils.EquipCombat()
+        task.wait(0.3)
+        
+        MainEvent:FireServer("ChargeButton")
+        task.wait(3.5)
+        
+        MainEvent:FireServer("ChargeButton")
+        task.wait(3.5)
+        
+        Noclip.Disable()
+        
+        STATE.processedATMs[atmData.Name] = true
+        STATE.atmRobbed = STATE.atmRobbed + 1
+        
+        CashAura.Resume()
+        
+        return true
+    end)
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- FARM LOGIC
+-- ═══════════════════════════════════════════════════════════
+
+local Farm = {}
+
+function Farm.Start()
+    Utils.Log("═══════════════════════════════════════")
+    Utils.Log("🏧 ATM Farm Started!")
+    Utils.Log("Executor: " .. DETECTED_EXECUTOR)
+    Utils.Log("Starting Cash: " .. Utils.FormatCash(STATE.startingCash))
+    Utils.Log("═══════════════════════════════════════")
+    
+    CameraClip.Enable()
+    createSafeZone()
+    Noclip.Enable()
+    CFrameLoop.Start()
+    
+    Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
+    
+    CashAura.Start()
+    
+    task.spawn(function()
+        while STATE.farmLoopRunning do
+            if not STATE.isRunning then 
+                break
+            end
+            
+            task.wait(1)
+            
+            local success, err = pcall(function()
+                -- processedATMs reset every 3 minutes
+                if os.time() - STATE.lastProcessedReset >= 180 then
+                    STATE.processedATMs = {}
+                    STATE.lastProcessedReset = os.time()
+                    Utils.Log("Reset processed ATMs")
+                end
+                
+                local filledATMs = ATM.ScanAll()
+                
+                if #filledATMs == 0 then
+                    Utils.Log("No ATMs found")
+                    teleportToSafeZone()
+                    task.wait(30)
+                    return
+                end
+                
+                Utils.Log("Processing " .. #filledATMs .. " ATMs...")
+                
+                for i, atmData in ipairs(filledATMs) do
+                    if not STATE.isRunning then break end
+                    
+                    STATE.currentATMIndex = i
+                    
+                    -- ✅ YENİ: ATM'ye gitmeden önce tekrar kontrol et
+                    local stillFilled, _ = ATM.IsATMFilled(atmData.Cashier)
+                    if not stillFilled then
+                        Utils.Log("ATM already empty, skipping: " .. atmData.Name)
+                        STATE.processedATMs[atmData.Name] = true
+                        continue
+                    end
+                    
+                    -- ✅ YENİ: Health kontrolü
+                    if atmData.Cashier:FindFirstChild("Humanoid") then
+                        if atmData.Cashier.Humanoid.Health <= 0 then
+                            Utils.Log("ATM already broken, skipping: " .. atmData.Name)
+                            STATE.processedATMs[atmData.Name] = true
+                            continue
+                        end
+                    end
+                    
+                    local breakSuccess, breakErr = ATM.Break(atmData)
+                    
+                    if breakSuccess then
+                        SmartWait.ForCashCollection()
+                    end
+                    
+                    task.wait(1)
+                end
+                
+                if STATE.isRunning then
+                    teleportToSafeZone()
+                    task.wait(15)
+                end
+            end)
+            
+            if not success then
+                Utils.Log("ERROR: " .. tostring(err))
+                task.wait(5)
+            end
+        end
+    end)
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- GUI UPDATERS
+-- ═══════════════════════════════════════════════════════════
+
+task.spawn(function()
+    while task.wait(0.5) do
+        pcall(function()
+            local currentCash = Utils.GetCurrentCash()
+            local profit = currentCash - STATE.startingCash
+            local elapsedTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
+            local perHour = GraphSystem.CalculatePerHour()
+            
+            walletLabel.Text = Utils.FormatCash(currentCash)
+            profitLabel.Text = Utils.FormatCash(profit)
+            elapsedLabel.Text = Utils.FormatTime(elapsedTime)
+            perHourLabel.Text = Utils.FormatCash(perHour)
+        end)
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════════
+-- DEBUG MODE
+-- ═══════════════════════════════════════════════════════════
+
+if getgenv()._secretDebugVar then
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == Enum.KeyCode.P then
+            mainFrame.Visible = not mainFrame.Visible
+            background.Visible = not background.Visible
+        end
+        
+        if input.KeyCode == Enum.KeyCode.O then
+            STATE.renderingEnabled = not STATE.renderingEnabled
+            RunService:Set3dRenderingEnabled(STATE.renderingEnabled)
+            Utils.Log("[RENDERING] " .. (STATE.renderingEnabled and "ENABLED" or "DISABLED"))
+        end
+    end)
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- CHARACTER RESPAWN HANDLER
+-- ═══════════════════════════════════════════════════════════
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+    STATE.deathCount = STATE.deathCount + 1
+    
+    -- ✅ YENİ: processedATMs'i SIFIRLAMA (death sonrası fresh start)
+    STATE.processedATMs = {}
+    STATE.lastProcessedReset = os.time()
+    
+    Utils.Log("💀 Death #" .. STATE.deathCount .. " - processedATMs reset")
+    Webhook.Send("💀 Death", "Total: " .. STATE.deathCount, 15158332, true)
+    
+    task.wait(0.5)
+    if not character:FindFirstChild("FULLY_LOADED_CHAR") then
+        repeat task.wait(0.5) until character:FindFirstChild("FULLY_LOADED_CHAR")
+        task.wait(1)
+    end
+    
+    Camera = Workspace.CurrentCamera
+    CameraClip.Enable()
+    Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
+    
+    Noclip.Enable()
+    CFrameLoop.Start()
+end)
+
+-- Anti-idle
+task.spawn(function()
+    local vu = game:GetService("VirtualUser")
+    LocalPlayer.Idled:Connect(function()
+        vu:Button2Down(Vector2.new(0,0), Camera.CFrame)
+        task.wait(1)
+        vu:Button2Up(Vector2.new(0,0), Camera.CFrame)
+    end)
+end)
+
+-- ═══════════════════════════════════════════════════════════
+-- AUTO START
+-- ═══════════════════════════════════════════════════════════
+
+task.wait(2)
+Farm.Start()
+
+print("═══════════════════════════════════════")
+print("[ATM FARM] v13.0 FINAL LOADED")
+print("[Executor] " .. DETECTED_EXECUTOR)
+print("[Starting Cash] " .. Utils.FormatCash(STATE.startingCash))
+print("[GUI] Modern + Animated + Dynamic Graph")
+print("[Features] Anti-Cheat + Server Hop + Data Persistence")
+print("[processedATMs] ENABLED (3 min reset + death reset)")
+print("[Graph] Dynamic data every 30s")
+print("═══════════════════════════════════════")
