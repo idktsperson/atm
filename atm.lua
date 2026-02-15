@@ -768,7 +768,7 @@ G2L["5e"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Size"] = UDim2.new(0, 2046, 0, 1534);
 G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Name"] = [[Background]];
-G2L["5e"]["BackgroundTransparency"] = 0.06;
+G2L["5e"]["BackgroundTransparency"] = 0;
 
 task.spawn(function()
     local UIGradient = G2L["3e"].UIGradient
@@ -1135,14 +1135,14 @@ function GraphSystem.DrawGraph()
         
         local gradient = Instance.new("UIGradient")
         gradient.Rotation = 90
-        gradient.Color = ColorSequence.new({
+        gradient.Color = ColorSequence.new{
             ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 150)),
             ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 60))
-        })
-        gradient.Transparency = NumberSequence.new({
-            ColorSequenceKeypoint.new(0, 0.6),
-            ColorSequenceKeypoint.new(1, 0.95)
-        })
+        }
+        gradient.Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.6),
+            NumberSequenceKeypoint.new(1, 0.95)
+        }
         gradient.Parent = areaFill
     end
     
@@ -1186,11 +1186,11 @@ function GraphSystem.DrawGraph()
         line.Parent = graphFrame
         
         local gradient = Instance.new("UIGradient")
-        gradient.Color = ColorSequence.new({
+        gradient.Color = ColorSequence.new{
             ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 150)),
             ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 220, 130)),
             ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 150))
-        })
+        }
         gradient.Parent = line
     end
     
