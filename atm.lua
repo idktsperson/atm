@@ -1762,7 +1762,7 @@ function CashAuraCamera.Start()
                                 
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
-                                task.wait(0.03)
+                                task.wait(0.05)
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
                                 
                                 if Utils.IsValidCharacter(LocalPlayer.Character) then
