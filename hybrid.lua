@@ -1,4 +1,6 @@
+
 local plrr = game.Players.LocalPlayer
+
 
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
@@ -106,30 +108,6 @@ local function validateSettings()
         return false
     end
 
-    local expectedDiscord = "Made by _ethz on Discord."
-    if getgenv()._ATMFARM.Discord ~= expectedDiscord then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-
-    local expectedServer = "https://discord.gg/aTb4K8Euta"
-    if getgenv()._ATMFARM.Server ~= expectedServer then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-
-    local expectedWarning = "If you paid for this script, you got scammed! This is FREE."
-    if getgenv()._ATMFARM.Warning ~= expectedWarning then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-
-    local expectedExecute = "DO NOT edit _ATMFARM or you'll be kicked. Good Boy."
-    if getgenv()._ATMFARM.Execute ~= expectedExecute then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-    
     return true
 end
 
@@ -137,7 +115,6 @@ task.wait(0.5)
 if not validateSettings() then
     return
 end
-
 
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 
@@ -768,8 +745,9 @@ G2L["5e"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Size"] = UDim2.new(0, 2046, 0, 1534);
 G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Name"] = [[Background]];
-G2L["5e"]["BackgroundTransparency"] = 0.06;
+G2L["5e"]["BackgroundTransparency"] = 0;
 
+-- UIStroke rotation animation
 task.spawn(function()
     local UIGradient = G2L["3e"].UIGradient
     local runService = game:GetService("RunService")
@@ -857,6 +835,10 @@ local perHourLabel = G2L["43"]
 local graphFrame = G2L["4a"]
 
 print("[GUI] Modern GUI loaded with animations")
+
+-- ═══════════════════════════════════════════════════════════
+-- UTILITIES
+-- ═══════════════════════════════════════════════════════════
 
 local Utils = {}
 
@@ -975,12 +957,12 @@ local STATE = {
     deathCount = 0,
     startingCash = walletValue - profitValue,
     atmRobbed = savedRobbed,
-    sessionStartTime = os.time(),
+    sessionStartTime = nil, -- ✅ nil olarak başlat, Farm.Start()'ta ayarlanacak
     isRunning = true,
     cashAuraActive = false,
     cashAuraPaused = false,
     lastWebhookSent = 0,
-    processedATMs = {},  -- ← processedATMs GERİ EKLENDİ
+    processedATMs = {},
     noclipConnection = nil,
     cframeLoopConnection = nil,
     lastCashCount = 0,
@@ -999,9 +981,11 @@ local STATE = {
     lastProfitUpdate = os.time(),
 }
 
--- Auto-save every second
+-- Auto-save every 3 seconds (optimize edildi)
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(3) do
+        if not STATE.sessionStartTime then continue end -- Timer başlamadıysa kaydetme
+        
         local elapsedTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
         saveUserData(id, Utils.GetCurrentCash(), Utils.GetCurrentCash() - STATE.startingCash, elapsedTime, tick(), STATE.atmRobbed)
     end
@@ -1028,6 +1012,7 @@ end
 
 function GraphSystem.CalculatePerHour()
     if #STATE.profitHistory < 2 then return 0 end
+    if not STATE.sessionStartTime then return 0 end -- ✅ nil check
     
     local totalTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
     if totalTime <= 0 then return 0 end
@@ -1135,14 +1120,14 @@ function GraphSystem.DrawGraph()
         
         local gradient = Instance.new("UIGradient")
         gradient.Rotation = 90
-        gradient.Color = ColorSequence.new({
+        gradient.Color = ColorSequence.new{
             ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 150)),
             ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 60))
-        })
-        gradient.Transparency = NumberSequence.new({
-            ColorSequenceKeypoint.new(0, 0.6),
-            ColorSequenceKeypoint.new(1, 0.95)
-        })
+        }
+        gradient.Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.6),
+            NumberSequenceKeypoint.new(1, 0.95)
+        }
         gradient.Parent = areaFill
     end
     
@@ -1186,11 +1171,11 @@ function GraphSystem.DrawGraph()
         line.Parent = graphFrame
         
         local gradient = Instance.new("UIGradient")
-        gradient.Color = ColorSequence.new({
+        gradient.Color = ColorSequence.new{
             ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 150)),
             ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 220, 130)),
             ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 255, 150))
-        })
+        }
         gradient.Parent = line
     end
     
@@ -1256,6 +1241,10 @@ task.spawn(function()
 end)
 
 print("[GRAPH] Per hour system loaded")
+
+-- ═══════════════════════════════════════════════════════════
+-- 2. ADVANCED SERVER HOP (LDHC SYSTEM)
+-- ═══════════════════════════════════════════════════════════
 
 if CONFIG.ServerHop then
     local blacklistedids = {
@@ -1387,6 +1376,7 @@ if CONFIG.ServerHop then
     end
     LocalPlayer.CharacterAdded:Connect(onPlayerDied)
 
+    -- Error prompt rejoin
     pcall(function()
         local coregui = game:GetService("CoreGui")
         coregui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
@@ -1441,6 +1431,10 @@ local function teleportToSafeZone()
     end)
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- OPTIMIZATION
+-- ═══════════════════════════════════════════════════════════
+
 RunService:Set3dRenderingEnabled(false)
 setfpscap(CONFIG.Fps)
 
@@ -1452,78 +1446,19 @@ Lighting.GlobalShadows = false
 Lighting.FogEnd = 100
 Lighting.Brightness = 0
 
-local decalsyeeted = true -- Leaving this on makes games look shitty but the fps goes up by at least 20.
-local g = game
-local w = g.Workspace
-local l = g.Lighting
-local t = w.Terrain
-sethiddenproperty(l,"Technology",2)
-sethiddenproperty(t,"Decoration",false)
-t.WaterWaveSize = 0
-t.WaterWaveSpeed = 0
-t.WaterReflectance = 0
-t.WaterTransparency = 0
-l.GlobalShadows = 0
-l.FogEnd = 9e9
-l.Brightness = 0
-settings().Rendering.QualityLevel = "Level01"
-for i, v in pairs(w:GetDescendants()) do
-    if v:IsA("BasePart") and not v:IsA("MeshPart") then
-        v.Material = "Plastic"
-        v.Reflectance = 0
-    elseif (v:IsA("Decal") or v:IsA("Texture")) and decalsyeeted then
-        v.Transparency = 1
-    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-        v.Lifetime = NumberRange.new(0)
-    elseif v:IsA("Explosion") then
-        v.BlastPressure = 1
-        v.BlastRadius = 1
-    elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
-        v.Enabled = false
-    elseif v:IsA("MeshPart") and decalsyeeted then
-        v.Material = "Plastic"
-        v.Reflectance = 0
-        v.TextureID = 10385902758728957
-    elseif v:IsA("SpecialMesh") and decalsyeeted  then
-        v.TextureId=0
-    elseif v:IsA("ShirtGraphic") and decalsyeeted then
-        v.Graphic=0
-    elseif (v:IsA("Shirt") or v:IsA("Pants")) and decalsyeeted then
-        v[v.ClassName.."Template"]=0
+for _, obj in pairs(Workspace:GetDescendants()) do
+    if obj:IsA("BasePart") then
+        obj.Material = Enum.Material.SmoothPlastic
+        obj.CastShadow = false
+        obj.Reflectance = 0
+    elseif obj:IsA("Decal") or obj:IsA("Texture") then
+        obj.Transparency = 1
+    elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") then
+        obj.Enabled = false
+    elseif obj:IsA("MeshPart") then
+        obj.TextureID = ""
     end
 end
-for i = 1,#l:GetChildren() do
-    e=l:GetChildren()[i]
-    if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
-        e.Enabled = false
-    end
-end
-w.DescendantAdded:Connect(function(v)
-    wait()--prevent errors and shit
-   if v:IsA("BasePart") and not v:IsA("MeshPart") then
-        v.Material = "Plastic"
-        v.Reflectance = 0
-    elseif v:IsA("Decal") or v:IsA("Texture") and decalsyeeted then
-        v.Transparency = 1
-    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-        v.Lifetime = NumberRange.new(0)
-    elseif v:IsA("Explosion") then
-        v.BlastPressure = 1
-        v.BlastRadius = 1
-    elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
-        v.Enabled = false
-    elseif v:IsA("MeshPart") and decalsyeeted then
-        v.Material = "Plastic"
-        v.Reflectance = 0
-        v.TextureID = 10385902758728957
-    elseif v:IsA("SpecialMesh") and decalsyeeted then
-        v.TextureId=0
-    elseif v:IsA("ShirtGraphic") and decalsyeeted then
-        v.ShirtGraphic=0
-    elseif (v:IsA("Shirt") or v:IsA("Pants")) and decalsyeeted then
-        v[v.ClassName.."Template"]=0
-    end
-end)
 
 local CameraClip = {}
 
@@ -1702,7 +1637,7 @@ end
 
 task.spawn(function()
     while true do
-        task.wait(60)
+        task.wait(120)
         if CONFIG.WebhookEnabled then
             Webhook.Send("📊 Farm Update", "Periodic status update", 3447003, false)
         end
@@ -1721,7 +1656,7 @@ function CashAuraCamera.Start()
     
     task.spawn(function()
         while STATE.cashAuraActive do
-            task.wait(0.05)
+            task.wait(0.1) -- 0.05'ten 0.1'e çıkarıldı (daha az işlem)
             
             if STATE.cashAuraPaused then
                 task.wait(0.5)
@@ -1752,17 +1687,19 @@ function CashAuraCamera.Start()
                             
                             Camera.CameraType = Enum.CameraType.Scriptable
                             
+                            -- ✅ OPTİMİZE: Kamerayı döndürmeden SABİT pozisyondan bak
+                            local fixedOffset = Vector3.new(0, 2, 0)
+                            Camera.CFrame = CFrame.lookAt(drop.Position + fixedOffset, drop.Position)
+                            
                             repeat
-                                task.wait(0.02)
+                                task.wait(0.05)
                                 
                                 if STATE.cashAuraPaused then break end
                                 
-                                local offset = Vector3.new(math.random(-30, 30) / 100, 2, math.random(-30, 30) / 100)
-                                Camera.CFrame = CFrame.lookAt(drop.Position + offset, drop.Position)
-                                
+                                -- ✅ Kamera hareketi KALDIRILDI - direkt click
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
-                                task.wait(0.03)
+                                task.wait(0.05)
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
                                 
                                 if Utils.IsValidCharacter(LocalPlayer.Character) then
@@ -1914,12 +1851,12 @@ function SmartWait.ForCashCollection()
             STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
         end
         
-        if currentCashCount == 0 and STATE.noCashChangeTime >= 0.01 then
+        if currentCashCount == 0 and STATE.noCashChangeTime >= 0.1 then
             Utils.Log("Collection complete!")
             break
         end
         
-        if STATE.noCashChangeTime >= 7 then
+        if STATE.noCashChangeTime >= 8 then
             Utils.Log("Collection timeout")
             break
         end
@@ -1979,9 +1916,11 @@ function ATM.ScanAll()
         end
         
         for index, cashier in ipairs(cashiers:GetChildren()) do
+            -- ✅ DAHA SIKICI KONTROL: VAULT değil VE işlenmemiş VE DOLU olmalı
             if not ATM.IsVault(cashier) and not STATE.processedATMs[cashier.Name] then
                 local isFilled, targetPart = ATM.IsATMFilled(cashier)
                 
+                -- ✅ Cashier health kontrolü de ekle
                 if isFilled and targetPart and cashier:FindFirstChild("Humanoid") then
                     if cashier.Humanoid.Health > 0 then
                         table.insert(filledATMs, {
@@ -2043,6 +1982,9 @@ function Farm.Start()
     Utils.Log("Starting Cash: " .. Utils.FormatCash(STATE.startingCash))
     Utils.Log("═══════════════════════════════════════")
     
+    -- ✅ Timer'ı ŞİMDİ başlat (herşey yüklendiğinde)
+    STATE.sessionStartTime = os.time()
+    
     CameraClip.Enable()
     createSafeZone()
     Noclip.Enable()
@@ -2061,6 +2003,7 @@ function Farm.Start()
             task.wait(1)
             
             local success, err = pcall(function()
+                -- processedATMs reset every 3 minutes
                 if os.time() - STATE.lastProcessedReset >= 180 then
                     STATE.processedATMs = {}
                     STATE.lastProcessedReset = os.time()
@@ -2083,6 +2026,7 @@ function Farm.Start()
                     
                     STATE.currentATMIndex = i
                     
+                    -- ✅ YENİ: ATM'ye gitmeden önce tekrar kontrol et
                     local stillFilled, _ = ATM.IsATMFilled(atmData.Cashier)
                     if not stillFilled then
                         Utils.Log("ATM already empty, skipping: " .. atmData.Name)
@@ -2090,6 +2034,7 @@ function Farm.Start()
                         continue
                     end
                     
+                    -- ✅ YENİ: Health kontrolü
                     if atmData.Cashier:FindFirstChild("Humanoid") then
                         if atmData.Cashier.Humanoid.Health <= 0 then
                             Utils.Log("ATM already broken, skipping: " .. atmData.Name)
@@ -2124,6 +2069,9 @@ end
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
+            -- ✅ sessionStartTime nil ise güncelleme yapma
+            if not STATE.sessionStartTime then return end
+            
             local currentCash = Utils.GetCurrentCash()
             local profit = currentCash - STATE.startingCash
             local elapsedTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
@@ -2190,12 +2138,5 @@ end)
 task.wait(2)
 Farm.Start()
 
-print("═══════════════════════════════════════")
 print("[ATM FARM] v13.0 FINAL LOADED")
 print("[Executor] " .. DETECTED_EXECUTOR)
-print("[Starting Cash] " .. Utils.FormatCash(STATE.startingCash))
-print("[GUI] Modern + Animated + Dynamic Graph")
-print("[Features] Anti-Cheat + Server Hop + Data Persistence")
-print("[processedATMs] ENABLED (3 min reset + death reset)")
-print("[Graph] Dynamic data every 30s")
-print("═══════════════════════════════════════")
