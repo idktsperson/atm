@@ -1,4 +1,6 @@
+
 local plrr = game.Players.LocalPlayer
+
 
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
@@ -137,7 +139,6 @@ task.wait(0.5)
 if not validateSettings() then
     return
 end
-
 
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 
@@ -770,6 +771,7 @@ G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Name"] = [[Background]];
 G2L["5e"]["BackgroundTransparency"] = 0;
 
+-- UIStroke rotation animation
 task.spawn(function()
     local UIGradient = G2L["3e"].UIGradient
     local runService = game:GetService("RunService")
@@ -857,6 +859,10 @@ local perHourLabel = G2L["43"]
 local graphFrame = G2L["4a"]
 
 print("[GUI] Modern GUI loaded with animations")
+
+-- ═══════════════════════════════════════════════════════════
+-- UTILITIES
+-- ═══════════════════════════════════════════════════════════
 
 local Utils = {}
 
@@ -975,12 +981,12 @@ local STATE = {
     deathCount = 0,
     startingCash = walletValue - profitValue,
     atmRobbed = savedRobbed,
-    sessionStartTime = os.time(),
+    sessionStartTime = nil, -- ✅ nil olarak başlat, Farm.Start()'ta ayarlanacak
     isRunning = true,
     cashAuraActive = false,
     cashAuraPaused = false,
     lastWebhookSent = 0,
-    processedATMs = {},  -- ← processedATMs GERİ EKLENDİ
+    processedATMs = {},
     noclipConnection = nil,
     cframeLoopConnection = nil,
     lastCashCount = 0,
@@ -999,9 +1005,11 @@ local STATE = {
     lastProfitUpdate = os.time(),
 }
 
--- Auto-save every second
+-- Auto-save every 3 seconds (optimize edildi)
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(3) do
+        if not STATE.sessionStartTime then continue end -- Timer başlamadıysa kaydetme
+        
         local elapsedTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
         saveUserData(id, Utils.GetCurrentCash(), Utils.GetCurrentCash() - STATE.startingCash, elapsedTime, tick(), STATE.atmRobbed)
     end
@@ -1028,6 +1036,7 @@ end
 
 function GraphSystem.CalculatePerHour()
     if #STATE.profitHistory < 2 then return 0 end
+    if not STATE.sessionStartTime then return 0 end -- ✅ nil check
     
     local totalTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
     if totalTime <= 0 then return 0 end
@@ -1257,6 +1266,10 @@ end)
 
 print("[GRAPH] Per hour system loaded")
 
+-- ═══════════════════════════════════════════════════════════
+-- 2. ADVANCED SERVER HOP (LDHC SYSTEM)
+-- ═══════════════════════════════════════════════════════════
+
 if CONFIG.ServerHop then
     local blacklistedids = {
         163721789, 15427717, 201454243, 822999, 63794379,
@@ -1387,6 +1400,7 @@ if CONFIG.ServerHop then
     end
     LocalPlayer.CharacterAdded:Connect(onPlayerDied)
 
+    -- Error prompt rejoin
     pcall(function()
         local coregui = game:GetService("CoreGui")
         coregui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
@@ -1440,6 +1454,10 @@ local function teleportToSafeZone()
         end
     end)
 end
+
+-- ═══════════════════════════════════════════════════════════
+-- OPTIMIZATION
+-- ═══════════════════════════════════════════════════════════
 
 RunService:Set3dRenderingEnabled(false)
 setfpscap(CONFIG.Fps)
@@ -1702,7 +1720,7 @@ end
 
 task.spawn(function()
     while true do
-        task.wait(60)
+        task.wait(120)
         if CONFIG.WebhookEnabled then
             Webhook.Send("📊 Farm Update", "Periodic status update", 3447003, false)
         end
@@ -1721,7 +1739,7 @@ function CashAuraCamera.Start()
     
     task.spawn(function()
         while STATE.cashAuraActive do
-            task.wait(0.05)
+            task.wait(0.1) -- 0.05'ten 0.1'e çıkarıldı (daha az işlem)
             
             if STATE.cashAuraPaused then
                 task.wait(0.5)
@@ -1752,14 +1770,16 @@ function CashAuraCamera.Start()
                             
                             Camera.CameraType = Enum.CameraType.Scriptable
                             
+                            -- ✅ OPTİMİZE: Kamerayı döndürmeden SABİT pozisyondan bak
+                            local fixedOffset = Vector3.new(0, 2, 0)
+                            Camera.CFrame = CFrame.lookAt(drop.Position + fixedOffset, drop.Position)
+                            
                             repeat
-                                task.wait(0.02)
+                                task.wait(0.05)
                                 
                                 if STATE.cashAuraPaused then break end
                                 
-                                local offset = Vector3.new(math.random(-30, 30) / 100, 2, math.random(-30, 30) / 100)
-                                Camera.CFrame = CFrame.lookAt(drop.Position + offset, drop.Position)
-                                
+                                -- ✅ Kamera hareketi KALDIRILDI - direkt click
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
                                 task.wait(0.05)
@@ -1914,12 +1934,12 @@ function SmartWait.ForCashCollection()
             STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
         end
         
-        if currentCashCount == 0 and STATE.noCashChangeTime >= 0.01 then
+        if currentCashCount == 0 and STATE.noCashChangeTime >= 0.1 then
             Utils.Log("Collection complete!")
             break
         end
         
-        if STATE.noCashChangeTime >= 7 then
+        if STATE.noCashChangeTime >= 8 then
             Utils.Log("Collection timeout")
             break
         end
@@ -1979,9 +1999,11 @@ function ATM.ScanAll()
         end
         
         for index, cashier in ipairs(cashiers:GetChildren()) do
+            -- ✅ DAHA SIKICI KONTROL: VAULT değil VE işlenmemiş VE DOLU olmalı
             if not ATM.IsVault(cashier) and not STATE.processedATMs[cashier.Name] then
                 local isFilled, targetPart = ATM.IsATMFilled(cashier)
                 
+                -- ✅ Cashier health kontrolü de ekle
                 if isFilled and targetPart and cashier:FindFirstChild("Humanoid") then
                     if cashier.Humanoid.Health > 0 then
                         table.insert(filledATMs, {
@@ -2043,6 +2065,9 @@ function Farm.Start()
     Utils.Log("Starting Cash: " .. Utils.FormatCash(STATE.startingCash))
     Utils.Log("═══════════════════════════════════════")
     
+    -- ✅ Timer'ı ŞİMDİ başlat (herşey yüklendiğinde)
+    STATE.sessionStartTime = os.time()
+    
     CameraClip.Enable()
     createSafeZone()
     Noclip.Enable()
@@ -2061,6 +2086,7 @@ function Farm.Start()
             task.wait(1)
             
             local success, err = pcall(function()
+                -- processedATMs reset every 3 minutes
                 if os.time() - STATE.lastProcessedReset >= 180 then
                     STATE.processedATMs = {}
                     STATE.lastProcessedReset = os.time()
@@ -2083,6 +2109,7 @@ function Farm.Start()
                     
                     STATE.currentATMIndex = i
                     
+                    -- ✅ YENİ: ATM'ye gitmeden önce tekrar kontrol et
                     local stillFilled, _ = ATM.IsATMFilled(atmData.Cashier)
                     if not stillFilled then
                         Utils.Log("ATM already empty, skipping: " .. atmData.Name)
@@ -2090,6 +2117,7 @@ function Farm.Start()
                         continue
                     end
                     
+                    -- ✅ YENİ: Health kontrolü
                     if atmData.Cashier:FindFirstChild("Humanoid") then
                         if atmData.Cashier.Humanoid.Health <= 0 then
                             Utils.Log("ATM already broken, skipping: " .. atmData.Name)
@@ -2124,6 +2152,9 @@ end
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
+            -- ✅ sessionStartTime nil ise güncelleme yapma
+            if not STATE.sessionStartTime then return end
+            
             local currentCash = Utils.GetCurrentCash()
             local profit = currentCash - STATE.startingCash
             local elapsedTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
@@ -2190,5 +2221,5 @@ end)
 task.wait(2)
 Farm.Start()
 
-print("LOADED")
+print("[ATM FARM] v13.0 FINAL LOADED")
 print("[Executor] " .. DETECTED_EXECUTOR)
