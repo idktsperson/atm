@@ -1956,14 +1956,16 @@ function ATM.ScanAll()
             if not ATM.IsVault(cashier) and not STATE.processedATMs[cashier.Name] then
                 local isFilled, targetPart = ATM.IsATMFilled(cashier)
                 
-                if isFilled and targetPart then
-                    table.insert(filledATMs, {
-                        Index = index,
-                        Name = cashier.Name,
-                        Position = targetPart.Position,
-                        Cashier = cashier,
-                        TargetPart = targetPart,
-                    })
+                if isFilled and targetPart and cashier:FindFirstChild("Humanoid") then
+                    if cashier.Humanoid.Health > 0 then
+                        table.insert(filledATMs, {
+                            Index = index,
+                            Name = cashier.Name,
+                            Position = targetPart.Position,
+                            Cashier = cashier,
+                            TargetPart = targetPart,
+                        })
+                    end
                 end
             end
         end
@@ -1971,7 +1973,6 @@ function ATM.ScanAll()
     
     return filledATMs
 end
-
 function ATM.Break(atmData)
     return pcall(function()
         Utils.Log("Breaking ATM: " .. atmData.Name)
@@ -2055,6 +2056,21 @@ function Farm.Start()
                     
                     STATE.currentATMIndex = i
                     
+                    local stillFilled, _ = ATM.IsATMFilled(atmData.Cashier)
+                    if not stillFilled then
+                        Utils.Log("ATM already empty, skipping: " .. atmData.Name)
+                        STATE.processedATMs[atmData.Name] = true
+                        continue
+                    end
+                    
+                    if atmData.Cashier:FindFirstChild("Humanoid") then
+                        if atmData.Cashier.Humanoid.Health <= 0 then
+                            Utils.Log("ATM already broken, skipping: " .. atmData.Name)
+                            STATE.processedATMs[atmData.Name] = true
+                            continue
+                        end
+                    end
+                    
                     local breakSuccess, breakErr = ATM.Break(atmData)
                     
                     if breakSuccess then
@@ -2113,6 +2129,9 @@ end
 
 LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
+    
+    STATE.processedATMs = {}
+    STATE.lastProcessedReset = os.time()
     
     Utils.Log("💀 Death #" .. STATE.deathCount)
     Webhook.Send("💀 Death", "Total: " .. STATE.deathCount, 15158332, true)
