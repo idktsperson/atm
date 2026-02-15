@@ -1,13 +1,4 @@
--- ═══════════════════════════════════════════════════════════
--- ATM FARM v13.0 FINAL
--- Yeni Modern GUI + LDHC Features + Per Hour Graph
--- ═══════════════════════════════════════════════════════════
-
 local plrr = game.Players.LocalPlayer
-
--- ═══════════════════════════════════════════════════════════
--- 1. ANTI-CHEAT BYPASS (LDHC XVNP_L SYSTEM)
--- ═══════════════════════════════════════════════════════════
 
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
@@ -103,10 +94,6 @@ end)
 
 print("[ANTI-CHEAT] XVNP_L Bypass loaded")
 
--- ═══════════════════════════════════════════════════════════
--- VALIDATION
--- ═══════════════════════════════════════════════════════════
-
 local function validateSettings()
     if not getgenv()._ATMFARM then
         plrr:Kick("Invalid Configuration - Missing _ATMFARM")
@@ -151,6 +138,7 @@ if not validateSettings() then
     return
 end
 
+
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 
 getgenv().Configuration = getgenv().Configuration or {
@@ -164,10 +152,6 @@ getgenv().Configuration = getgenv().Configuration or {
 
 local CONFIG = getgenv().Configuration
 
--- ═══════════════════════════════════════════════════════════
--- SERVICES
--- ═══════════════════════════════════════════════════════════
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -178,6 +162,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
 
 local LocalPlayer = Players.LocalPlayer
 local MainEvent = ReplicatedStorage:WaitForChild("MainEvent", 10)
@@ -191,16 +176,12 @@ end
 
 local Camera = Workspace.CurrentCamera
 
--- ═══════════════════════════════════════════════════════════
--- 3. DATA PERSISTENCE (LDHC SYSTEM)
--- ═══════════════════════════════════════════════════════════
-
-local function saveUserData(userid, walletValue, profitValue, elapsedTime, timestamp)
+local function saveUserData(userid, walletValue, profitValue, elapsedTime, timestamp, atmRobbed)
     local userFolder = "userdata/"..userid
     if not isfolder("userdata") then makefolder("userdata") end
     if not isfolder(userFolder) then makefolder(userFolder) end
 
-    local data = string.format("%s,%s,%s", walletValue, profitValue, elapsedTime)
+    local data = string.format("%s,%s,%s,%s", walletValue, profitValue, elapsedTime, atmRobbed)
     writefile(userFolder.."/data.txt", data)
     writefile(userFolder.."/timestamp.txt", tostring(timestamp))
 end
@@ -214,16 +195,15 @@ local function loadUserData(userid)
     if not lastSave or (tick() - lastSave > 180) then return nil end
 
     local data = readfile(userFolder.."/data.txt")
-    local wallet, profit, elapsed = string.match(data, "([^,]+),([^,]+),([^,]+)")
-    return tonumber(wallet), tonumber(profit), tonumber(elapsed)
+    local wallet, profit, elapsed, robbed = string.match(data, "([^,]+),([^,]+),([^,]+),([^,]+)")
+    return tonumber(wallet), tonumber(profit), tonumber(elapsed), tonumber(robbed) or 0
 end
 
--- ═══════════════════════════════════════════════════════════
--- YENİ MODERN GUI
--- ═══════════════════════════════════════════════════════════
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
 local G2L = {};
 
+-- StarterGui.AutoFarm
 G2L["1"] = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"));
 G2L["1"]["IgnoreGuiInset"] = true;
 G2L["1"]["ScreenInsets"] = Enum.ScreenInsets.DeviceSafeInsets;
@@ -231,44 +211,18 @@ G2L["1"]["Name"] = [[AutoFarm]];
 G2L["1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling;
 G2L["1"]["DisplayOrder"] = 999999999;
 
--- Background
-G2L["5d"] = Instance.new("Frame", G2L["1"]);
-G2L["5d"]["BorderSizePixel"] = 0;
-G2L["5d"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["5d"]["Size"] = UDim2.new(2, 0, 2, 0);
-G2L["5d"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["5d"]["Name"] = [[Background]];
-G2L["5d"]["BackgroundTransparency"] = 0.3;
-
--- MainFrame
+-- StarterGui.AutoFarm.MainFrame
 G2L["3"] = Instance.new("Frame", G2L["1"]);
 G2L["3"]["ZIndex"] = 2;
 G2L["3"]["BorderSizePixel"] = 0;
-G2L["3"]["BackgroundColor3"] = Color3.fromRGB(18, 18, 18);
+G2L["3"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["3"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
 G2L["3"]["Size"] = UDim2.new(0.5235, 0, 0.7494, 0);
 G2L["3"]["Position"] = UDim2.new(0.49732, 0, 0.50597, 0);
 G2L["3"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["3"]["Name"] = [[MainFrame]];
 
-G2L["58"] = Instance.new("UICorner", G2L["3"]);
-G2L["58"]["CornerRadius"] = UDim.new(0, 16);
-
--- UIStroke with animated gradient
-G2L["3d"] = Instance.new("UIStroke", G2L["3"]);
-G2L["3d"]["Thickness"] = 5;
-G2L["3d"]["Color"] = Color3.fromRGB(166, 166, 166);
-
-G2L["3e"] = Instance.new("UIGradient", G2L["3d"]);
-G2L["3e"]["Rotation"] = -90;
-G2L["3e"]["Color"] = ColorSequence.new{
-    ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(0.346, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(0.606, Color3.fromRGB(0, 103, 0)),
-    ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))
-};
-
--- Title
+-- StarterGui.AutoFarm.MainFrame.Title
 G2L["5"] = Instance.new("TextLabel", G2L["3"]);
 G2L["5"]["TextWrapped"] = true;
 G2L["5"]["ZIndex"] = 10;
@@ -288,514 +242,621 @@ G2L["5"]["Position"] = UDim2.new(0.02254, 0, 0.02412, 0);
 
 G2L["7"] = Instance.new("UIGradient", G2L["5"]);
 G2L["7"]["Rotation"] = -90;
-G2L["7"]["Color"] = ColorSequence.new{
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 180, 0)),
-    ColorSequenceKeypoint.new(0.05, Color3.fromRGB(100, 255, 100)),
-    ColorSequenceKeypoint.new(0.15, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(0.25, Color3.fromRGB(100, 255, 100)),
-    ColorSequenceKeypoint.new(0.30, Color3.fromRGB(0, 120, 0)),
-    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(0, 120, 0)),
-    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 180, 0)),
-    ColorSequenceKeypoint.new(0.65, Color3.fromRGB(0, 180, 0)),
-    ColorSequenceKeypoint.new(0.75, Color3.fromRGB(100, 255, 100)),
-    ColorSequenceKeypoint.new(0.85, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(0.95, Color3.fromRGB(100, 255, 100)),
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 180, 0))
-};
+G2L["7"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
 G2L["8"] = Instance.new("UITextSizeConstraint", G2L["5"]);
 G2L["8"]["MaxTextSize"] = 49;
 
--- Discord subtitle
-G2L["14"] = Instance.new("TextLabel", G2L["3"]);
-G2L["14"]["TextWrapped"] = true;
-G2L["14"]["ZIndex"] = 10;
-G2L["14"]["BorderSizePixel"] = 0;
-G2L["14"]["TextSize"] = 14;
-G2L["14"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["14"]["TextScaled"] = true;
-G2L["14"]["BackgroundColor3"] = Color3.fromRGB(114, 114, 114);
-G2L["14"]["FontFace"] = Font.new([[rbxasset://fonts/families/Nunito.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["14"]["TextColor3"] = Color3.fromRGB(191, 191, 191);
-G2L["14"]["BackgroundTransparency"] = 1;
-G2L["14"]["Size"] = UDim2.new(0.46003, 0, 0.03221, 0);
-G2L["14"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["14"]["Text"] = [[discord.gg/aTb4K8Euta]];
-G2L["14"]["Name"] = [[Title2]];
-G2L["14"]["Position"] = UDim2.new(0.02632, 0, 0.11987, 0);
+G2L["9"] = Instance.new("UIAspectRatioConstraint", G2L["5"]);
+G2L["9"]["AspectRatio"] = 6.46321;
 
-G2L["15"] = Instance.new("UITextSizeConstraint", G2L["14"]);
-G2L["15"]["MaxTextSize"] = 18;
+-- StarterGui.AutoFarm.MainFrame.UsernameFrame
+G2L["a"] = Instance.new("Frame", G2L["3"]);
+G2L["a"]["BorderSizePixel"] = 0;
+G2L["a"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["a"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
+G2L["a"]["Position"] = UDim2.new(0.02159, 0, 0.18949, 0);
+G2L["a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["a"]["Name"] = [[UsernameFrame]];
 
--- Username Frame
-G2L["9"] = Instance.new("Frame", G2L["3"]);
-G2L["9"]["BorderSizePixel"] = 0;
-G2L["9"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["9"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
-G2L["9"]["Position"] = UDim2.new(0.02159, 0, 0.18949, 0);
-G2L["9"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["9"]["Name"] = [[UsernameFrame]];
+G2L["b"] = Instance.new("UICorner", G2L["a"]);
+G2L["b"]["CornerRadius"] = UDim.new(0, 16);
 
-G2L["a"] = Instance.new("UICorner", G2L["9"]);
-G2L["a"]["CornerRadius"] = UDim.new(0, 16);
+G2L["c"] = Instance.new("UIStroke", G2L["a"]);
+G2L["c"]["Color"] = Color3.fromRGB(94, 94, 94);
 
-G2L["b"] = Instance.new("UIStroke", G2L["9"]);
-G2L["b"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["d"] = Instance.new("TextLabel", G2L["a"]);
+G2L["d"]["TextWrapped"] = true;
+G2L["d"]["TextStrokeTransparency"] = 0;
+G2L["d"]["ZIndex"] = 10;
+G2L["d"]["BorderSizePixel"] = 0;
+G2L["d"]["TextSize"] = 14;
+G2L["d"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["d"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["d"]["TextScaled"] = true;
+G2L["d"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["d"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["d"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["d"]["BackgroundTransparency"] = 1;
+G2L["d"]["Size"] = UDim2.new(0.8744, 0, 0.25, 0);
+G2L["d"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["d"]["Text"] = LocalPlayer.Name;
+G2L["d"]["Name"] = [[Username]];
+G2L["d"]["Position"] = UDim2.new(0.03382, 0, 0.57258, 0);
 
-G2L["10"] = Instance.new("TextLabel", G2L["9"]);
-G2L["10"]["TextWrapped"] = true;
-G2L["10"]["TextStrokeTransparency"] = 0;
-G2L["10"]["ZIndex"] = 10;
-G2L["10"]["BorderSizePixel"] = 0;
-G2L["10"]["TextSize"] = 14;
-G2L["10"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["10"]["TextScaled"] = true;
-G2L["10"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["10"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["10"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["10"]["BackgroundTransparency"] = 1;
-G2L["10"]["Size"] = UDim2.new(0.71256, 0, 0.46774, 0);
-G2L["10"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["10"]["Text"] = [[Username]];
-G2L["10"]["Name"] = [[Title]];
-G2L["10"]["Position"] = UDim2.new(0.02899, 0, 0.03226, 0);
+G2L["e"] = Instance.new("UIGradient", G2L["d"]);
+G2L["e"]["Rotation"] = -90;
+G2L["e"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
-G2L["12"] = Instance.new("UITextSizeConstraint", G2L["10"]);
-G2L["12"]["MaxTextSize"] = 58;
+G2L["f"] = Instance.new("UIAspectRatioConstraint", G2L["d"]);
+G2L["f"]["AspectRatio"] = 11.67742;
 
-G2L["c"] = Instance.new("TextLabel", G2L["9"]);
-G2L["c"]["TextWrapped"] = true;
-G2L["c"]["TextStrokeTransparency"] = 0;
-G2L["c"]["ZIndex"] = 10;
-G2L["c"]["BorderSizePixel"] = 0;
-G2L["c"]["TextSize"] = 14;
-G2L["c"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["c"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
-G2L["c"]["TextScaled"] = true;
-G2L["c"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["c"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["c"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["c"]["BackgroundTransparency"] = 1;
-G2L["c"]["Size"] = UDim2.new(0.8744, 0, 0.25, 0);
-G2L["c"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["c"]["Text"] = LocalPlayer.Name;
-G2L["c"]["Name"] = [[Username]];
-G2L["c"]["Position"] = UDim2.new(0.03382, 0, 0.57258, 0);
+G2L["10"] = Instance.new("UITextSizeConstraint", G2L["d"]);
+G2L["10"]["MaxTextSize"] = 31;
 
-G2L["d"] = Instance.new("UIGradient", G2L["c"]);
-G2L["d"]["Rotation"] = -90;
-G2L["d"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+G2L["11"] = Instance.new("TextLabel", G2L["a"]);
+G2L["11"]["TextWrapped"] = true;
+G2L["11"]["TextStrokeTransparency"] = 0;
+G2L["11"]["ZIndex"] = 10;
+G2L["11"]["BorderSizePixel"] = 0;
+G2L["11"]["TextSize"] = 14;
+G2L["11"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["11"]["TextScaled"] = true;
+G2L["11"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["11"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["11"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["11"]["BackgroundTransparency"] = 1;
+G2L["11"]["Size"] = UDim2.new(0.71256, 0, 0.46774, 0);
+G2L["11"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["11"]["Text"] = [[Username]];
+G2L["11"]["Name"] = [[Title]];
+G2L["11"]["Position"] = UDim2.new(0.02899, 0, 0.03226, 0);
 
-G2L["f"] = Instance.new("UITextSizeConstraint", G2L["c"]);
-G2L["f"]["MaxTextSize"] = 31;
+G2L["12"] = Instance.new("UIAspectRatioConstraint", G2L["11"]);
+G2L["12"]["AspectRatio"] = 5.08621;
 
--- Cash Frame
-G2L["17"] = Instance.new("Frame", G2L["3"]);
-G2L["17"]["BorderSizePixel"] = 0;
-G2L["17"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["17"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
-G2L["17"]["Position"] = UDim2.new(0.02159, 0, 0.40446, 0);
-G2L["17"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["17"]["Name"] = [[CashFrame]];
+G2L["13"] = Instance.new("UITextSizeConstraint", G2L["11"]);
+G2L["13"]["MaxTextSize"] = 58;
 
-G2L["1d"] = Instance.new("UICorner", G2L["17"]);
-G2L["1d"]["CornerRadius"] = UDim.new(0, 16);
+G2L["14"] = Instance.new("UIAspectRatioConstraint", G2L["a"]);
+G2L["14"]["AspectRatio"] = 3.33871;
 
-G2L["1c"] = Instance.new("UIStroke", G2L["17"]);
-G2L["1c"]["Color"] = Color3.fromRGB(94, 94, 94);
+-- StarterGui.AutoFarm.MainFrame.Title2
+G2L["15"] = Instance.new("TextLabel", G2L["3"]);
+G2L["15"]["TextWrapped"] = true;
+G2L["15"]["ZIndex"] = 10;
+G2L["15"]["BorderSizePixel"] = 0;
+G2L["15"]["TextSize"] = 14;
+G2L["15"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["15"]["TextScaled"] = true;
+G2L["15"]["BackgroundColor3"] = Color3.fromRGB(114, 114, 114);
+G2L["15"]["FontFace"] = Font.new([[rbxasset://fonts/families/Nunito.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["15"]["TextColor3"] = Color3.fromRGB(191, 191, 191);
+G2L["15"]["BackgroundTransparency"] = 1;
+G2L["15"]["Size"] = UDim2.new(0.46003, 0, 0.03221, 0);
+G2L["15"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["15"]["Text"] = [[discord.gg/aTb4K8Euta]];
+G2L["15"]["Name"] = [[Title2]];
+G2L["15"]["Position"] = UDim2.new(0.02632, 0, 0.11987, 0);
 
-G2L["1e"] = Instance.new("TextLabel", G2L["17"]);
-G2L["1e"]["TextWrapped"] = true;
-G2L["1e"]["TextStrokeTransparency"] = 0;
-G2L["1e"]["ZIndex"] = 10;
-G2L["1e"]["BorderSizePixel"] = 0;
-G2L["1e"]["TextSize"] = 14;
-G2L["1e"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["1e"]["TextScaled"] = true;
-G2L["1e"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1e"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["1e"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1e"]["BackgroundTransparency"] = 1;
-G2L["1e"]["Size"] = UDim2.new(0.37681, 0, 0.5, 0);
-G2L["1e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1e"]["Text"] = [[Wallet]];
-G2L["1e"]["Name"] = [[Title]];
-G2L["1e"]["Position"] = UDim2.new(0.01691, 0, 0.00806, 0);
+G2L["16"] = Instance.new("UITextSizeConstraint", G2L["15"]);
+G2L["16"]["MaxTextSize"] = 18;
 
-G2L["20"] = Instance.new("UITextSizeConstraint", G2L["1e"]);
-G2L["20"]["MaxTextSize"] = 62;
+G2L["17"] = Instance.new("UIAspectRatioConstraint", G2L["15"]);
+G2L["17"]["AspectRatio"] = 20.01554;
 
-G2L["18"] = Instance.new("TextLabel", G2L["17"]);
-G2L["18"]["TextWrapped"] = true;
-G2L["18"]["TextStrokeTransparency"] = 0;
-G2L["18"]["ZIndex"] = 10;
+-- StarterGui.AutoFarm.MainFrame.CashFrame
+G2L["18"] = Instance.new("Frame", G2L["3"]);
 G2L["18"]["BorderSizePixel"] = 0;
-G2L["18"]["TextSize"] = 14;
-G2L["18"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["18"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
-G2L["18"]["TextScaled"] = true;
-G2L["18"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["18"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["18"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["18"]["BackgroundTransparency"] = 1;
-G2L["18"]["Size"] = UDim2.new(0.91304, 0, 0.25, 0);
+G2L["18"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["18"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
+G2L["18"]["Position"] = UDim2.new(0.02159, 0, 0.40446, 0);
 G2L["18"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["18"]["Text"] = [[$0]];
-G2L["18"]["Name"] = [[Wallet]];
-G2L["18"]["Position"] = UDim2.new(0.01449, 0, 0.57258, 0);
+G2L["18"]["Name"] = [[CashFrame]];
 
-G2L["19"] = Instance.new("UIGradient", G2L["18"]);
-G2L["19"]["Rotation"] = -90;
-G2L["19"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+G2L["19"] = Instance.new("TextLabel", G2L["18"]);
+G2L["19"]["TextWrapped"] = true;
+G2L["19"]["TextStrokeTransparency"] = 0;
+G2L["19"]["ZIndex"] = 10;
+G2L["19"]["BorderSizePixel"] = 0;
+G2L["19"]["TextSize"] = 14;
+G2L["19"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["19"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["19"]["TextScaled"] = true;
+G2L["19"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["19"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["19"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["19"]["BackgroundTransparency"] = 1;
+G2L["19"]["Size"] = UDim2.new(0.91304, 0, 0.25, 0);
+G2L["19"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["19"]["Text"] = [[$0]];
+G2L["19"]["Name"] = [[Wallet]];
+G2L["19"]["Position"] = UDim2.new(0.01449, 0, 0.57258, 0);
 
-G2L["1b"] = Instance.new("UITextSizeConstraint", G2L["18"]);
-G2L["1b"]["MaxTextSize"] = 31;
+G2L["1a"] = Instance.new("UIGradient", G2L["19"]);
+G2L["1a"]["Rotation"] = -90;
+G2L["1a"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
--- Elapsed Frame
-G2L["22"] = Instance.new("Frame", G2L["3"]);
-G2L["22"]["BorderSizePixel"] = 0;
-G2L["22"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["22"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
-G2L["22"]["Position"] = UDim2.new(0.50568, 0, 0.18949, 0);
-G2L["22"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["22"]["Name"] = [[ElapsedFrame]];
+G2L["1b"] = Instance.new("UIAspectRatioConstraint", G2L["19"]);
+G2L["1b"]["AspectRatio"] = 12.19355;
 
-G2L["23"] = Instance.new("UICorner", G2L["22"]);
-G2L["23"]["CornerRadius"] = UDim.new(0, 16);
+G2L["1c"] = Instance.new("UITextSizeConstraint", G2L["19"]);
+G2L["1c"]["MaxTextSize"] = 31;
 
-G2L["24"] = Instance.new("UIStroke", G2L["22"]);
-G2L["24"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["1d"] = Instance.new("UIStroke", G2L["18"]);
+G2L["1d"]["Color"] = Color3.fromRGB(94, 94, 94);
 
-G2L["25"] = Instance.new("TextLabel", G2L["22"]);
-G2L["25"]["TextWrapped"] = true;
-G2L["25"]["TextStrokeTransparency"] = 0;
-G2L["25"]["ZIndex"] = 10;
-G2L["25"]["BorderSizePixel"] = 0;
-G2L["25"]["TextSize"] = 14;
-G2L["25"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["25"]["TextScaled"] = true;
-G2L["25"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["25"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["25"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["25"]["BackgroundTransparency"] = 1;
-G2L["25"]["Size"] = UDim2.new(0.39855, 0, 0.47581, 0);
-G2L["25"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["25"]["Text"] = [[Elapsed]];
-G2L["25"]["Name"] = [[Title]];
-G2L["25"]["Position"] = UDim2.new(0.03382, 0, 0.02419, 0);
+G2L["1e"] = Instance.new("UICorner", G2L["18"]);
+G2L["1e"]["CornerRadius"] = UDim.new(0, 16);
 
-G2L["27"] = Instance.new("UITextSizeConstraint", G2L["25"]);
-G2L["27"]["MaxTextSize"] = 59;
+G2L["1f"] = Instance.new("TextLabel", G2L["18"]);
+G2L["1f"]["TextWrapped"] = true;
+G2L["1f"]["TextStrokeTransparency"] = 0;
+G2L["1f"]["ZIndex"] = 10;
+G2L["1f"]["BorderSizePixel"] = 0;
+G2L["1f"]["TextSize"] = 14;
+G2L["1f"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["1f"]["TextScaled"] = true;
+G2L["1f"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1f"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["1f"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1f"]["BackgroundTransparency"] = 1;
+G2L["1f"]["Size"] = UDim2.new(0.37681, 0, 0.5, 0);
+G2L["1f"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1f"]["Text"] = [[Wallet]];
+G2L["1f"]["Name"] = [[Title]];
+G2L["1f"]["Position"] = UDim2.new(0.01691, 0, 0.00806, 0);
 
-G2L["28"] = Instance.new("TextLabel", G2L["22"]);
-G2L["28"]["TextWrapped"] = true;
-G2L["28"]["TextStrokeTransparency"] = 0;
-G2L["28"]["ZIndex"] = 10;
-G2L["28"]["BorderSizePixel"] = 0;
-G2L["28"]["TextSize"] = 14;
-G2L["28"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["28"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
-G2L["28"]["TextScaled"] = true;
-G2L["28"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["28"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["28"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["28"]["BackgroundTransparency"] = 1;
-G2L["28"]["Size"] = UDim2.new(0.89614, 0, 0.24194, 0);
-G2L["28"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["28"]["Text"] = [[00:00:00]];
-G2L["28"]["Name"] = [[Elapsed]];
-G2L["28"]["Position"] = UDim2.new(0.03382, 0, 0.58065, 0);
+G2L["20"] = Instance.new("UIAspectRatioConstraint", G2L["1f"]);
+G2L["20"]["AspectRatio"] = 2.51613;
 
-G2L["29"] = Instance.new("UIGradient", G2L["28"]);
-G2L["29"]["Rotation"] = -90;
-G2L["29"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+G2L["21"] = Instance.new("UITextSizeConstraint", G2L["1f"]);
+G2L["21"]["MaxTextSize"] = 62;
 
-G2L["2b"] = Instance.new("UITextSizeConstraint", G2L["28"]);
-G2L["2b"]["MaxTextSize"] = 30;
+G2L["22"] = Instance.new("UIAspectRatioConstraint", G2L["18"]);
+G2L["22"]["AspectRatio"] = 3.33871;
 
--- Profit Frame
-G2L["32"] = Instance.new("Frame", G2L["3"]);
-G2L["32"]["BorderSizePixel"] = 0;
-G2L["32"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["32"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
-G2L["32"]["Position"] = UDim2.new(0.02159, 0, 0.62102, 0);
-G2L["32"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["32"]["Name"] = [[ProfitFrame]];
+-- StarterGui.AutoFarm.MainFrame.ElapsedFrame
+G2L["23"] = Instance.new("Frame", G2L["3"]);
+G2L["23"]["BorderSizePixel"] = 0;
+G2L["23"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["23"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
+G2L["23"]["Position"] = UDim2.new(0.50568, 0, 0.18949, 0);
+G2L["23"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["23"]["Name"] = [[ElapsedFrame]];
 
-G2L["33"] = Instance.new("UICorner", G2L["32"]);
-G2L["33"]["CornerRadius"] = UDim.new(0, 16);
+G2L["24"] = Instance.new("UICorner", G2L["23"]);
+G2L["24"]["CornerRadius"] = UDim.new(0, 16);
 
-G2L["34"] = Instance.new("UIStroke", G2L["32"]);
-G2L["34"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["25"] = Instance.new("UIStroke", G2L["23"]);
+G2L["25"]["Color"] = Color3.fromRGB(94, 94, 94);
 
-G2L["39"] = Instance.new("TextLabel", G2L["32"]);
-G2L["39"]["TextWrapped"] = true;
-G2L["39"]["TextStrokeTransparency"] = 0;
-G2L["39"]["ZIndex"] = 10;
-G2L["39"]["BorderSizePixel"] = 0;
-G2L["39"]["TextSize"] = 14;
-G2L["39"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["39"]["TextScaled"] = true;
-G2L["39"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["39"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["39"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["39"]["BackgroundTransparency"] = 1;
-G2L["39"]["Size"] = UDim2.new(0.33909, 0, 0.5, 0);
-G2L["39"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["39"]["Text"] = [[Profit]];
-G2L["39"]["Name"] = [[Title]];
-G2L["39"]["Position"] = UDim2.new(0.01691, 0, 0, 0);
+G2L["26"] = Instance.new("TextLabel", G2L["23"]);
+G2L["26"]["TextWrapped"] = true;
+G2L["26"]["TextStrokeTransparency"] = 0;
+G2L["26"]["ZIndex"] = 10;
+G2L["26"]["BorderSizePixel"] = 0;
+G2L["26"]["TextSize"] = 14;
+G2L["26"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["26"]["TextScaled"] = true;
+G2L["26"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["26"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["26"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["26"]["BackgroundTransparency"] = 1;
+G2L["26"]["Size"] = UDim2.new(0.39855, 0, 0.47581, 0);
+G2L["26"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["26"]["Text"] = [[Elapsed]];
+G2L["26"]["Name"] = [[Title]];
+G2L["26"]["Position"] = UDim2.new(0.03382, 0, 0.02419, 0);
 
-G2L["3b"] = Instance.new("UITextSizeConstraint", G2L["39"]);
-G2L["3b"]["MaxTextSize"] = 62;
+G2L["27"] = Instance.new("UIAspectRatioConstraint", G2L["26"]);
+G2L["27"]["AspectRatio"] = 2.79661;
 
-G2L["35"] = Instance.new("TextLabel", G2L["32"]);
-G2L["35"]["TextWrapped"] = true;
-G2L["35"]["TextStrokeTransparency"] = 0;
-G2L["35"]["ZIndex"] = 10;
-G2L["35"]["BorderSizePixel"] = 0;
-G2L["35"]["TextSize"] = 14;
-G2L["35"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["35"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
-G2L["35"]["TextScaled"] = true;
-G2L["35"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["35"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["35"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["35"]["BackgroundTransparency"] = 1;
-G2L["35"]["Size"] = UDim2.new(0.91304, 0, 0.25, 0);
-G2L["35"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["35"]["Text"] = [[$0]];
-G2L["35"]["Name"] = [[Profit]];
-G2L["35"]["Position"] = UDim2.new(0.01449, 0, 0.57258, 0);
+G2L["28"] = Instance.new("UITextSizeConstraint", G2L["26"]);
+G2L["28"]["MaxTextSize"] = 59;
 
-G2L["36"] = Instance.new("UIGradient", G2L["35"]);
-G2L["36"]["Rotation"] = -90;
-G2L["36"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+G2L["29"] = Instance.new("TextLabel", G2L["23"]);
+G2L["29"]["TextWrapped"] = true;
+G2L["29"]["TextStrokeTransparency"] = 0;
+G2L["29"]["ZIndex"] = 10;
+G2L["29"]["BorderSizePixel"] = 0;
+G2L["29"]["TextSize"] = 14;
+G2L["29"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["29"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["29"]["TextScaled"] = true;
+G2L["29"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["29"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["29"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["29"]["BackgroundTransparency"] = 1;
+G2L["29"]["Size"] = UDim2.new(0.89614, 0, 0.24194, 0);
+G2L["29"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["29"]["Text"] = [[0h 0m 0s]];
+G2L["29"]["Name"] = [[Elapsed]];
+G2L["29"]["Position"] = UDim2.new(0.03382, 0, 0.58065, 0);
 
-G2L["38"] = Instance.new("UITextSizeConstraint", G2L["35"]);
-G2L["38"]["MaxTextSize"] = 31;
+G2L["2a"] = Instance.new("UIGradient", G2L["29"]);
+G2L["2a"]["Rotation"] = -90;
+G2L["2a"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
--- Per Hour Frame
-G2L["3f"] = Instance.new("Frame", G2L["3"]);
-G2L["3f"]["BorderSizePixel"] = 0;
-G2L["3f"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["3f"]["Size"] = UDim2.new(0.47159, 0, 0.41242, 0);
-G2L["3f"]["Position"] = UDim2.new(0.50568, 0, 0.40446, 0);
-G2L["3f"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["3f"]["Name"] = [[PerHourFrame]];
+G2L["2b"] = Instance.new("UIAspectRatioConstraint", G2L["29"]);
+G2L["2b"]["AspectRatio"] = 12.36667;
 
-G2L["40"] = Instance.new("UICorner", G2L["3f"]);
-G2L["40"]["CornerRadius"] = UDim.new(0, 16);
+G2L["2c"] = Instance.new("UITextSizeConstraint", G2L["29"]);
+G2L["2c"]["MaxTextSize"] = 30;
 
-G2L["41"] = Instance.new("UIStroke", G2L["3f"]);
-G2L["41"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["2d"] = Instance.new("UIAspectRatioConstraint", G2L["23"]);
+G2L["2d"]["AspectRatio"] = 3.33871;
 
-G2L["46"] = Instance.new("TextLabel", G2L["3f"]);
-G2L["46"]["TextWrapped"] = true;
-G2L["46"]["TextStrokeTransparency"] = 0;
-G2L["46"]["ZIndex"] = 10;
-G2L["46"]["BorderSizePixel"] = 0;
-G2L["46"]["TextSize"] = 14;
-G2L["46"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["46"]["TextScaled"] = true;
-G2L["46"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["46"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["46"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["46"]["BackgroundTransparency"] = 1;
-G2L["46"]["Size"] = UDim2.new(0.35904, 0, 0.32046, 0);
-G2L["46"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["46"]["Text"] = [[Per Hour]];
-G2L["46"]["Name"] = [[Title]];
-G2L["46"]["Position"] = UDim2.new(0.03373, 0, -0.03861, 0);
+-- StarterGui.AutoFarm.MainFrame.ImageLabel
+G2L["2e"] = Instance.new("ImageLabel", G2L["3"]);
+G2L["2e"]["BorderSizePixel"] = 0;
+G2L["2e"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["2e"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+G2L["2e"]["Image"] = [[rbxasset://textures/ui/GuiImagePlaceholder.png]];
+G2L["2e"]["Size"] = UDim2.new(0.08165, 0, 0.09586, 0);
+G2L["2e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["2e"]["BackgroundTransparency"] = 1;
+G2L["2e"]["Position"] = UDim2.new(0.94328, 0, 0.07194, 0);
 
-G2L["48"] = Instance.new("UITextSizeConstraint", G2L["46"]);
-G2L["48"]["MaxTextSize"] = 59;
+G2L["30"] = Instance.new("UICorner", G2L["2e"]);
+G2L["30"]["CornerRadius"] = UDim.new(1, 0);
 
-G2L["42"] = Instance.new("TextLabel", G2L["3f"]);
-G2L["42"]["TextWrapped"] = true;
-G2L["42"]["TextStrokeTransparency"] = 0;
-G2L["42"]["ZIndex"] = 10;
-G2L["42"]["BorderSizePixel"] = 0;
-G2L["42"]["TextSize"] = 14;
-G2L["42"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["42"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
-G2L["42"]["TextScaled"] = true;
-G2L["42"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["42"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["42"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["42"]["BackgroundTransparency"] = 1;
-G2L["42"]["Size"] = UDim2.new(0.34217, 0, 0.40154, 0);
-G2L["42"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["42"]["Text"] = [[$0]];
-G2L["42"]["Name"] = [[PerHour]];
-G2L["42"]["Position"] = UDim2.new(0.03373, 0, 0.11969, 0);
+G2L["31"] = Instance.new("UIAspectRatioConstraint", G2L["2e"]);
+G2L["31"]["AspectRatio"] = 0.97;
 
-G2L["43"] = Instance.new("UIGradient", G2L["42"]);
-G2L["43"]["Rotation"] = -90;
-G2L["43"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+-- StarterGui.AutoFarm.MainFrame.UIGradient
+G2L["32"] = Instance.new("UIGradient", G2L["3"]);
+G2L["32"]["Rotation"] = -44;
+G2L["32"]["Offset"] = Vector2.new(0.2, 0);
+G2L["32"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(14, 14, 14)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(18, 18, 18))};
 
-G2L["45"] = Instance.new("UITextSizeConstraint", G2L["42"]);
-G2L["45"]["MaxTextSize"] = 33;
+-- StarterGui.AutoFarm.MainFrame.ProfitFrame
+G2L["33"] = Instance.new("Frame", G2L["3"]);
+G2L["33"]["BorderSizePixel"] = 0;
+G2L["33"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["33"]["Size"] = UDim2.new(0.47045, 0, 0.19745, 0);
+G2L["33"]["Position"] = UDim2.new(0.02159, 0, 0.62102, 0);
+G2L["33"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["33"]["Name"] = [[ProfitFrame]];
 
--- Graph Frame
-G2L["49"] = Instance.new("Frame", G2L["3f"]);
-G2L["49"]["BorderSizePixel"] = 0;
-G2L["49"]["BackgroundColor3"] = Color3.fromRGB(16, 21, 19);
-G2L["49"]["Size"] = UDim2.new(0.99014, 0, 0.73904, 0);
-G2L["49"]["Position"] = UDim2.new(-0.00241, 0, 0.24324, 0);
-G2L["49"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["49"]["Name"] = [[PerHourGraphFrame]];
-G2L["49"]["BackgroundTransparency"] = 1;
+G2L["34"] = Instance.new("UICorner", G2L["33"]);
+G2L["34"]["CornerRadius"] = UDim.new(0, 16);
 
-G2L["4b"] = Instance.new("UICorner", G2L["49"]);
+G2L["35"] = Instance.new("UIStroke", G2L["33"]);
+G2L["35"]["Color"] = Color3.fromRGB(94, 94, 94);
 
--- Status Frame
-G2L["4e"] = Instance.new("Frame", G2L["3"]);
-G2L["4e"]["BorderSizePixel"] = 0;
-G2L["4e"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
-G2L["4e"]["Size"] = UDim2.new(0.95568, 0, 0.13057, 0);
-G2L["4e"]["Position"] = UDim2.new(0.02159, 0, 0.83758, 0);
-G2L["4e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["4e"]["Name"] = [[StatusFrame]];
+G2L["36"] = Instance.new("TextLabel", G2L["33"]);
+G2L["36"]["TextWrapped"] = true;
+G2L["36"]["TextStrokeTransparency"] = 0;
+G2L["36"]["ZIndex"] = 10;
+G2L["36"]["BorderSizePixel"] = 0;
+G2L["36"]["TextSize"] = 14;
+G2L["36"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["36"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["36"]["TextScaled"] = true;
+G2L["36"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["36"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["36"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["36"]["BackgroundTransparency"] = 1;
+G2L["36"]["Size"] = UDim2.new(0.91304, 0, 0.25, 0);
+G2L["36"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["36"]["Text"] = [[$0]];
+G2L["36"]["Name"] = [[Profit]];
+G2L["36"]["Position"] = UDim2.new(0.01449, 0, 0.57258, 0);
 
-G2L["4f"] = Instance.new("UICorner", G2L["4e"]);
-G2L["4f"]["CornerRadius"] = UDim.new(0, 16);
+G2L["37"] = Instance.new("UIGradient", G2L["36"]);
+G2L["37"]["Rotation"] = -90;
+G2L["37"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
-G2L["50"] = Instance.new("UIStroke", G2L["4e"]);
-G2L["50"]["Color"] = Color3.fromRGB(94, 94, 94);
+G2L["38"] = Instance.new("UIAspectRatioConstraint", G2L["36"]);
+G2L["38"]["AspectRatio"] = 12.19355;
 
-G2L["51"] = Instance.new("TextLabel", G2L["4e"]);
-G2L["51"]["TextWrapped"] = true;
-G2L["51"]["TextStrokeTransparency"] = 0;
-G2L["51"]["ZIndex"] = 10;
-G2L["51"]["BorderSizePixel"] = 0;
-G2L["51"]["TextSize"] = 14;
-G2L["51"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["51"]["TextScaled"] = true;
-G2L["51"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["51"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["51"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["51"]["BackgroundTransparency"] = 1;
-G2L["51"]["Size"] = UDim2.new(0.14605, 0, 0.57317, 0);
-G2L["51"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["51"]["Text"] = [[Status:]];
-G2L["51"]["Name"] = [[Title]];
-G2L["51"]["Position"] = UDim2.new(0.36504, 0, 0.22841, 0);
+G2L["39"] = Instance.new("UITextSizeConstraint", G2L["36"]);
+G2L["39"]["MaxTextSize"] = 31;
 
-G2L["53"] = Instance.new("UITextSizeConstraint", G2L["51"]);
-G2L["53"]["MaxTextSize"] = 41;
+G2L["3a"] = Instance.new("TextLabel", G2L["33"]);
+G2L["3a"]["TextWrapped"] = true;
+G2L["3a"]["TextStrokeTransparency"] = 0;
+G2L["3a"]["ZIndex"] = 10;
+G2L["3a"]["BorderSizePixel"] = 0;
+G2L["3a"]["TextSize"] = 14;
+G2L["3a"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["3a"]["TextScaled"] = true;
+G2L["3a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["3a"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["3a"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["3a"]["BackgroundTransparency"] = 1;
+G2L["3a"]["Size"] = UDim2.new(0.33909, 0, 0.5, 0);
+G2L["3a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["3a"]["Text"] = [[Profit]];
+G2L["3a"]["Name"] = [[Title]];
+G2L["3a"]["Position"] = UDim2.new(0.01691, 0, 0, 0);
 
-G2L["54"] = Instance.new("TextLabel", G2L["4e"]);
-G2L["54"]["TextWrapped"] = true;
-G2L["54"]["TextStrokeTransparency"] = 0;
-G2L["54"]["ZIndex"] = 10;
-G2L["54"]["BorderSizePixel"] = 0;
-G2L["54"]["TextSize"] = 14;
-G2L["54"]["TextXAlignment"] = Enum.TextXAlignment.Left;
-G2L["54"]["TextScaled"] = true;
-G2L["54"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["54"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["54"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["54"]["BackgroundTransparency"] = 1;
-G2L["54"]["Size"] = UDim2.new(0.14724, 0, 0.50965, 0);
-G2L["54"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["54"]["Text"] = [[Running...]];
-G2L["54"]["Name"] = [[StatusText]];
-G2L["54"]["Position"] = UDim2.new(0.52319, 0, 0.24061, 0);
+G2L["3b"] = Instance.new("UIAspectRatioConstraint", G2L["3a"]);
+G2L["3b"]["AspectRatio"] = 2.26423;
 
-G2L["57"] = Instance.new("UITextSizeConstraint", G2L["54"]);
-G2L["57"]["MaxTextSize"] = 41;
+G2L["3c"] = Instance.new("UITextSizeConstraint", G2L["3a"]);
+G2L["3c"]["MaxTextSize"] = 62;
 
--- Status Color Indicator
-G2L["5a"] = Instance.new("Frame", G2L["3"]);
-G2L["5a"]["BorderSizePixel"] = 0;
-G2L["5a"]["BackgroundColor3"] = Color3.fromRGB(0, 222, 0);
-G2L["5a"]["Size"] = UDim2.new(0.01364, 0, 0.02707, 0);
-G2L["5a"]["Position"] = UDim2.new(0.49091, 0, 0.89331, 0);
-G2L["5a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["5a"]["Name"] = [[SitationColor]];
+G2L["3d"] = Instance.new("UIAspectRatioConstraint", G2L["33"]);
+G2L["3d"]["AspectRatio"] = 3.33871;
 
-G2L["5b"] = Instance.new("UICorner", G2L["5a"]);
-G2L["5b"]["CornerRadius"] = UDim.new(1, 0);
+-- StarterGui.AutoFarm.MainFrame.UIStroke
+G2L["3e"] = Instance.new("UIStroke", G2L["3"]);
+G2L["3e"]["Thickness"] = 5;
+G2L["3e"]["Color"] = Color3.fromRGB(166, 166, 166);
 
--- Profile Picture
+G2L["3f"] = Instance.new("UIGradient", G2L["3e"]);
+G2L["3f"]["Rotation"] = -90;
+G2L["3f"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 0, 0)),ColorSequenceKeypoint.new(0.346, Color3.fromRGB(0, 0, 0)),ColorSequenceKeypoint.new(0.606, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+
+-- StarterGui.AutoFarm.MainFrame.PerHourFrame
+G2L["40"] = Instance.new("Frame", G2L["3"]);
+G2L["40"]["BorderSizePixel"] = 0;
+G2L["40"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["40"]["Size"] = UDim2.new(0.47159, 0, 0.41242, 0);
+G2L["40"]["Position"] = UDim2.new(0.50568, 0, 0.40446, 0);
+G2L["40"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["40"]["Name"] = [[PerHourFrame]];
+
+G2L["41"] = Instance.new("UICorner", G2L["40"]);
+G2L["41"]["CornerRadius"] = UDim.new(0, 16);
+
+G2L["42"] = Instance.new("UIStroke", G2L["40"]);
+G2L["42"]["Color"] = Color3.fromRGB(94, 94, 94);
+
+G2L["43"] = Instance.new("TextLabel", G2L["40"]);
+G2L["43"]["TextWrapped"] = true;
+G2L["43"]["TextStrokeTransparency"] = 0;
+G2L["43"]["ZIndex"] = 10;
+G2L["43"]["BorderSizePixel"] = 0;
+G2L["43"]["TextSize"] = 14;
+G2L["43"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["43"]["TextStrokeColor3"] = Color3.fromRGB(94, 94, 94);
+G2L["43"]["TextScaled"] = true;
+G2L["43"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["43"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["43"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["43"]["BackgroundTransparency"] = 1;
+G2L["43"]["Size"] = UDim2.new(0.34217, 0, 0.40154, 0);
+G2L["43"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["43"]["Text"] = [[$0]];
+G2L["43"]["Name"] = [[PerHour]];
+G2L["43"]["Position"] = UDim2.new(0.03373, 0, 0.11969, 0);
+
+G2L["44"] = Instance.new("UIGradient", G2L["43"]);
+G2L["44"]["Rotation"] = -90;
+G2L["44"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
+
+G2L["45"] = Instance.new("UIAspectRatioConstraint", G2L["43"]);
+G2L["45"]["AspectRatio"] = 1.36538;
+
+G2L["46"] = Instance.new("UITextSizeConstraint", G2L["43"]);
+G2L["46"]["MaxTextSize"] = 33;
+
+G2L["47"] = Instance.new("TextLabel", G2L["40"]);
+G2L["47"]["TextWrapped"] = true;
+G2L["47"]["TextStrokeTransparency"] = 0;
+G2L["47"]["ZIndex"] = 10;
+G2L["47"]["BorderSizePixel"] = 0;
+G2L["47"]["TextSize"] = 14;
+G2L["47"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["47"]["TextScaled"] = true;
+G2L["47"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["47"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["47"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["47"]["BackgroundTransparency"] = 1;
+G2L["47"]["Size"] = UDim2.new(0.35904, 0, 0.32046, 0);
+G2L["47"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["47"]["Text"] = [[Per Hour]];
+G2L["47"]["Name"] = [[Title]];
+G2L["47"]["Position"] = UDim2.new(0.03373, 0, -0.03861, 0);
+
+G2L["48"] = Instance.new("UIAspectRatioConstraint", G2L["47"]);
+G2L["48"]["AspectRatio"] = 1.79518;
+
+G2L["49"] = Instance.new("UITextSizeConstraint", G2L["47"]);
+G2L["49"]["MaxTextSize"] = 59;
+
+-- StarterGui.AutoFarm.MainFrame.PerHourFrame.PerHourGraphFrame
+G2L["4a"] = Instance.new("Frame", G2L["40"]);
+G2L["4a"]["ZIndex"] = 15;
+G2L["4a"]["BorderSizePixel"] = 0;
+G2L["4a"]["BackgroundColor3"] = Color3.fromRGB(16, 21, 19);
+G2L["4a"]["Size"] = UDim2.new(1, 0, 0.63324, 0);
+G2L["4a"]["Position"] = UDim2.new(-0, 0, 0.36676, 0);
+G2L["4a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["4a"]["Name"] = [[PerHourGraphFrame]];
+G2L["4a"]["BackgroundTransparency"] = 1;
+
+G2L["4c"] = Instance.new("UICorner", G2L["4a"]);
+
+G2L["4d"] = Instance.new("UIAspectRatioConstraint", G2L["4a"]);
+G2L["4d"]["AspectRatio"] = 2.53036;
+
+G2L["4e"] = Instance.new("UIAspectRatioConstraint", G2L["40"]);
+G2L["4e"]["AspectRatio"] = 1.60232;
+
+-- StarterGui.AutoFarm.MainFrame.StatusFrame
+G2L["4f"] = Instance.new("Frame", G2L["3"]);
+G2L["4f"]["BorderSizePixel"] = 0;
+G2L["4f"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
+G2L["4f"]["Size"] = UDim2.new(0.95568, 0, 0.13057, 0);
+G2L["4f"]["Position"] = UDim2.new(0.02159, 0, 0.83758, 0);
+G2L["4f"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["4f"]["Name"] = [[StatusFrame]];
+
+G2L["50"] = Instance.new("UICorner", G2L["4f"]);
+G2L["50"]["CornerRadius"] = UDim.new(0, 16);
+
+G2L["51"] = Instance.new("UIStroke", G2L["4f"]);
+G2L["51"]["Color"] = Color3.fromRGB(94, 94, 94);
+
+G2L["52"] = Instance.new("TextLabel", G2L["4f"]);
+G2L["52"]["TextWrapped"] = true;
+G2L["52"]["TextStrokeTransparency"] = 0;
+G2L["52"]["ZIndex"] = 10;
+G2L["52"]["BorderSizePixel"] = 0;
+G2L["52"]["TextSize"] = 14;
+G2L["52"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["52"]["TextScaled"] = true;
+G2L["52"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["52"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["52"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["52"]["BackgroundTransparency"] = 1;
+G2L["52"]["Size"] = UDim2.new(0.14605, 0, 0.53404, 0);
+G2L["52"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["52"]["Text"] = [[Status:]];
+G2L["52"]["Name"] = [[Title]];
+G2L["52"]["Position"] = UDim2.new(0.36504, 0, 0.22841, 0);
+
+G2L["53"] = Instance.new("UIAspectRatioConstraint", G2L["52"]);
+G2L["53"]["AspectRatio"] = 2.80488;
+
+G2L["54"] = Instance.new("UITextSizeConstraint", G2L["52"]);
+G2L["54"]["MaxTextSize"] = 41;
+
+G2L["55"] = Instance.new("TextLabel", G2L["4f"]);
+G2L["55"]["TextWrapped"] = true;
+G2L["55"]["TextStrokeTransparency"] = 0;
+G2L["55"]["ZIndex"] = 10;
+G2L["55"]["BorderSizePixel"] = 0;
+G2L["55"]["TextSize"] = 14;
+G2L["55"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["55"]["TextScaled"] = true;
+G2L["55"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["55"]["FontFace"] = Font.new([[rbxasset://fonts/families/TitilliumWeb.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["55"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["55"]["BackgroundTransparency"] = 1;
+G2L["55"]["Size"] = UDim2.new(0.13938, 0, 0.50965, 0);
+G2L["55"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["55"]["Text"] = [[Running...]];
+G2L["55"]["Name"] = [[Title]];
+G2L["55"]["Position"] = UDim2.new(0.52319, 0, 0.24061, 0);
+
+G2L["57"] = Instance.new("UIAspectRatioConstraint", G2L["55"]);
+G2L["57"]["AspectRatio"] = 2.80488;
+
+G2L["58"] = Instance.new("UITextSizeConstraint", G2L["55"]);
+G2L["58"]["MaxTextSize"] = 41;
+
+-- StarterGui.AutoFarm.MainFrame.UICorner
+G2L["59"] = Instance.new("UICorner", G2L["3"]);
+G2L["59"]["CornerRadius"] = UDim.new(0, 16);
+
+G2L["5a"] = Instance.new("UIAspectRatioConstraint", G2L["3"]);
+G2L["5a"]["AspectRatio"] = 1.40127;
+
+-- StarterGui.AutoFarm.MainFrame.SitationColor
+G2L["5b"] = Instance.new("Frame", G2L["3"]);
+G2L["5b"]["BorderSizePixel"] = 0;
+G2L["5b"]["BackgroundColor3"] = Color3.fromRGB(0, 222, 0);
+G2L["5b"]["Size"] = UDim2.new(0.01364, 0, 0.02707, 0);
+G2L["5b"]["Position"] = UDim2.new(0.49091, 0, 0.89331, 0);
+G2L["5b"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["5b"]["Name"] = [[SitationColor]];
+
+G2L["5c"] = Instance.new("UICorner", G2L["5b"]);
+G2L["5c"]["CornerRadius"] = UDim.new(1, 0);
+
+G2L["5d"] = Instance.new("UIAspectRatioConstraint", G2L["5b"]);
+
+-- StarterGui.AutoFarm.Background
+G2L["5e"] = Instance.new("Frame", G2L["1"]);
+G2L["5e"]["BorderSizePixel"] = 0;
+G2L["5e"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["5e"]["Size"] = UDim2.new(0, 2046, 0, 1534);
+G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["5e"]["Name"] = [[Background]];
+G2L["5e"]["BackgroundTransparency"] = 0.06;
+
 task.spawn(function()
-    G2L["2d"] = Instance.new("ImageLabel", G2L["3"]);
-    G2L["2d"]["BorderSizePixel"] = 0;
-    G2L["2d"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-    G2L["2d"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
-    G2L["2d"]["Image"] = [[rbxasset://textures/ui/GuiImagePlaceholder.png]];
-    G2L["2d"]["Size"] = UDim2.new(0.08171, 0, 0.11804, 0);
-    G2L["2d"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-    G2L["2d"]["BackgroundTransparency"] = 1;
-    G2L["2d"]["Position"] = UDim2.new(0.93534, 0, 0.08302, 0);
+    local UIGradient = G2L["3e"].UIGradient
+    local runService = game:GetService("RunService")
     
-    local corner = Instance.new("UICorner", G2L["2d"]);
-    corner["CornerRadius"] = UDim.new(1, 0);
-    
-    local userId = LocalPlayer.UserId
-    local thumbType = Enum.ThumbnailType.HeadShot
-    local thumbSize = Enum.ThumbnailSize.Size420x420
-    local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
-    G2L["2d"]["Image"] = content
-end)
-
--- Background Gradient
-G2L["31"] = Instance.new("UIGradient", G2L["3"]);
-G2L["31"]["Rotation"] = -44;
-G2L["31"]["Offset"] = Vector2.new(0.2, 0);
-G2L["31"]["Color"] = ColorSequence.new{
-    ColorSequenceKeypoint.new(0.000, Color3.fromRGB(14, 14, 14)),
-    ColorSequenceKeypoint.new(1.000, Color3.fromRGB(18, 18, 18))
-};
-
-local screenGui = G2L["1"]
-local mainFrame = G2L["3"]
-local background = G2L["5d"]
-local walletLabel = G2L["18"]
-local elapsedLabel = G2L["28"]
-local profitLabel = G2L["35"]
-local statusLabel = G2L["54"]
-local perHourLabel = G2L["42"]
-local graphFrame = G2L["49"]
-
--- ═══════════════════════════════════════════════════════════
--- GUI ANIMATIONS
--- ═══════════════════════════════════════════════════════════
-
--- Stroke rotation animation
-task.spawn(function()
-    local rotation = 0
-    while task.wait() do
-        rotation = rotation + 2
-        G2L["3e"].Rotation = rotation % 360
-    end
+    runService.RenderStepped:Connect(function()
+        UIGradient.Rotation += 2
+    end)
 end)
 
 -- Title gradient rotation
 task.spawn(function()
+    local textLabel = G2L["5"]
+    local gradient = textLabel.UIGradient
+    local RunService = game:GetService("RunService")
+    
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 180, 0)),
+        ColorSequenceKeypoint.new(0.05, Color3.fromRGB(100, 255, 100)),
+        ColorSequenceKeypoint.new(0.15, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(100, 255, 100)),
+        ColorSequenceKeypoint.new(0.30, Color3.fromRGB(0, 120, 0)),
+        ColorSequenceKeypoint.new(0.35, Color3.fromRGB(0, 180, 0)),
+        ColorSequenceKeypoint.new(0.45, Color3.fromRGB(0, 120, 0)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 180, 0)),
+        ColorSequenceKeypoint.new(0.55, Color3.fromRGB(0, 120, 0)),
+        ColorSequenceKeypoint.new(0.65, Color3.fromRGB(0, 180, 0)),
+        ColorSequenceKeypoint.new(0.70, Color3.fromRGB(0, 120, 0)),
+        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(100, 255, 100)),
+        ColorSequenceKeypoint.new(0.85, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.95, Color3.fromRGB(100, 255, 100)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 180, 0))
+    }
+    
+    gradient.Offset = Vector2.new(0, 0)
+    
     local rotation = 0
-    while task.wait() do
-        rotation = rotation + 50 * (1/60)
-        G2L["7"].Rotation = rotation % 360
-    end
+    
+    RunService.RenderStepped:Connect(function(deltaTime)
+        rotation = rotation + (50 * deltaTime)
+        gradient.Rotation = rotation % 360
+    end)
+end)
+
+-- Profile picture
+task.spawn(function()
+    local imageLabel = G2L["2e"]
+    local userId = LocalPlayer.UserId
+    local thumbType = Enum.ThumbnailType.HeadShot
+    local thumbSize = Enum.ThumbnailSize.Size420x420
+    
+    local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+    imageLabel.Image = content
 end)
 
 -- Status text animation
 task.spawn(function()
-    local states = {"Running...", "Running..", "Running.", "Running", "Running.", "Running.."}
-    local i = 1
-    while task.wait(0.6) do
-        statusLabel.Text = states[i]
-        i = (i % #states) + 1
+    local label = G2L["55"]
+    
+    local states = {
+        "Running...",
+        "Running..",
+        "Running.",
+        "Running",
+        "Running.",
+        "Running..",
+    }
+    
+    while true do
+        for _, text in ipairs(states) do
+            label.Text = text
+            task.wait(0.6)
+        end
     end
 end)
 
-print("[GUI] Modern GUI loaded")
+-- GUI Variables
+local screenGui = G2L["1"]
+local mainFrame = G2L["3"]
+local background = G2L["5e"]
+local walletLabel = G2L["19"]
+local elapsedLabel = G2L["29"]
+local profitLabel = G2L["36"]
+local statusLabel = G2L["55"]
+local perHourLabel = G2L["43"]
+local graphFrame = G2L["4a"]
 
--- ═══════════════════════════════════════════════════════════
--- UTILITIES
--- ═══════════════════════════════════════════════════════════
+print("[GUI] Modern GUI loaded with animations")
 
 local Utils = {}
 
@@ -871,10 +932,6 @@ function Utils.Log(message)
     end
 end
 
--- ═══════════════════════════════════════════════════════════
--- EXECUTOR DETECTION
--- ═══════════════════════════════════════════════════════════
-
 local function detectExecutor()
     if identifyexecutor then
         local success, executor = pcall(identifyexecutor)
@@ -904,29 +961,26 @@ end
 local DETECTED_EXECUTOR = detectExecutor()
 Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
 
--- ═══════════════════════════════════════════════════════════
--- STATE + DATA PERSISTENCE
--- ═══════════════════════════════════════════════════════════
-
 local id = tostring(LocalPlayer.UserId)
-local walletValue, profitValue, savedElapsed = loadUserData(id)
+local walletValue, profitValue, savedElapsed, savedRobbed = loadUserData(id)
 
 local data_folder = LocalPlayer:WaitForChild("DataFolder")
 walletValue = walletValue or data_folder.Currency.Value
 profitValue = profitValue or 0
 savedElapsed = savedElapsed or 0
+savedRobbed = savedRobbed or 0
 
 local STATE = {
     currentATMIndex = 1,
     deathCount = 0,
     startingCash = walletValue - profitValue,
-    atmRobbed = 0,
+    atmRobbed = savedRobbed,
     sessionStartTime = os.time(),
     isRunning = true,
     cashAuraActive = false,
     cashAuraPaused = false,
     lastWebhookSent = 0,
-    processedATMs = {},  -- ← GERİ EKLENDİ
+    processedATMs = {},  -- ← processedATMs GERİ EKLENDİ
     noclipConnection = nil,
     cframeLoopConnection = nil,
     lastCashCount = 0,
@@ -949,15 +1003,11 @@ local STATE = {
 task.spawn(function()
     while task.wait(1) do
         local elapsedTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
-        saveUserData(id, Utils.GetCurrentCash(), Utils.GetCurrentCash() - STATE.startingCash, elapsedTime, tick())
+        saveUserData(id, Utils.GetCurrentCash(), Utils.GetCurrentCash() - STATE.startingCash, elapsedTime, tick(), STATE.atmRobbed)
     end
 end)
 
 print("[DATA] Session loaded - Elapsed: " .. Utils.FormatTime(STATE.totalElapsedTime))
-
--- ═══════════════════════════════════════════════════════════
--- PER HOUR GRAPH SYSTEM
--- ═══════════════════════════════════════════════════════════
 
 local GraphSystem = {}
 
@@ -991,12 +1041,24 @@ end
 function GraphSystem.DrawGraph()
     -- Clear previous graph
     for _, child in pairs(graphFrame:GetChildren()) do
-        if child.Name ~= "UICorner" then
+        if child.Name ~= "UICorner" and child.Name ~= "UIAspectRatioConstraint" then
             child:Destroy()
         end
     end
     
-    if #STATE.profitHistory < 2 then return end
+    -- If not enough data, show placeholder
+    if #STATE.profitHistory < 2 then
+        local placeholder = Instance.new("TextLabel")
+        placeholder.Name = "Placeholder"
+        placeholder.Text = "Collecting data..."
+        placeholder.TextColor3 = Color3.fromRGB(180, 180, 180)
+        placeholder.BackgroundTransparency = 1
+        placeholder.Size = UDim2.new(1, 0, 1, 0)
+        placeholder.Font = Enum.Font.TitilliumWeb
+        placeholder.TextScaled = true
+        placeholder.Parent = graphFrame
+        return
+    end
     
     local values = {}
     local maxProfit = 0
@@ -1020,7 +1082,7 @@ function GraphSystem.DrawGraph()
     local drawWidth = graphWidth - (paddingX * 2)
     local drawHeight = graphHeight - (paddingY * 2)
     
-    -- Draw grid
+    -- Draw grid (dashed lines from Document 3)
     local horizontalGridLines = 5
     local gridColor = Color3.fromRGB(70, 70, 80)
     local gridThickness = 1
@@ -1054,7 +1116,7 @@ function GraphSystem.DrawGraph()
         points[i] = {x = x, y = y}
     end
     
-    -- Draw area fill
+    -- Draw area fill (gradient from Document 3)
     for i = 1, #points - 1 do
         local p1 = points[i]
         local p2 = points[i + 1]
@@ -1078,13 +1140,13 @@ function GraphSystem.DrawGraph()
             ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 60))
         })
         gradient.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.6),
-            NumberSequenceKeypoint.new(1, 0.95)
+            ColorSequenceKeypoint.new(0, 0.6),
+            ColorSequenceKeypoint.new(1, 0.95)
         })
         gradient.Parent = areaFill
     end
     
-    -- Draw lines
+    -- Draw lines (with glow from Document 3)
     local lineThickness = 3
     for i = 1, #points - 1 do
         local p1 = points[i]
@@ -1132,7 +1194,7 @@ function GraphSystem.DrawGraph()
         gradient.Parent = line
     end
     
-    -- Draw points
+    -- Draw points (with glow from Document 3)
     local pointSize = 8
     for i, point in ipairs(points) do
         -- Outer glow
@@ -1184,9 +1246,10 @@ function GraphSystem.DrawGraph()
     end
 end
 
--- Update graph every 10 seconds
+-- Update graph every 30 seconds
 task.spawn(function()
-    while task.wait(10) do
+    task.wait(10) -- Wait 10s before first update
+    while task.wait(30) do
         GraphSystem.UpdateHistory()
         GraphSystem.DrawGraph()
     end
@@ -1194,54 +1257,21 @@ end)
 
 print("[GRAPH] Per hour system loaded")
 
--- ═══════════════════════════════════════════════════════════
--- ATM FARM v13.0 FINAL - PART 2
--- Advanced Server Hop + Farm Logic + All Systems
--- ═══════════════════════════════════════════════════════════
-
--- Bu dosya Part 1'in devamıdır. İçindekiler:
--- 1. Advanced Server Hop (LDHC System)
--- 2. Safe Zone
--- 3. Optimization
--- 4. Camera Systems
--- 5. Noclip
--- 6. CFrame Loop
--- 7. Webhook
--- 8. Cash Aura (Dual System)
--- 9. ATM Systems
--- 10. Farm Logic
--- 11. GUI Updaters
-
--- Part 1'deki değişkenler devam ediyor...
-
--- ═══════════════════════════════════════════════════════════
--- 2. ADVANCED SERVER HOP (LDHC SYSTEM)
--- ═══════════════════════════════════════════════════════════
-
 if CONFIG.ServerHop then
     local blacklistedids = {
         163721789, 15427717, 201454243, 822999, 63794379,
         17260230, 28357488, 93101606, 8195210, 89473551,
         16917269, 85989579, 1553950697, 476537893, 155627580,
-        31163456, 7200829, 25717070, 201454243, 15427717,
-        -- ... (full list from LDHC - shortened for brevity)
+        31163456, 7200829, 25717070, 1446694201, 971662350,
+        1391475335, 79242647, 81720432, 5348287604, 94102158,
     }
     
-    local blaclistedsetting = getgenv().Configuration.ServerHopBlacklist or {}
-    for _, id in ipairs(blaclistedsetting) do
-        if not table.find(blacklistedids, id) then
-            table.insert(blacklistedids, id)
-        end
-    end
-
     local function backup()
         local success, result = pcall(function()
             local response = request({
                 Url = "http://107.175.254.57/roblox/roblox.php",
                 Method = "GET",
-                Headers = {
-                    ["Content-Type"] = "application/json"
-                }
+                Headers = {["Content-Type"] = "application/json"}
             })
             return HttpService:JSONDecode(response.Body)
         end)
@@ -1357,7 +1387,6 @@ if CONFIG.ServerHop then
     end
     LocalPlayer.CharacterAdded:Connect(onPlayerDied)
 
-    -- Error prompt rejoin
     pcall(function()
         local coregui = game:GetService("CoreGui")
         coregui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
@@ -1371,10 +1400,6 @@ if CONFIG.ServerHop then
     
     print("[SERVER HOP] Advanced system loaded")
 end
-
--- ═══════════════════════════════════════════════════════════
--- SAFE ZONE
--- ═══════════════════════════════════════════════════════════
 
 local SAFE_ZONE = {
     Position = Vector3.new(-3363.70337, 91784.7188, 11727.2256),
@@ -1416,15 +1441,16 @@ local function teleportToSafeZone()
     end)
 end
 
--- ═══════════════════════════════════════════════════════════
--- OPTIMIZATION
--- ═══════════════════════════════════════════════════════════
-
 RunService:Set3dRenderingEnabled(false)
 setfpscap(CONFIG.Fps)
 
-pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
-pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
+--pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
+--pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
+
+settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+Lighting.GlobalShadows = false
+Lighting.FogEnd = 100
+Lighting.Brightness = 0
 
 local decalsyeeted = true -- Leaving this on makes games look shitty but the fps goes up by at least 20.
 local g = game
@@ -1695,7 +1721,7 @@ function CashAuraCamera.Start()
     
     task.spawn(function()
         while STATE.cashAuraActive do
-            task.wait(0.05)  -- 3x hızlı
+            task.wait(0.05)
             
             if STATE.cashAuraPaused then
                 task.wait(0.5)
@@ -1727,7 +1753,7 @@ function CashAuraCamera.Start()
                             Camera.CameraType = Enum.CameraType.Scriptable
                             
                             repeat
-                                task.wait(0.02)  -- 7x hızlı
+                                task.wait(0.02)
                                 
                                 if STATE.cashAuraPaused then break end
                                 
@@ -1736,7 +1762,7 @@ function CashAuraCamera.Start()
                                 
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
-                                task.wait(0.05)
+                                task.wait(0.03)
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
                                 
                                 if Utils.IsValidCharacter(LocalPlayer.Character) then
@@ -1888,12 +1914,12 @@ function SmartWait.ForCashCollection()
             STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
         end
         
-        if currentCashCount == 0 and STATE.noCashChangeTime >= 0.5 then
+        if currentCashCount == 0 and STATE.noCashChangeTime >= 0.01 then
             Utils.Log("Collection complete!")
             break
         end
         
-        if STATE.noCashChangeTime >= 15 then
+        if STATE.noCashChangeTime >= 7 then
             Utils.Log("Collection timeout")
             break
         end
@@ -1973,6 +1999,7 @@ function ATM.ScanAll()
     
     return filledATMs
 end
+
 function ATM.Break(atmData)
     return pcall(function()
         Utils.Log("Breaking ATM: " .. atmData.Name)
@@ -2133,7 +2160,7 @@ LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.processedATMs = {}
     STATE.lastProcessedReset = os.time()
     
-    Utils.Log("💀 Death #" .. STATE.deathCount)
+    Utils.Log("💀 Death #" .. STATE.deathCount .. " - processedATMs reset")
     Webhook.Send("💀 Death", "Total: " .. STATE.deathCount, 15158332, true)
     
     task.wait(0.5)
@@ -2160,17 +2187,8 @@ task.spawn(function()
     end)
 end)
 
--- ═══════════════════════════════════════════════════════════
--- AUTO START
--- ═══════════════════════════════════════════════════════════
-
 task.wait(2)
 Farm.Start()
 
-print("═══════════════════════════════════════")
-print("[ATM FARM] v13.0 LOADED")
+print("LOADED")
 print("[Executor] " .. DETECTED_EXECUTOR)
-print("[Starting Cash] " .. Utils.FormatCash(STATE.startingCash))
-print("[GUI] Modern + Animated")
-print("[Features] Anti-Cheat + Server Hop + Data Persistence")
-print("═══════════════════════════════════════")
