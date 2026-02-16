@@ -1,6 +1,14 @@
+-- ═══════════════════════════════════════════════════════════
+-- ATM FARM v13.0 FINAL COMPLETE
+-- Yeni Modern GUI + LDHC Features + Dynamic Per Hour Graph
+-- TEK DOSYA - TAM ENTEGRASYON
+-- ═══════════════════════════════════════════════════════════
 
 local plrr = game.Players.LocalPlayer
 
+-- ═══════════════════════════════════════════════════════════
+-- 1. ANTI-CHEAT BYPASS (LDHC XVNP_L SYSTEM)
+-- ═══════════════════════════════════════════════════════════
 
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
@@ -96,6 +104,10 @@ end)
 
 print("[ANTI-CHEAT] XVNP_L Bypass loaded")
 
+-- ═══════════════════════════════════════════════════════════
+-- VALIDATION
+-- ═══════════════════════════════════════════════════════════
+
 local function validateSettings()
     if not getgenv()._ATMFARM then
         plrr:Kick("Invalid Configuration - Missing _ATMFARM")
@@ -108,30 +120,6 @@ local function validateSettings()
         return false
     end
 
-    local expectedDiscord = "Made by _ethz on Discord."
-    if getgenv()._ATMFARM.Discord ~= expectedDiscord then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-
-    local expectedServer = "https://discord.gg/aTb4K8Euta"
-    if getgenv()._ATMFARM.Server ~= expectedServer then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-
-    local expectedWarning = "If you paid for this script, you got scammed! This is FREE."
-    if getgenv()._ATMFARM.Warning ~= expectedWarning then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-
-    local expectedExecute = "DO NOT edit _ATMFARM or you'll be kicked. Good Boy."
-    if getgenv()._ATMFARM.Execute ~= expectedExecute then
-        plrr:Kick("Tampering Detected - Configuration Modified")
-        return false
-    end
-    
     return true
 end
 
@@ -152,6 +140,10 @@ getgenv().Configuration = getgenv().Configuration or {
 }
 
 local CONFIG = getgenv().Configuration
+
+-- ═══════════════════════════════════════════════════════════
+-- SERVICES
+-- ═══════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -177,6 +169,10 @@ end
 
 local Camera = Workspace.CurrentCamera
 
+-- ═══════════════════════════════════════════════════════════
+-- 3. DATA PERSISTENCE (LDHC SYSTEM)
+-- ═══════════════════════════════════════════════════════════
+
 local function saveUserData(userid, walletValue, profitValue, elapsedTime, timestamp, atmRobbed)
     local userFolder = "userdata/"..userid
     if not isfolder("userdata") then makefolder("userdata") end
@@ -199,6 +195,10 @@ local function loadUserData(userid)
     local wallet, profit, elapsed, robbed = string.match(data, "([^,]+),([^,]+),([^,]+),([^,]+)")
     return tonumber(wallet), tonumber(profit), tonumber(elapsed), tonumber(robbed) or 0
 end
+
+-- ═══════════════════════════════════════════════════════════
+-- YENİ MODERN GUI (DOCUMENT 3'TEN TAM ENTEGRASYON)
+-- ═══════════════════════════════════════════════════════════
 
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
@@ -769,7 +769,11 @@ G2L["5e"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Size"] = UDim2.new(0, 2046, 0, 1534);
 G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Name"] = [[Background]];
-G2L["5e"]["BackgroundTransparency"] = 0;
+G2L["5e"]["BackgroundTransparency"] = 0.06;
+
+-- ═══════════════════════════════════════════════════════════
+-- GUI ANIMATIONS & SCRIPTS
+-- ═══════════════════════════════════════════════════════════
 
 -- UIStroke rotation animation
 task.spawn(function()
@@ -938,6 +942,10 @@ function Utils.Log(message)
     end
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- EXECUTOR DETECTION
+-- ═══════════════════════════════════════════════════════════
+
 local function detectExecutor()
     if identifyexecutor then
         local success, executor = pcall(identifyexecutor)
@@ -966,6 +974,10 @@ end
 
 local DETECTED_EXECUTOR = detectExecutor()
 Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
+
+-- ═══════════════════════════════════════════════════════════
+-- STATE + DATA PERSISTENCE
+-- ═══════════════════════════════════════════════════════════
 
 local id = tostring(LocalPlayer.UserId)
 local walletValue, profitValue, savedElapsed, savedRobbed = loadUserData(id)
@@ -1016,6 +1028,10 @@ task.spawn(function()
 end)
 
 print("[DATA] Session loaded - Elapsed: " .. Utils.FormatTime(STATE.totalElapsedTime))
+
+-- ═══════════════════════════════════════════════════════════
+-- PER HOUR GRAPH SYSTEM (DYNAMIC DATA FROM DOCUMENT 3)
+-- ═══════════════════════════════════════════════════════════
 
 local GraphSystem = {}
 
@@ -1415,6 +1431,10 @@ if CONFIG.ServerHop then
     print("[SERVER HOP] Advanced system loaded")
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- SAFE ZONE
+-- ═══════════════════════════════════════════════════════════
+
 local SAFE_ZONE = {
     Position = Vector3.new(-3363.70337, 91784.7188, 11727.2256),
     Part = nil
@@ -1462,86 +1482,31 @@ end
 RunService:Set3dRenderingEnabled(false)
 setfpscap(CONFIG.Fps)
 
---pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
---pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
+pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
+pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
 
 settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 Lighting.GlobalShadows = false
 Lighting.FogEnd = 100
 Lighting.Brightness = 0
 
-local decalsyeeted = true -- Leaving this on makes games look shitty but the fps goes up by at least 20.
-local g = game
-local w = g.Workspace
-local l = g.Lighting
-local t = w.Terrain
-sethiddenproperty(l,"Technology",2)
-sethiddenproperty(t,"Decoration",false)
-t.WaterWaveSize = 0
-t.WaterWaveSpeed = 0
-t.WaterReflectance = 0
-t.WaterTransparency = 0
-l.GlobalShadows = 0
-l.FogEnd = 9e9
-l.Brightness = 0
-settings().Rendering.QualityLevel = "Level01"
-for i, v in pairs(w:GetDescendants()) do
-    if v:IsA("BasePart") and not v:IsA("MeshPart") then
-        v.Material = "Plastic"
-        v.Reflectance = 0
-    elseif (v:IsA("Decal") or v:IsA("Texture")) and decalsyeeted then
-        v.Transparency = 1
-    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-        v.Lifetime = NumberRange.new(0)
-    elseif v:IsA("Explosion") then
-        v.BlastPressure = 1
-        v.BlastRadius = 1
-    elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
-        v.Enabled = false
-    elseif v:IsA("MeshPart") and decalsyeeted then
-        v.Material = "Plastic"
-        v.Reflectance = 0
-        v.TextureID = 10385902758728957
-    elseif v:IsA("SpecialMesh") and decalsyeeted  then
-        v.TextureId=0
-    elseif v:IsA("ShirtGraphic") and decalsyeeted then
-        v.Graphic=0
-    elseif (v:IsA("Shirt") or v:IsA("Pants")) and decalsyeeted then
-        v[v.ClassName.."Template"]=0
+for _, obj in pairs(Workspace:GetDescendants()) do
+    if obj:IsA("BasePart") then
+        obj.Material = Enum.Material.SmoothPlastic
+        obj.CastShadow = false
+        obj.Reflectance = 0
+    elseif obj:IsA("Decal") or obj:IsA("Texture") then
+        obj.Transparency = 1
+    elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") then
+        obj.Enabled = false
+    elseif obj:IsA("MeshPart") then
+        obj.TextureID = ""
     end
 end
-for i = 1,#l:GetChildren() do
-    e=l:GetChildren()[i]
-    if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
-        e.Enabled = false
-    end
-end
-w.DescendantAdded:Connect(function(v)
-    wait()--prevent errors and shit
-   if v:IsA("BasePart") and not v:IsA("MeshPart") then
-        v.Material = "Plastic"
-        v.Reflectance = 0
-    elseif v:IsA("Decal") or v:IsA("Texture") and decalsyeeted then
-        v.Transparency = 1
-    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-        v.Lifetime = NumberRange.new(0)
-    elseif v:IsA("Explosion") then
-        v.BlastPressure = 1
-        v.BlastRadius = 1
-    elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
-        v.Enabled = false
-    elseif v:IsA("MeshPart") and decalsyeeted then
-        v.Material = "Plastic"
-        v.Reflectance = 0
-        v.TextureID = 10385902758728957
-    elseif v:IsA("SpecialMesh") and decalsyeeted then
-        v.TextureId=0
-    elseif v:IsA("ShirtGraphic") and decalsyeeted then
-        v.ShirtGraphic=0
-    elseif (v:IsA("Shirt") or v:IsA("Pants")) and decalsyeeted then
-        v[v.ClassName.."Template"]=0
-    end
-end)
+
+-- ═══════════════════════════════════════════════════════════
+-- CAMERA SYSTEMS
+-- ═══════════════════════════════════════════════════════════
 
 local CameraClip = {}
 
@@ -1557,6 +1522,10 @@ function CameraClip.Enable()
         Utils.Log("Camera occlusion enabled")
     end)
 end
+
+-- ═══════════════════════════════════════════════════════════
+-- NOCLIP
+-- ═══════════════════════════════════════════════════════════
 
 local Noclip = {}
 
@@ -1597,6 +1566,10 @@ function Noclip.Disable()
     Utils.Log("Noclip disabled")
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- CFRAME LOOP
+-- ═══════════════════════════════════════════════════════════
+
 local CFrameLoop = {}
 
 function CFrameLoop.Start()
@@ -1630,6 +1603,10 @@ function CFrameLoop.Stop()
     
     Utils.Log("CFrame loop stopped")
 end
+
+-- ═══════════════════════════════════════════════════════════
+-- WEBHOOK
+-- ═══════════════════════════════════════════════════════════
 
 local Webhook = {}
 
@@ -1718,6 +1695,7 @@ function Webhook.Send(title, description, color, forceUpdate)
     end)
 end
 
+-- ✅ OPTİMİZE: Webhook interval 120 saniye (daha az request)
 task.spawn(function()
     while true do
         task.wait(120)
@@ -1726,6 +1704,10 @@ task.spawn(function()
         end
     end
 end)
+
+-- ═══════════════════════════════════════════════════════════
+-- CASH AURA (DUAL SYSTEM)
+-- ═══════════════════════════════════════════════════════════
 
 local CashAuraCamera = {}
 local Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
@@ -1914,10 +1896,14 @@ function CashAura.GetNearbyCount()
     return count
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- SMART WAIT
+-- ═══════════════════════════════════════════════════════════
+
 local SmartWait = {}
 
 function SmartWait.ForCashCollection()
-    Utils.Log("Collecting cash...")
+    Utils.Log("💰 Collecting...")
     
     STATE.lastCashCount = CashAura.GetNearbyCount()
     STATE.noCashChangeTime = 0
@@ -1930,21 +1916,26 @@ function SmartWait.ForCashCollection()
         if currentCashCount ~= STATE.lastCashCount then
             STATE.lastCashCount = currentCashCount
             STATE.noCashChangeTime = 0
+            Utils.Log("   💵 Cash: " .. currentCashCount)
         else
             STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
         end
         
         if currentCashCount == 0 and STATE.noCashChangeTime >= 0.1 then
-            Utils.Log("Collection complete!")
+            Utils.Log("✅ Complete!")
             break
         end
         
         if STATE.noCashChangeTime >= 8 then
-            Utils.Log("Collection timeout")
+            Utils.Log("⏱️ Timeout")
             break
         end
     end
 end
+
+-- ═══════════════════════════════════════════════════════════
+-- ATM SYSTEMS
+-- ═══════════════════════════════════════════════════════════
 
 local ATMPositioning = {}
 
@@ -1952,14 +1943,19 @@ function ATMPositioning.GetOffset(atmPosition)
     local x = math.floor(atmPosition.X + 0.5)
     local z = math.floor(atmPosition.Z + 0.5)
     
+    Utils.Log("  ATM Position: X=" .. x .. " Z=" .. z)
+    
     if (x >= -625 and x <= -624) and (z >= -287 and z <= -286) then
+        Utils.Log("  → Left ATM detected, offsetting +3 studs RIGHT")
         return Vector3.new(3, 0, 0)
     end
     
     if (x >= -628 and x <= -627) and (z >= -287 and z <= -286) then
+        Utils.Log("  → Right ATM detected, offsetting -3 studs LEFT")
         return Vector3.new(-3, 0, 0)
     end
     
+    Utils.Log("  → Normal ATM, no offset")
     return Vector3.new(0, 0, 0)
 end
 
@@ -1995,11 +1991,14 @@ function ATM.ScanAll()
     pcall(function()
         local cashiers = Workspace:FindFirstChild("Cashiers")
         if not cashiers then
+            Utils.Log("ERROR: No Cashiers folder!")
             return
         end
         
+        Utils.Log("Scanning " .. #cashiers:GetChildren() .. " cashiers...")
+        
         for index, cashier in ipairs(cashiers:GetChildren()) do
-            -- ✅ DAHA SIKICI KONTROL: VAULT değil VE işlenmemiş VE DOLU olmalı
+            -- ✅ VAULT değil VE işlenmemiş VE DOLU olmalı
             if not ATM.IsVault(cashier) and not STATE.processedATMs[cashier.Name] then
                 local isFilled, targetPart = ATM.IsATMFilled(cashier)
                 
@@ -2013,10 +2012,14 @@ function ATM.ScanAll()
                             Cashier = cashier,
                             TargetPart = targetPart,
                         })
+                        
+                        Utils.Log("  ✓ " .. cashier.Name .. " at " .. tostring(targetPart.Position))
                     end
                 end
             end
         end
+        
+        Utils.Log("Total found: " .. #filledATMs)
     end)
     
     return filledATMs
@@ -2024,7 +2027,8 @@ end
 
 function ATM.Break(atmData)
     return pcall(function()
-        Utils.Log("Breaking ATM: " .. atmData.Name)
+        Utils.Log("═══════════════════════════════")
+        Utils.Log("Breaking: " .. atmData.Name)
         
         CashAura.Pause()
         Noclip.Enable()
@@ -2039,9 +2043,11 @@ function ATM.Break(atmData)
         Utils.EquipCombat()
         task.wait(0.3)
         
+        Utils.Log("⚡ Charge 1/2")
         MainEvent:FireServer("ChargeButton")
         task.wait(3.5)
         
+        Utils.Log("⚡ Charge 2/2")
         MainEvent:FireServer("ChargeButton")
         task.wait(3.5)
         
@@ -2050,11 +2056,17 @@ function ATM.Break(atmData)
         STATE.processedATMs[atmData.Name] = true
         STATE.atmRobbed = STATE.atmRobbed + 1
         
+        Utils.Log("✅ Complete! Total: " .. STATE.atmRobbed)
+        
         CashAura.Resume()
         
         return true
     end)
 end
+
+-- ═══════════════════════════════════════════════════════════
+-- FARM LOGIC
+-- ═══════════════════════════════════════════════════════════
 
 local Farm = {}
 
@@ -2086,23 +2098,22 @@ function Farm.Start()
             task.wait(1)
             
             local success, err = pcall(function()
-                -- processedATMs reset every 3 minutes
                 if os.time() - STATE.lastProcessedReset >= 180 then
                     STATE.processedATMs = {}
                     STATE.lastProcessedReset = os.time()
-                    Utils.Log("Reset processed ATMs")
+                    Utils.Log("🔄 Reset processed ATMs (3 min)")
                 end
                 
                 local filledATMs = ATM.ScanAll()
                 
                 if #filledATMs == 0 then
-                    Utils.Log("No ATMs found")
+                    Utils.Log("⏳ No ATMs (Robbed: " .. STATE.atmRobbed .. ")")
                     teleportToSafeZone()
                     task.wait(30)
                     return
                 end
                 
-                Utils.Log("Processing " .. #filledATMs .. " ATMs...")
+                Utils.Log("🎯 Processing " .. #filledATMs .. " ATMs...")
                 
                 for i, atmData in ipairs(filledATMs) do
                     if not STATE.isRunning then break end
@@ -2130,24 +2141,31 @@ function Farm.Start()
                     
                     if breakSuccess then
                         SmartWait.ForCashCollection()
+                    else
+                        Utils.Log("❌ Failed: " .. tostring(breakErr))
                     end
                     
                     task.wait(1)
                 end
                 
                 if STATE.isRunning then
+                    Utils.Log("🔄 Rescanning in 15s...")
                     teleportToSafeZone()
                     task.wait(15)
                 end
             end)
             
             if not success then
-                Utils.Log("ERROR: " .. tostring(err))
+                Utils.Log("❌ ERROR: " .. tostring(err))
                 task.wait(5)
             end
         end
     end)
 end
+
+-- ═══════════════════════════════════════════════════════════
+-- GUI UPDATERS
+-- ═══════════════════════════════════════════════════════════
 
 task.spawn(function()
     while task.wait(0.5) do
@@ -2168,6 +2186,10 @@ task.spawn(function()
     end
 end)
 
+-- ═══════════════════════════════════════════════════════════
+-- DEBUG MODE
+-- ═══════════════════════════════════════════════════════════
+
 if getgenv()._secretDebugVar then
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
@@ -2185,9 +2207,14 @@ if getgenv()._secretDebugVar then
     end)
 end
 
+-- ═══════════════════════════════════════════════════════════
+-- CHARACTER RESPAWN HANDLER
+-- ═══════════════════════════════════════════════════════════
+
 LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
     
+    -- ✅ YENİ: processedATMs'i SIFIRLAMA (death sonrası fresh start)
     STATE.processedATMs = {}
     STATE.lastProcessedReset = os.time()
     
@@ -2218,8 +2245,19 @@ task.spawn(function()
     end)
 end)
 
+-- ═══════════════════════════════════════════════════════════
+-- AUTO START
+-- ═══════════════════════════════════════════════════════════
+
 task.wait(2)
 Farm.Start()
 
+print("═══════════════════════════════════════")
 print("[ATM FARM] v13.0 FINAL LOADED")
 print("[Executor] " .. DETECTED_EXECUTOR)
+print("[Starting Cash] " .. Utils.FormatCash(STATE.startingCash))
+print("[GUI] Modern + Animated + Dynamic Graph")
+print("[Features] Anti-Cheat + Server Hop + Data Persistence")
+print("[processedATMs] ENABLED (3 min reset + death reset)")
+print("[Graph] Dynamic data every 30s")
+print("═══════════════════════════════════════")
