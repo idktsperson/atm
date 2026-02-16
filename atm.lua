@@ -2042,6 +2042,7 @@ function ATM.Break(atmData)
         
         Utils.Log("⚡ Charge 2/2")
         MainEvent:FireServer("ChargeButton")
+        CashAura.Resume()
         task.wait(3.5)
         
         Noclip.Disable()
@@ -2051,7 +2052,7 @@ function ATM.Break(atmData)
         
         Utils.Log("✅ Complete! Total: " .. STATE.atmRobbed)
         
-        CashAura.Resume()
+        --CashAura.Resume()
         
         return true
     end)
