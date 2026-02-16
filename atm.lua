@@ -572,7 +572,7 @@ G2L["3d"] = Instance.new("UIAspectRatioConstraint", G2L["33"]);
 G2L["3d"]["AspectRatio"] = 3.33871;
 
 G2L["3e"] = Instance.new("UIStroke", G2L["3"]);
-G2L["3e"]["Thickness"] = 5;
+G2L["3e"]["Thickness"] = 5.5;
 G2L["3e"]["Color"] = Color3.fromRGB(166, 166, 166);
 
 G2L["3f"] = Instance.new("UIGradient", G2L["3e"]);
