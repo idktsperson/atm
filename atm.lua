@@ -1,6 +1,4 @@
-
 local plrr = game.Players.LocalPlayer
-
 
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
@@ -204,7 +202,6 @@ StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
 local G2L = {};
 
--- StarterGui.AutoFarm
 G2L["1"] = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"));
 G2L["1"]["IgnoreGuiInset"] = true;
 G2L["1"]["ScreenInsets"] = Enum.ScreenInsets.DeviceSafeInsets;
@@ -212,7 +209,6 @@ G2L["1"]["Name"] = [[AutoFarm]];
 G2L["1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling;
 G2L["1"]["DisplayOrder"] = 999999999;
 
--- StarterGui.AutoFarm.MainFrame
 G2L["3"] = Instance.new("Frame", G2L["1"]);
 G2L["3"]["ZIndex"] = 2;
 G2L["3"]["BorderSizePixel"] = 0;
@@ -223,7 +219,6 @@ G2L["3"]["Position"] = UDim2.new(0.49732, 0, 0.50597, 0);
 G2L["3"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["3"]["Name"] = [[MainFrame]];
 
--- StarterGui.AutoFarm.MainFrame.Title
 G2L["5"] = Instance.new("TextLabel", G2L["3"]);
 G2L["5"]["TextWrapped"] = true;
 G2L["5"]["ZIndex"] = 10;
@@ -251,7 +246,6 @@ G2L["8"]["MaxTextSize"] = 49;
 G2L["9"] = Instance.new("UIAspectRatioConstraint", G2L["5"]);
 G2L["9"]["AspectRatio"] = 6.46321;
 
--- StarterGui.AutoFarm.MainFrame.UsernameFrame
 G2L["a"] = Instance.new("Frame", G2L["3"]);
 G2L["a"]["BorderSizePixel"] = 0;
 G2L["a"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -322,7 +316,6 @@ G2L["13"]["MaxTextSize"] = 58;
 G2L["14"] = Instance.new("UIAspectRatioConstraint", G2L["a"]);
 G2L["14"]["AspectRatio"] = 3.33871;
 
--- StarterGui.AutoFarm.MainFrame.Title2
 G2L["15"] = Instance.new("TextLabel", G2L["3"]);
 G2L["15"]["TextWrapped"] = true;
 G2L["15"]["ZIndex"] = 10;
@@ -346,7 +339,6 @@ G2L["16"]["MaxTextSize"] = 18;
 G2L["17"] = Instance.new("UIAspectRatioConstraint", G2L["15"]);
 G2L["17"]["AspectRatio"] = 20.01554;
 
--- StarterGui.AutoFarm.MainFrame.CashFrame
 G2L["18"] = Instance.new("Frame", G2L["3"]);
 G2L["18"]["BorderSizePixel"] = 0;
 G2L["18"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -417,7 +409,6 @@ G2L["21"]["MaxTextSize"] = 62;
 G2L["22"] = Instance.new("UIAspectRatioConstraint", G2L["18"]);
 G2L["22"]["AspectRatio"] = 3.33871;
 
--- StarterGui.AutoFarm.MainFrame.ElapsedFrame
 G2L["23"] = Instance.new("Frame", G2L["3"]);
 G2L["23"]["BorderSizePixel"] = 0;
 G2L["23"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -505,13 +496,11 @@ G2L["30"]["CornerRadius"] = UDim.new(1, 0);
 G2L["31"] = Instance.new("UIAspectRatioConstraint", G2L["2e"]);
 G2L["31"]["AspectRatio"] = 0.97;
 
--- StarterGui.AutoFarm.MainFrame.UIGradient
 G2L["32"] = Instance.new("UIGradient", G2L["3"]);
 G2L["32"]["Rotation"] = -44;
 G2L["32"]["Offset"] = Vector2.new(0.2, 0);
 G2L["32"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(14, 14, 14)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(18, 18, 18))};
 
--- StarterGui.AutoFarm.MainFrame.ProfitFrame
 G2L["33"] = Instance.new("Frame", G2L["3"]);
 G2L["33"]["BorderSizePixel"] = 0;
 G2L["33"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -582,7 +571,6 @@ G2L["3c"]["MaxTextSize"] = 62;
 G2L["3d"] = Instance.new("UIAspectRatioConstraint", G2L["33"]);
 G2L["3d"]["AspectRatio"] = 3.33871;
 
--- StarterGui.AutoFarm.MainFrame.UIStroke
 G2L["3e"] = Instance.new("UIStroke", G2L["3"]);
 G2L["3e"]["Thickness"] = 5;
 G2L["3e"]["Color"] = Color3.fromRGB(166, 166, 166);
@@ -591,7 +579,6 @@ G2L["3f"] = Instance.new("UIGradient", G2L["3e"]);
 G2L["3f"]["Rotation"] = -90;
 G2L["3f"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 0, 0)),ColorSequenceKeypoint.new(0.346, Color3.fromRGB(0, 0, 0)),ColorSequenceKeypoint.new(0.606, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
--- StarterGui.AutoFarm.MainFrame.PerHourFrame
 G2L["40"] = Instance.new("Frame", G2L["3"]);
 G2L["40"]["BorderSizePixel"] = 0;
 G2L["40"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -678,7 +665,6 @@ G2L["4d"]["AspectRatio"] = 2.53036;
 G2L["4e"] = Instance.new("UIAspectRatioConstraint", G2L["40"]);
 G2L["4e"]["AspectRatio"] = 1.60232;
 
--- StarterGui.AutoFarm.MainFrame.StatusFrame
 G2L["4f"] = Instance.new("Frame", G2L["3"]);
 G2L["4f"]["BorderSizePixel"] = 0;
 G2L["4f"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -741,14 +727,12 @@ G2L["57"]["AspectRatio"] = 2.80488;
 G2L["58"] = Instance.new("UITextSizeConstraint", G2L["55"]);
 G2L["58"]["MaxTextSize"] = 41;
 
--- StarterGui.AutoFarm.MainFrame.UICorner
 G2L["59"] = Instance.new("UICorner", G2L["3"]);
 G2L["59"]["CornerRadius"] = UDim.new(0, 16);
 
 G2L["5a"] = Instance.new("UIAspectRatioConstraint", G2L["3"]);
 G2L["5a"]["AspectRatio"] = 1.40127;
 
--- StarterGui.AutoFarm.MainFrame.SitationColor
 G2L["5b"] = Instance.new("Frame", G2L["3"]);
 G2L["5b"]["BorderSizePixel"] = 0;
 G2L["5b"]["BackgroundColor3"] = Color3.fromRGB(0, 222, 0);
@@ -762,7 +746,6 @@ G2L["5c"]["CornerRadius"] = UDim.new(1, 0);
 
 G2L["5d"] = Instance.new("UIAspectRatioConstraint", G2L["5b"]);
 
--- StarterGui.AutoFarm.Background
 G2L["5e"] = Instance.new("Frame", G2L["1"]);
 G2L["5e"]["BorderSizePixel"] = 0;
 G2L["5e"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
@@ -771,7 +754,6 @@ G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Name"] = [[Background]];
 G2L["5e"]["BackgroundTransparency"] = 0;
 
--- UIStroke rotation animation
 task.spawn(function()
     local UIGradient = G2L["3e"].UIGradient
     local runService = game:GetService("RunService")
@@ -781,7 +763,6 @@ task.spawn(function()
     end)
 end)
 
--- Title gradient rotation
 task.spawn(function()
     local textLabel = G2L["5"]
     local gradient = textLabel.UIGradient
@@ -815,7 +796,6 @@ task.spawn(function()
     end)
 end)
 
--- Profile picture
 task.spawn(function()
     local imageLabel = G2L["2e"]
     local userId = LocalPlayer.UserId
@@ -826,7 +806,6 @@ task.spawn(function()
     imageLabel.Image = content
 end)
 
--- Status text animation
 task.spawn(function()
     local label = G2L["55"]
     
@@ -847,7 +826,6 @@ task.spawn(function()
     end
 end)
 
--- GUI Variables
 local screenGui = G2L["1"]
 local mainFrame = G2L["3"]
 local background = G2L["5e"]
@@ -859,10 +837,6 @@ local perHourLabel = G2L["43"]
 local graphFrame = G2L["4a"]
 
 print("[GUI] Modern GUI loaded with animations")
-
--- ═══════════════════════════════════════════════════════════
--- UTILITIES
--- ═══════════════════════════════════════════════════════════
 
 local Utils = {}
 
@@ -981,7 +955,7 @@ local STATE = {
     deathCount = 0,
     startingCash = walletValue - profitValue,
     atmRobbed = savedRobbed,
-    sessionStartTime = nil, -- ✅ nil olarak başlat, Farm.Start()'ta ayarlanacak
+    sessionStartTime = nil,
     isRunning = true,
     cashAuraActive = false,
     cashAuraPaused = false,
@@ -989,6 +963,7 @@ local STATE = {
     processedATMs = {},
     noclipConnection = nil,
     cframeLoopConnection = nil,
+    antiStompConnection = nil,
     lastCashCount = 0,
     noCashChangeTime = 0,
     useCameraAura = (DETECTED_EXECUTOR == "SOLARA" or DETECTED_EXECUTOR == "XENO"),
@@ -1000,12 +975,10 @@ local STATE = {
     lastStopTime = 0,
     renderingEnabled = false,
     
-    -- Per hour tracking
     profitHistory = {},
     lastProfitUpdate = os.time(),
 }
 
--- Auto-save every 3 seconds (optimize edildi)
 task.spawn(function()
     while task.wait(3) do
         if not STATE.sessionStartTime then continue end -- Timer başlamadıysa kaydetme
@@ -1028,7 +1001,6 @@ function GraphSystem.UpdateHistory()
         time = currentTime
     })
     
-    -- Keep last 9 data points
     if #STATE.profitHistory > 9 then
         table.remove(STATE.profitHistory, 1)
     end
@@ -1036,7 +1008,7 @@ end
 
 function GraphSystem.CalculatePerHour()
     if #STATE.profitHistory < 2 then return 0 end
-    if not STATE.sessionStartTime then return 0 end -- ✅ nil check
+    if not STATE.sessionStartTime then return 0 end
     
     local totalTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
     if totalTime <= 0 then return 0 end
@@ -1048,14 +1020,12 @@ function GraphSystem.CalculatePerHour()
 end
 
 function GraphSystem.DrawGraph()
-    -- Clear previous graph
     for _, child in pairs(graphFrame:GetChildren()) do
         if child.Name ~= "UICorner" and child.Name ~= "UIAspectRatioConstraint" then
             child:Destroy()
         end
     end
     
-    -- If not enough data, show placeholder
     if #STATE.profitHistory < 2 then
         local placeholder = Instance.new("TextLabel")
         placeholder.Name = "Placeholder"
@@ -1079,7 +1049,6 @@ function GraphSystem.DrawGraph()
         end
     end
     
-    -- Normalize values (0 to 1)
     for i, v in ipairs(values) do
         values[i] = maxProfit > 0 and (v / maxProfit) or 0
     end
@@ -1091,7 +1060,6 @@ function GraphSystem.DrawGraph()
     local drawWidth = graphWidth - (paddingX * 2)
     local drawHeight = graphHeight - (paddingY * 2)
     
-    -- Draw grid (dashed lines from Document 3)
     local horizontalGridLines = 5
     local gridColor = Color3.fromRGB(70, 70, 80)
     local gridThickness = 1
@@ -1117,7 +1085,6 @@ function GraphSystem.DrawGraph()
         end
     end
     
-    -- Calculate points
     local points = {}
     for i, value in ipairs(values) do
         local x = paddingX + ((i - 1) / (#values - 1)) * drawWidth
@@ -1125,7 +1092,6 @@ function GraphSystem.DrawGraph()
         points[i] = {x = x, y = y}
     end
     
-    -- Draw area fill (gradient from Document 3)
     for i = 1, #points - 1 do
         local p1 = points[i]
         local p2 = points[i + 1]
@@ -1155,7 +1121,6 @@ function GraphSystem.DrawGraph()
         gradient.Parent = areaFill
     end
     
-    -- Draw lines (with glow from Document 3)
     local lineThickness = 3
     for i = 1, #points - 1 do
         local p1 = points[i]
@@ -1169,7 +1134,6 @@ function GraphSystem.DrawGraph()
         local dy = p2.y - p1.y
         local angle = math.atan2(dy, dx) * (180 / math.pi)
         
-        -- Glow line
         local glowLine = Instance.new("Frame")
         glowLine.Name = "GlowLine" .. i
         glowLine.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1182,7 +1146,6 @@ function GraphSystem.DrawGraph()
         glowLine.ZIndex = 0
         glowLine.Parent = graphFrame
         
-        -- Main line
         local line = Instance.new("Frame")
         line.Name = "Line" .. i
         line.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1203,10 +1166,8 @@ function GraphSystem.DrawGraph()
         gradient.Parent = line
     end
     
-    -- Draw points (with glow from Document 3)
     local pointSize = 8
     for i, point in ipairs(points) do
-        -- Outer glow
         local outerGlow = Instance.new("Frame")
         outerGlow.Name = "OuterGlow" .. i
         outerGlow.Size = UDim2.new(0, pointSize * 2.5, 0, pointSize * 2.5)
@@ -1222,7 +1183,6 @@ function GraphSystem.DrawGraph()
         outerCorner.CornerRadius = UDim.new(1, 0)
         outerCorner.Parent = outerGlow
         
-        -- Main dot
         local dot = Instance.new("Frame")
         dot.Name = "Dot" .. i
         dot.Size = UDim2.new(0, pointSize, 0, pointSize)
@@ -1233,7 +1193,6 @@ function GraphSystem.DrawGraph()
         dot.ZIndex = 2
         dot.Parent = graphFrame
         
-        -- Inner dot
         local innerDot = Instance.new("Frame")
         innerDot.Name = "InnerDot"
         innerDot.Size = UDim2.new(0.4, 0, 0.4, 0)
@@ -1255,20 +1214,13 @@ function GraphSystem.DrawGraph()
     end
 end
 
--- Update graph every 30 seconds
 task.spawn(function()
-    task.wait(10) -- Wait 10s before first update
+    task.wait(10)
     while task.wait(30) do
         GraphSystem.UpdateHistory()
         GraphSystem.DrawGraph()
     end
 end)
-
-print("[GRAPH] Per hour system loaded")
-
--- ═══════════════════════════════════════════════════════════
--- 2. ADVANCED SERVER HOP (LDHC SYSTEM)
--- ═══════════════════════════════════════════════════════════
 
 if CONFIG.ServerHop then
     local blacklistedids = {
@@ -1389,7 +1341,6 @@ if CONFIG.ServerHop then
         end
     end)
 
-    -- Death counter
     local deaths = 0
     local function onPlayerDied()
         deaths = deaths + 1
@@ -1400,7 +1351,6 @@ if CONFIG.ServerHop then
     end
     LocalPlayer.CharacterAdded:Connect(onPlayerDied)
 
-    -- Error prompt rejoin
     pcall(function()
         local coregui = game:GetService("CoreGui")
         coregui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
@@ -1454,10 +1404,6 @@ local function teleportToSafeZone()
         end
     end)
 end
-
--- ═══════════════════════════════════════════════════════════
--- OPTIMIZATION
--- ═══════════════════════════════════════════════════════════
 
 RunService:Set3dRenderingEnabled(false)
 setfpscap(CONFIG.Fps)
@@ -1595,6 +1541,47 @@ function Noclip.Disable()
     end)
     
     Utils.Log("Noclip disabled")
+end
+
+local AntiStomp = {}
+
+local function checkStomp()
+    pcall(function()
+        if not STATE.isRunning then return end
+        if not LocalPlayer.Character then return end
+        
+        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+        local bodyEffects = LocalPlayer.Character:FindFirstChild("BodyEffects")
+        local koValue = bodyEffects and bodyEffects:FindFirstChild("K.O")
+        
+        if humanoid and koValue and koValue.Value == true then
+            Utils.Log("⚠️ K.O detected - forcing respawn")
+            humanoid.Health = 0
+            return
+        end
+        
+        if humanoid and humanoid.Health <= 1 then
+            Utils.Log("⚠️ Low health detected - forcing respawn")
+            humanoid.Health = 0
+            return
+        end
+    end)
+end
+
+function AntiStomp.Start()
+    if STATE.antiStompConnection then return end
+    
+    STATE.antiStompConnection = RunService.RenderStepped:Connect(checkStomp)
+    Utils.Log("Anti-Stomp enabled")
+end
+
+function AntiStomp.Stop()
+    if STATE.antiStompConnection then
+        STATE.antiStompConnection:Disconnect()
+        STATE.antiStompConnection = nil
+    end
+    
+    Utils.Log("Anti-Stomp disabled")
 end
 
 local CFrameLoop = {}
@@ -1739,7 +1726,7 @@ function CashAuraCamera.Start()
     
     task.spawn(function()
         while STATE.cashAuraActive do
-            task.wait(0.1) -- 0.05'ten 0.1'e çıkarıldı (daha az işlem)
+            task.wait(0.1)
             
             if STATE.cashAuraPaused then
                 task.wait(0.5)
@@ -1770,19 +1757,17 @@ function CashAuraCamera.Start()
                             
                             Camera.CameraType = Enum.CameraType.Scriptable
                             
-                            -- ✅ OPTİMİZE: Kamerayı döndürmeden SABİT pozisyondan bak
                             local fixedOffset = Vector3.new(0, 2, 0)
                             Camera.CFrame = CFrame.lookAt(drop.Position + fixedOffset, drop.Position)
                             
                             repeat
-                                task.wait(0.05)
+                                task.wait(0.03)
                                 
                                 if STATE.cashAuraPaused then break end
                                 
-                                -- ✅ Kamera hareketi KALDIRILDI - direkt click
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
-                                task.wait(0.05)
+                                task.wait(0.03)
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
                                 
                                 if Utils.IsValidCharacter(LocalPlayer.Character) then
@@ -1917,7 +1902,7 @@ end
 local SmartWait = {}
 
 function SmartWait.ForCashCollection()
-    Utils.Log("Collecting cash...")
+    Utils.Log("💰 Collecting...")
     
     STATE.lastCashCount = CashAura.GetNearbyCount()
     STATE.noCashChangeTime = 0
@@ -1930,17 +1915,18 @@ function SmartWait.ForCashCollection()
         if currentCashCount ~= STATE.lastCashCount then
             STATE.lastCashCount = currentCashCount
             STATE.noCashChangeTime = 0
+            Utils.Log("   💵 Cash: " .. currentCashCount)
         else
             STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
         end
         
         if currentCashCount == 0 and STATE.noCashChangeTime >= 0.1 then
-            Utils.Log("Collection complete!")
+            Utils.Log("✅ Complete!")
             break
         end
         
         if STATE.noCashChangeTime >= 8 then
-            Utils.Log("Collection timeout")
+            Utils.Log("⏱️ Timeout")
             break
         end
     end
@@ -1952,14 +1938,19 @@ function ATMPositioning.GetOffset(atmPosition)
     local x = math.floor(atmPosition.X + 0.5)
     local z = math.floor(atmPosition.Z + 0.5)
     
+    Utils.Log("  ATM Position: X=" .. x .. " Z=" .. z)
+    
     if (x >= -625 and x <= -624) and (z >= -287 and z <= -286) then
+        Utils.Log("  → Left ATM detected, offsetting +3 studs RIGHT")
         return Vector3.new(3, 0, 0)
     end
     
     if (x >= -628 and x <= -627) and (z >= -287 and z <= -286) then
+        Utils.Log("  → Right ATM detected, offsetting -3 studs LEFT")
         return Vector3.new(-3, 0, 0)
     end
     
+    Utils.Log("  → Normal ATM, no offset")
     return Vector3.new(0, 0, 0)
 end
 
@@ -1995,15 +1986,16 @@ function ATM.ScanAll()
     pcall(function()
         local cashiers = Workspace:FindFirstChild("Cashiers")
         if not cashiers then
+            Utils.Log("ERROR: No Cashiers folder!")
             return
         end
         
+        Utils.Log("Scanning " .. #cashiers:GetChildren() .. " cashiers...")
+        
         for index, cashier in ipairs(cashiers:GetChildren()) do
-            -- ✅ DAHA SIKICI KONTROL: VAULT değil VE işlenmemiş VE DOLU olmalı
             if not ATM.IsVault(cashier) and not STATE.processedATMs[cashier.Name] then
                 local isFilled, targetPart = ATM.IsATMFilled(cashier)
                 
-                -- ✅ Cashier health kontrolü de ekle
                 if isFilled and targetPart and cashier:FindFirstChild("Humanoid") then
                     if cashier.Humanoid.Health > 0 then
                         table.insert(filledATMs, {
@@ -2013,10 +2005,14 @@ function ATM.ScanAll()
                             Cashier = cashier,
                             TargetPart = targetPart,
                         })
+                        
+                        Utils.Log("  ✓ " .. cashier.Name .. " at " .. tostring(targetPart.Position))
                     end
                 end
             end
         end
+        
+        Utils.Log("Total found: " .. #filledATMs)
     end)
     
     return filledATMs
@@ -2024,7 +2020,8 @@ end
 
 function ATM.Break(atmData)
     return pcall(function()
-        Utils.Log("Breaking ATM: " .. atmData.Name)
+        Utils.Log("═══════════════════════════════")
+        Utils.Log("Breaking: " .. atmData.Name)
         
         CashAura.Pause()
         Noclip.Enable()
@@ -2039,9 +2036,11 @@ function ATM.Break(atmData)
         Utils.EquipCombat()
         task.wait(0.3)
         
+        Utils.Log("⚡ Charge 1/2")
         MainEvent:FireServer("ChargeButton")
         task.wait(3.5)
         
+        Utils.Log("⚡ Charge 2/2")
         MainEvent:FireServer("ChargeButton")
         task.wait(3.5)
         
@@ -2049,6 +2048,8 @@ function ATM.Break(atmData)
         
         STATE.processedATMs[atmData.Name] = true
         STATE.atmRobbed = STATE.atmRobbed + 1
+        
+        Utils.Log("✅ Complete! Total: " .. STATE.atmRobbed)
         
         CashAura.Resume()
         
@@ -2065,13 +2066,13 @@ function Farm.Start()
     Utils.Log("Starting Cash: " .. Utils.FormatCash(STATE.startingCash))
     Utils.Log("═══════════════════════════════════════")
     
-    -- ✅ Timer'ı ŞİMDİ başlat (herşey yüklendiğinde)
     STATE.sessionStartTime = os.time()
     
     CameraClip.Enable()
     createSafeZone()
     Noclip.Enable()
     CFrameLoop.Start()
+    AntiStomp.Start()
     
     Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
     
@@ -2086,30 +2087,28 @@ function Farm.Start()
             task.wait(1)
             
             local success, err = pcall(function()
-                -- processedATMs reset every 3 minutes
                 if os.time() - STATE.lastProcessedReset >= 180 then
                     STATE.processedATMs = {}
                     STATE.lastProcessedReset = os.time()
-                    Utils.Log("Reset processed ATMs")
+                    Utils.Log("🔄 Reset processed ATMs (3 min)")
                 end
                 
                 local filledATMs = ATM.ScanAll()
                 
                 if #filledATMs == 0 then
-                    Utils.Log("No ATMs found")
+                    Utils.Log("⏳ No ATMs (Robbed: " .. STATE.atmRobbed .. ")")
                     teleportToSafeZone()
                     task.wait(30)
                     return
                 end
                 
-                Utils.Log("Processing " .. #filledATMs .. " ATMs...")
+                Utils.Log("🎯 Processing " .. #filledATMs .. " ATMs...")
                 
                 for i, atmData in ipairs(filledATMs) do
                     if not STATE.isRunning then break end
                     
                     STATE.currentATMIndex = i
                     
-                    -- ✅ YENİ: ATM'ye gitmeden önce tekrar kontrol et
                     local stillFilled, _ = ATM.IsATMFilled(atmData.Cashier)
                     if not stillFilled then
                         Utils.Log("ATM already empty, skipping: " .. atmData.Name)
@@ -2117,7 +2116,6 @@ function Farm.Start()
                         continue
                     end
                     
-                    -- ✅ YENİ: Health kontrolü
                     if atmData.Cashier:FindFirstChild("Humanoid") then
                         if atmData.Cashier.Humanoid.Health <= 0 then
                             Utils.Log("ATM already broken, skipping: " .. atmData.Name)
@@ -2130,19 +2128,22 @@ function Farm.Start()
                     
                     if breakSuccess then
                         SmartWait.ForCashCollection()
+                    else
+                        Utils.Log("❌ Failed: " .. tostring(breakErr))
                     end
                     
                     task.wait(1)
                 end
                 
                 if STATE.isRunning then
+                    Utils.Log("🔄 Rescanning in 15s...")
                     teleportToSafeZone()
                     task.wait(15)
                 end
             end)
             
             if not success then
-                Utils.Log("ERROR: " .. tostring(err))
+                Utils.Log("❌ ERROR: " .. tostring(err))
                 task.wait(5)
             end
         end
@@ -2152,7 +2153,6 @@ end
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
-            -- ✅ sessionStartTime nil ise güncelleme yapma
             if not STATE.sessionStartTime then return end
             
             local currentCash = Utils.GetCurrentCash()
@@ -2184,6 +2184,7 @@ if getgenv()._secretDebugVar then
         end
     end)
 end
+
 
 LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
@@ -2221,5 +2222,5 @@ end)
 task.wait(2)
 Farm.Start()
 
-print("[ATM FARM] v13.0 FINAL LOADED")
+print("ATM FARM LOADED")
 print("[Executor] " .. DETECTED_EXECUTOR)
