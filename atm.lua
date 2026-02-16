@@ -1729,7 +1729,7 @@ function CashAuraCamera.Start()
             task.wait(0.1)
             
             if STATE.cashAuraPaused then
-                task.wait(0.5)
+                task.wait(0.3)
                 continue
             end
             
@@ -1761,13 +1761,13 @@ function CashAuraCamera.Start()
                             Camera.CFrame = CFrame.lookAt(drop.Position + fixedOffset, drop.Position)
                             
                             repeat
-                                task.wait(0.03)
+                                task.wait(0.02)
                                 
                                 if STATE.cashAuraPaused then break end
                                 
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
-                                task.wait(0.03)
+                                task.wait(0.02)
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
                                 
                                 if Utils.IsValidCharacter(LocalPlayer.Character) then
