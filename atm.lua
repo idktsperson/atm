@@ -1726,10 +1726,10 @@ function CashAuraCamera.Start()
     
     task.spawn(function()
         while STATE.cashAuraActive do
-            task.wait(0.1)
+            task.wait(0.05)  -- 3x hızlı
             
             if STATE.cashAuraPaused then
-                task.wait(0.3)
+                task.wait(0.5)
                 continue
             end
             
@@ -1757,13 +1757,13 @@ function CashAuraCamera.Start()
                             
                             Camera.CameraType = Enum.CameraType.Scriptable
                             
-                            local fixedOffset = Vector3.new(0, 2, 0)
-                            Camera.CFrame = CFrame.lookAt(drop.Position + fixedOffset, drop.Position)
-                            
                             repeat
-                                task.wait(0.02)
+                                task.wait(0.02)  -- 7x hızlı
                                 
                                 if STATE.cashAuraPaused then break end
+                                
+                                local offset = Vector3.new(math.random(-30, 30) / 100, 2, math.random(-30, 30) / 100)
+                                Camera.CFrame = CFrame.lookAt(drop.Position + offset, drop.Position)
                                 
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
