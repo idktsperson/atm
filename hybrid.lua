@@ -1,14 +1,4 @@
--- ═══════════════════════════════════════════════════════════
--- ATM FARM v13.0 FINAL COMPLETE
--- Yeni Modern GUI + LDHC Features + Dynamic Per Hour Graph
--- TEK DOSYA - TAM ENTEGRASYON
--- ═══════════════════════════════════════════════════════════
-
 local plrr = game.Players.LocalPlayer
-
--- ═══════════════════════════════════════════════════════════
--- 1. ANTI-CHEAT BYPASS (LDHC XVNP_L SYSTEM)
--- ═══════════════════════════════════════════════════════════
 
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
@@ -104,10 +94,6 @@ end)
 
 print("[ANTI-CHEAT] XVNP_L Bypass loaded")
 
--- ═══════════════════════════════════════════════════════════
--- VALIDATION
--- ═══════════════════════════════════════════════════════════
-
 local function validateSettings()
     if not getgenv()._ATMFARM then
         plrr:Kick("Invalid Configuration - Missing _ATMFARM")
@@ -120,6 +106,30 @@ local function validateSettings()
         return false
     end
 
+    local expectedDiscord = "Made by _ethz on Discord."
+    if getgenv()._ATMFARM.Discord ~= expectedDiscord then
+        plrr:Kick("Tampering Detected - Configuration Modified")
+        return false
+    end
+
+    local expectedServer = "https://discord.gg/aTb4K8Euta"
+    if getgenv()._ATMFARM.Server ~= expectedServer then
+        plrr:Kick("Tampering Detected - Configuration Modified")
+        return false
+    end
+
+    local expectedWarning = "If you paid for this script, you got scammed! This is FREE."
+    if getgenv()._ATMFARM.Warning ~= expectedWarning then
+        plrr:Kick("Tampering Detected - Configuration Modified")
+        return false
+    end
+
+    local expectedExecute = "DO NOT edit _ATMFARM or you'll be kicked. Good Boy."
+    if getgenv()._ATMFARM.Execute ~= expectedExecute then
+        plrr:Kick("Tampering Detected - Configuration Modified")
+        return false
+    end
+    
     return true
 end
 
@@ -140,10 +150,6 @@ getgenv().Configuration = getgenv().Configuration or {
 }
 
 local CONFIG = getgenv().Configuration
-
--- ═══════════════════════════════════════════════════════════
--- SERVICES
--- ═══════════════════════════════════════════════════════════
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -169,10 +175,6 @@ end
 
 local Camera = Workspace.CurrentCamera
 
--- ═══════════════════════════════════════════════════════════
--- 3. DATA PERSISTENCE (LDHC SYSTEM)
--- ═══════════════════════════════════════════════════════════
-
 local function saveUserData(userid, walletValue, profitValue, elapsedTime, timestamp, atmRobbed)
     local userFolder = "userdata/"..userid
     if not isfolder("userdata") then makefolder("userdata") end
@@ -196,15 +198,10 @@ local function loadUserData(userid)
     return tonumber(wallet), tonumber(profit), tonumber(elapsed), tonumber(robbed) or 0
 end
 
--- ═══════════════════════════════════════════════════════════
--- YENİ MODERN GUI (DOCUMENT 3'TEN TAM ENTEGRASYON)
--- ═══════════════════════════════════════════════════════════
-
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
 local G2L = {};
 
--- StarterGui.AutoFarm
 G2L["1"] = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"));
 G2L["1"]["IgnoreGuiInset"] = true;
 G2L["1"]["ScreenInsets"] = Enum.ScreenInsets.DeviceSafeInsets;
@@ -212,7 +209,6 @@ G2L["1"]["Name"] = [[AutoFarm]];
 G2L["1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling;
 G2L["1"]["DisplayOrder"] = 999999999;
 
--- StarterGui.AutoFarm.MainFrame
 G2L["3"] = Instance.new("Frame", G2L["1"]);
 G2L["3"]["ZIndex"] = 2;
 G2L["3"]["BorderSizePixel"] = 0;
@@ -223,7 +219,6 @@ G2L["3"]["Position"] = UDim2.new(0.49732, 0, 0.50597, 0);
 G2L["3"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["3"]["Name"] = [[MainFrame]];
 
--- StarterGui.AutoFarm.MainFrame.Title
 G2L["5"] = Instance.new("TextLabel", G2L["3"]);
 G2L["5"]["TextWrapped"] = true;
 G2L["5"]["ZIndex"] = 10;
@@ -251,7 +246,6 @@ G2L["8"]["MaxTextSize"] = 49;
 G2L["9"] = Instance.new("UIAspectRatioConstraint", G2L["5"]);
 G2L["9"]["AspectRatio"] = 6.46321;
 
--- StarterGui.AutoFarm.MainFrame.UsernameFrame
 G2L["a"] = Instance.new("Frame", G2L["3"]);
 G2L["a"]["BorderSizePixel"] = 0;
 G2L["a"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -322,7 +316,6 @@ G2L["13"]["MaxTextSize"] = 58;
 G2L["14"] = Instance.new("UIAspectRatioConstraint", G2L["a"]);
 G2L["14"]["AspectRatio"] = 3.33871;
 
--- StarterGui.AutoFarm.MainFrame.Title2
 G2L["15"] = Instance.new("TextLabel", G2L["3"]);
 G2L["15"]["TextWrapped"] = true;
 G2L["15"]["ZIndex"] = 10;
@@ -346,7 +339,6 @@ G2L["16"]["MaxTextSize"] = 18;
 G2L["17"] = Instance.new("UIAspectRatioConstraint", G2L["15"]);
 G2L["17"]["AspectRatio"] = 20.01554;
 
--- StarterGui.AutoFarm.MainFrame.CashFrame
 G2L["18"] = Instance.new("Frame", G2L["3"]);
 G2L["18"]["BorderSizePixel"] = 0;
 G2L["18"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -417,7 +409,6 @@ G2L["21"]["MaxTextSize"] = 62;
 G2L["22"] = Instance.new("UIAspectRatioConstraint", G2L["18"]);
 G2L["22"]["AspectRatio"] = 3.33871;
 
--- StarterGui.AutoFarm.MainFrame.ElapsedFrame
 G2L["23"] = Instance.new("Frame", G2L["3"]);
 G2L["23"]["BorderSizePixel"] = 0;
 G2L["23"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -505,13 +496,11 @@ G2L["30"]["CornerRadius"] = UDim.new(1, 0);
 G2L["31"] = Instance.new("UIAspectRatioConstraint", G2L["2e"]);
 G2L["31"]["AspectRatio"] = 0.97;
 
--- StarterGui.AutoFarm.MainFrame.UIGradient
 G2L["32"] = Instance.new("UIGradient", G2L["3"]);
 G2L["32"]["Rotation"] = -44;
 G2L["32"]["Offset"] = Vector2.new(0.2, 0);
 G2L["32"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(14, 14, 14)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(18, 18, 18))};
 
--- StarterGui.AutoFarm.MainFrame.ProfitFrame
 G2L["33"] = Instance.new("Frame", G2L["3"]);
 G2L["33"]["BorderSizePixel"] = 0;
 G2L["33"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -582,7 +571,6 @@ G2L["3c"]["MaxTextSize"] = 62;
 G2L["3d"] = Instance.new("UIAspectRatioConstraint", G2L["33"]);
 G2L["3d"]["AspectRatio"] = 3.33871;
 
--- StarterGui.AutoFarm.MainFrame.UIStroke
 G2L["3e"] = Instance.new("UIStroke", G2L["3"]);
 G2L["3e"]["Thickness"] = 5;
 G2L["3e"]["Color"] = Color3.fromRGB(166, 166, 166);
@@ -591,7 +579,6 @@ G2L["3f"] = Instance.new("UIGradient", G2L["3e"]);
 G2L["3f"]["Rotation"] = -90;
 G2L["3f"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(0, 0, 0)),ColorSequenceKeypoint.new(0.346, Color3.fromRGB(0, 0, 0)),ColorSequenceKeypoint.new(0.606, Color3.fromRGB(0, 103, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(0, 255, 0))};
 
--- StarterGui.AutoFarm.MainFrame.PerHourFrame
 G2L["40"] = Instance.new("Frame", G2L["3"]);
 G2L["40"]["BorderSizePixel"] = 0;
 G2L["40"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -678,7 +665,6 @@ G2L["4d"]["AspectRatio"] = 2.53036;
 G2L["4e"] = Instance.new("UIAspectRatioConstraint", G2L["40"]);
 G2L["4e"]["AspectRatio"] = 1.60232;
 
--- StarterGui.AutoFarm.MainFrame.StatusFrame
 G2L["4f"] = Instance.new("Frame", G2L["3"]);
 G2L["4f"]["BorderSizePixel"] = 0;
 G2L["4f"]["BackgroundColor3"] = Color3.fromRGB(31, 31, 31);
@@ -741,14 +727,12 @@ G2L["57"]["AspectRatio"] = 2.80488;
 G2L["58"] = Instance.new("UITextSizeConstraint", G2L["55"]);
 G2L["58"]["MaxTextSize"] = 41;
 
--- StarterGui.AutoFarm.MainFrame.UICorner
 G2L["59"] = Instance.new("UICorner", G2L["3"]);
 G2L["59"]["CornerRadius"] = UDim.new(0, 16);
 
 G2L["5a"] = Instance.new("UIAspectRatioConstraint", G2L["3"]);
 G2L["5a"]["AspectRatio"] = 1.40127;
 
--- StarterGui.AutoFarm.MainFrame.SitationColor
 G2L["5b"] = Instance.new("Frame", G2L["3"]);
 G2L["5b"]["BorderSizePixel"] = 0;
 G2L["5b"]["BackgroundColor3"] = Color3.fromRGB(0, 222, 0);
@@ -762,20 +746,14 @@ G2L["5c"]["CornerRadius"] = UDim.new(1, 0);
 
 G2L["5d"] = Instance.new("UIAspectRatioConstraint", G2L["5b"]);
 
--- StarterGui.AutoFarm.Background
 G2L["5e"] = Instance.new("Frame", G2L["1"]);
 G2L["5e"]["BorderSizePixel"] = 0;
 G2L["5e"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Size"] = UDim2.new(0, 2046, 0, 1534);
 G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Name"] = [[Background]];
-G2L["5e"]["BackgroundTransparency"] = 0.06;
+G2L["5e"]["BackgroundTransparency"] = 0;
 
--- ═══════════════════════════════════════════════════════════
--- GUI ANIMATIONS & SCRIPTS
--- ═══════════════════════════════════════════════════════════
-
--- UIStroke rotation animation
 task.spawn(function()
     local UIGradient = G2L["3e"].UIGradient
     local runService = game:GetService("RunService")
@@ -785,7 +763,6 @@ task.spawn(function()
     end)
 end)
 
--- Title gradient rotation
 task.spawn(function()
     local textLabel = G2L["5"]
     local gradient = textLabel.UIGradient
@@ -819,7 +796,6 @@ task.spawn(function()
     end)
 end)
 
--- Profile picture
 task.spawn(function()
     local imageLabel = G2L["2e"]
     local userId = LocalPlayer.UserId
@@ -830,7 +806,6 @@ task.spawn(function()
     imageLabel.Image = content
 end)
 
--- Status text animation
 task.spawn(function()
     local label = G2L["55"]
     
@@ -851,7 +826,6 @@ task.spawn(function()
     end
 end)
 
--- GUI Variables
 local screenGui = G2L["1"]
 local mainFrame = G2L["3"]
 local background = G2L["5e"]
@@ -863,10 +837,6 @@ local perHourLabel = G2L["43"]
 local graphFrame = G2L["4a"]
 
 print("[GUI] Modern GUI loaded with animations")
-
--- ═══════════════════════════════════════════════════════════
--- UTILITIES
--- ═══════════════════════════════════════════════════════════
 
 local Utils = {}
 
@@ -942,10 +912,6 @@ function Utils.Log(message)
     end
 end
 
--- ═══════════════════════════════════════════════════════════
--- EXECUTOR DETECTION
--- ═══════════════════════════════════════════════════════════
-
 local function detectExecutor()
     if identifyexecutor then
         local success, executor = pcall(identifyexecutor)
@@ -975,10 +941,6 @@ end
 local DETECTED_EXECUTOR = detectExecutor()
 Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
 
--- ═══════════════════════════════════════════════════════════
--- STATE + DATA PERSISTENCE
--- ═══════════════════════════════════════════════════════════
-
 local id = tostring(LocalPlayer.UserId)
 local walletValue, profitValue, savedElapsed, savedRobbed = loadUserData(id)
 
@@ -993,7 +955,7 @@ local STATE = {
     deathCount = 0,
     startingCash = walletValue - profitValue,
     atmRobbed = savedRobbed,
-    sessionStartTime = nil, -- ✅ nil olarak başlat, Farm.Start()'ta ayarlanacak
+    sessionStartTime = nil,
     isRunning = true,
     cashAuraActive = false,
     cashAuraPaused = false,
@@ -1012,12 +974,10 @@ local STATE = {
     lastStopTime = 0,
     renderingEnabled = false,
     
-    -- Per hour tracking
     profitHistory = {},
     lastProfitUpdate = os.time(),
 }
 
--- Auto-save every 3 seconds (optimize edildi)
 task.spawn(function()
     while task.wait(3) do
         if not STATE.sessionStartTime then continue end -- Timer başlamadıysa kaydetme
@@ -1028,10 +988,6 @@ task.spawn(function()
 end)
 
 print("[DATA] Session loaded - Elapsed: " .. Utils.FormatTime(STATE.totalElapsedTime))
-
--- ═══════════════════════════════════════════════════════════
--- PER HOUR GRAPH SYSTEM (DYNAMIC DATA FROM DOCUMENT 3)
--- ═══════════════════════════════════════════════════════════
 
 local GraphSystem = {}
 
@@ -1044,7 +1000,6 @@ function GraphSystem.UpdateHistory()
         time = currentTime
     })
     
-    -- Keep last 9 data points
     if #STATE.profitHistory > 9 then
         table.remove(STATE.profitHistory, 1)
     end
@@ -1052,7 +1007,7 @@ end
 
 function GraphSystem.CalculatePerHour()
     if #STATE.profitHistory < 2 then return 0 end
-    if not STATE.sessionStartTime then return 0 end -- ✅ nil check
+    if not STATE.sessionStartTime then return 0 end
     
     local totalTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
     if totalTime <= 0 then return 0 end
@@ -1064,14 +1019,12 @@ function GraphSystem.CalculatePerHour()
 end
 
 function GraphSystem.DrawGraph()
-    -- Clear previous graph
     for _, child in pairs(graphFrame:GetChildren()) do
         if child.Name ~= "UICorner" and child.Name ~= "UIAspectRatioConstraint" then
             child:Destroy()
         end
     end
     
-    -- If not enough data, show placeholder
     if #STATE.profitHistory < 2 then
         local placeholder = Instance.new("TextLabel")
         placeholder.Name = "Placeholder"
@@ -1095,7 +1048,6 @@ function GraphSystem.DrawGraph()
         end
     end
     
-    -- Normalize values (0 to 1)
     for i, v in ipairs(values) do
         values[i] = maxProfit > 0 and (v / maxProfit) or 0
     end
@@ -1107,7 +1059,6 @@ function GraphSystem.DrawGraph()
     local drawWidth = graphWidth - (paddingX * 2)
     local drawHeight = graphHeight - (paddingY * 2)
     
-    -- Draw grid (dashed lines from Document 3)
     local horizontalGridLines = 5
     local gridColor = Color3.fromRGB(70, 70, 80)
     local gridThickness = 1
@@ -1133,7 +1084,6 @@ function GraphSystem.DrawGraph()
         end
     end
     
-    -- Calculate points
     local points = {}
     for i, value in ipairs(values) do
         local x = paddingX + ((i - 1) / (#values - 1)) * drawWidth
@@ -1141,7 +1091,6 @@ function GraphSystem.DrawGraph()
         points[i] = {x = x, y = y}
     end
     
-    -- Draw area fill (gradient from Document 3)
     for i = 1, #points - 1 do
         local p1 = points[i]
         local p2 = points[i + 1]
@@ -1171,7 +1120,6 @@ function GraphSystem.DrawGraph()
         gradient.Parent = areaFill
     end
     
-    -- Draw lines (with glow from Document 3)
     local lineThickness = 3
     for i = 1, #points - 1 do
         local p1 = points[i]
@@ -1185,7 +1133,6 @@ function GraphSystem.DrawGraph()
         local dy = p2.y - p1.y
         local angle = math.atan2(dy, dx) * (180 / math.pi)
         
-        -- Glow line
         local glowLine = Instance.new("Frame")
         glowLine.Name = "GlowLine" .. i
         glowLine.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1198,7 +1145,6 @@ function GraphSystem.DrawGraph()
         glowLine.ZIndex = 0
         glowLine.Parent = graphFrame
         
-        -- Main line
         local line = Instance.new("Frame")
         line.Name = "Line" .. i
         line.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1219,10 +1165,8 @@ function GraphSystem.DrawGraph()
         gradient.Parent = line
     end
     
-    -- Draw points (with glow from Document 3)
     local pointSize = 8
     for i, point in ipairs(points) do
-        -- Outer glow
         local outerGlow = Instance.new("Frame")
         outerGlow.Name = "OuterGlow" .. i
         outerGlow.Size = UDim2.new(0, pointSize * 2.5, 0, pointSize * 2.5)
@@ -1238,7 +1182,6 @@ function GraphSystem.DrawGraph()
         outerCorner.CornerRadius = UDim.new(1, 0)
         outerCorner.Parent = outerGlow
         
-        -- Main dot
         local dot = Instance.new("Frame")
         dot.Name = "Dot" .. i
         dot.Size = UDim2.new(0, pointSize, 0, pointSize)
@@ -1249,7 +1192,6 @@ function GraphSystem.DrawGraph()
         dot.ZIndex = 2
         dot.Parent = graphFrame
         
-        -- Inner dot
         local innerDot = Instance.new("Frame")
         innerDot.Name = "InnerDot"
         innerDot.Size = UDim2.new(0.4, 0, 0.4, 0)
@@ -1271,20 +1213,13 @@ function GraphSystem.DrawGraph()
     end
 end
 
--- Update graph every 30 seconds
 task.spawn(function()
-    task.wait(10) -- Wait 10s before first update
+    task.wait(10)
     while task.wait(30) do
         GraphSystem.UpdateHistory()
         GraphSystem.DrawGraph()
     end
 end)
-
-print("[GRAPH] Per hour system loaded")
-
--- ═══════════════════════════════════════════════════════════
--- 2. ADVANCED SERVER HOP (LDHC SYSTEM)
--- ═══════════════════════════════════════════════════════════
 
 if CONFIG.ServerHop then
     local blacklistedids = {
@@ -1405,7 +1340,6 @@ if CONFIG.ServerHop then
         end
     end)
 
-    -- Death counter
     local deaths = 0
     local function onPlayerDied()
         deaths = deaths + 1
@@ -1416,7 +1350,6 @@ if CONFIG.ServerHop then
     end
     LocalPlayer.CharacterAdded:Connect(onPlayerDied)
 
-    -- Error prompt rejoin
     pcall(function()
         local coregui = game:GetService("CoreGui")
         coregui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
@@ -1430,10 +1363,6 @@ if CONFIG.ServerHop then
     
     print("[SERVER HOP] Advanced system loaded")
 end
-
--- ═══════════════════════════════════════════════════════════
--- SAFE ZONE
--- ═══════════════════════════════════════════════════════════
 
 local SAFE_ZONE = {
     Position = Vector3.new(-3363.70337, 91784.7188, 11727.2256),
@@ -1475,38 +1404,89 @@ local function teleportToSafeZone()
     end)
 end
 
--- ═══════════════════════════════════════════════════════════
--- OPTIMIZATION
--- ═══════════════════════════════════════════════════════════
-
 RunService:Set3dRenderingEnabled(false)
 setfpscap(CONFIG.Fps)
 
-pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
-pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
+--pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
+--pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
 
 settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 Lighting.GlobalShadows = false
 Lighting.FogEnd = 100
 Lighting.Brightness = 0
 
-for _, obj in pairs(Workspace:GetDescendants()) do
-    if obj:IsA("BasePart") then
-        obj.Material = Enum.Material.SmoothPlastic
-        obj.CastShadow = false
-        obj.Reflectance = 0
-    elseif obj:IsA("Decal") or obj:IsA("Texture") then
-        obj.Transparency = 1
-    elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") then
-        obj.Enabled = false
-    elseif obj:IsA("MeshPart") then
-        obj.TextureID = ""
+local decalsyeeted = true -- Leaving this on makes games look shitty but the fps goes up by at least 20.
+local g = game
+local w = g.Workspace
+local l = g.Lighting
+local t = w.Terrain
+sethiddenproperty(l,"Technology",2)
+sethiddenproperty(t,"Decoration",false)
+t.WaterWaveSize = 0
+t.WaterWaveSpeed = 0
+t.WaterReflectance = 0
+t.WaterTransparency = 0
+l.GlobalShadows = 0
+l.FogEnd = 9e9
+l.Brightness = 0
+settings().Rendering.QualityLevel = "Level01"
+for i, v in pairs(w:GetDescendants()) do
+    if v:IsA("BasePart") and not v:IsA("MeshPart") then
+        v.Material = "Plastic"
+        v.Reflectance = 0
+    elseif (v:IsA("Decal") or v:IsA("Texture")) and decalsyeeted then
+        v.Transparency = 1
+    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+        v.Lifetime = NumberRange.new(0)
+    elseif v:IsA("Explosion") then
+        v.BlastPressure = 1
+        v.BlastRadius = 1
+    elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+        v.Enabled = false
+    elseif v:IsA("MeshPart") and decalsyeeted then
+        v.Material = "Plastic"
+        v.Reflectance = 0
+        v.TextureID = 10385902758728957
+    elseif v:IsA("SpecialMesh") and decalsyeeted  then
+        v.TextureId=0
+    elseif v:IsA("ShirtGraphic") and decalsyeeted then
+        v.Graphic=0
+    elseif (v:IsA("Shirt") or v:IsA("Pants")) and decalsyeeted then
+        v[v.ClassName.."Template"]=0
     end
 end
-
--- ═══════════════════════════════════════════════════════════
--- CAMERA SYSTEMS
--- ═══════════════════════════════════════════════════════════
+for i = 1,#l:GetChildren() do
+    e=l:GetChildren()[i]
+    if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
+        e.Enabled = false
+    end
+end
+w.DescendantAdded:Connect(function(v)
+    wait()--prevent errors and shit
+   if v:IsA("BasePart") and not v:IsA("MeshPart") then
+        v.Material = "Plastic"
+        v.Reflectance = 0
+    elseif v:IsA("Decal") or v:IsA("Texture") and decalsyeeted then
+        v.Transparency = 1
+    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+        v.Lifetime = NumberRange.new(0)
+    elseif v:IsA("Explosion") then
+        v.BlastPressure = 1
+        v.BlastRadius = 1
+    elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+        v.Enabled = false
+    elseif v:IsA("MeshPart") and decalsyeeted then
+        v.Material = "Plastic"
+        v.Reflectance = 0
+        v.TextureID = 10385902758728957
+    elseif v:IsA("SpecialMesh") and decalsyeeted then
+        v.TextureId=0
+    elseif v:IsA("ShirtGraphic") and decalsyeeted then
+        v.ShirtGraphic=0
+    elseif (v:IsA("Shirt") or v:IsA("Pants")) and decalsyeeted then
+        v[v.ClassName.."Template"]=0
+    end
+end)
 
 local CameraClip = {}
 
@@ -1522,10 +1502,6 @@ function CameraClip.Enable()
         Utils.Log("Camera occlusion enabled")
     end)
 end
-
--- ═══════════════════════════════════════════════════════════
--- NOCLIP
--- ═══════════════════════════════════════════════════════════
 
 local Noclip = {}
 
@@ -1566,10 +1542,6 @@ function Noclip.Disable()
     Utils.Log("Noclip disabled")
 end
 
--- ═══════════════════════════════════════════════════════════
--- CFRAME LOOP
--- ═══════════════════════════════════════════════════════════
-
 local CFrameLoop = {}
 
 function CFrameLoop.Start()
@@ -1603,10 +1575,6 @@ function CFrameLoop.Stop()
     
     Utils.Log("CFrame loop stopped")
 end
-
--- ═══════════════════════════════════════════════════════════
--- WEBHOOK
--- ═══════════════════════════════════════════════════════════
 
 local Webhook = {}
 
@@ -1695,7 +1663,6 @@ function Webhook.Send(title, description, color, forceUpdate)
     end)
 end
 
--- ✅ OPTİMİZE: Webhook interval 120 saniye (daha az request)
 task.spawn(function()
     while true do
         task.wait(120)
@@ -1704,10 +1671,6 @@ task.spawn(function()
         end
     end
 end)
-
--- ═══════════════════════════════════════════════════════════
--- CASH AURA (DUAL SYSTEM)
--- ═══════════════════════════════════════════════════════════
 
 local CashAuraCamera = {}
 local Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
@@ -1721,7 +1684,7 @@ function CashAuraCamera.Start()
     
     task.spawn(function()
         while STATE.cashAuraActive do
-            task.wait(0.1) -- 0.05'ten 0.1'e çıkarıldı (daha az işlem)
+            task.wait(0.1)
             
             if STATE.cashAuraPaused then
                 task.wait(0.5)
@@ -1752,19 +1715,17 @@ function CashAuraCamera.Start()
                             
                             Camera.CameraType = Enum.CameraType.Scriptable
                             
-                            -- ✅ OPTİMİZE: Kamerayı döndürmeden SABİT pozisyondan bak
                             local fixedOffset = Vector3.new(0, 2, 0)
                             Camera.CFrame = CFrame.lookAt(drop.Position + fixedOffset, drop.Position)
                             
                             repeat
-                                task.wait(0.05)
+                                task.wait(0.03)
                                 
                                 if STATE.cashAuraPaused then break end
                                 
-                                -- ✅ Kamera hareketi KALDIRILDI - direkt click
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
-                                task.wait(0.05)
+                                task.wait(0.03)
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
                                 
                                 if Utils.IsValidCharacter(LocalPlayer.Character) then
@@ -1896,10 +1857,6 @@ function CashAura.GetNearbyCount()
     return count
 end
 
--- ═══════════════════════════════════════════════════════════
--- SMART WAIT
--- ═══════════════════════════════════════════════════════════
-
 local SmartWait = {}
 
 function SmartWait.ForCashCollection()
@@ -1932,10 +1889,6 @@ function SmartWait.ForCashCollection()
         end
     end
 end
-
--- ═══════════════════════════════════════════════════════════
--- ATM SYSTEMS
--- ═══════════════════════════════════════════════════════════
 
 local ATMPositioning = {}
 
@@ -1998,11 +1951,9 @@ function ATM.ScanAll()
         Utils.Log("Scanning " .. #cashiers:GetChildren() .. " cashiers...")
         
         for index, cashier in ipairs(cashiers:GetChildren()) do
-            -- ✅ VAULT değil VE işlenmemiş VE DOLU olmalı
             if not ATM.IsVault(cashier) and not STATE.processedATMs[cashier.Name] then
                 local isFilled, targetPart = ATM.IsATMFilled(cashier)
                 
-                -- ✅ Cashier health kontrolü de ekle
                 if isFilled and targetPart and cashier:FindFirstChild("Humanoid") then
                     if cashier.Humanoid.Health > 0 then
                         table.insert(filledATMs, {
@@ -2064,10 +2015,6 @@ function ATM.Break(atmData)
     end)
 end
 
--- ═══════════════════════════════════════════════════════════
--- FARM LOGIC
--- ═══════════════════════════════════════════════════════════
-
 local Farm = {}
 
 function Farm.Start()
@@ -2077,7 +2024,6 @@ function Farm.Start()
     Utils.Log("Starting Cash: " .. Utils.FormatCash(STATE.startingCash))
     Utils.Log("═══════════════════════════════════════")
     
-    -- ✅ Timer'ı ŞİMDİ başlat (herşey yüklendiğinde)
     STATE.sessionStartTime = os.time()
     
     CameraClip.Enable()
@@ -2120,7 +2066,6 @@ function Farm.Start()
                     
                     STATE.currentATMIndex = i
                     
-                    -- ✅ YENİ: ATM'ye gitmeden önce tekrar kontrol et
                     local stillFilled, _ = ATM.IsATMFilled(atmData.Cashier)
                     if not stillFilled then
                         Utils.Log("ATM already empty, skipping: " .. atmData.Name)
@@ -2128,7 +2073,6 @@ function Farm.Start()
                         continue
                     end
                     
-                    -- ✅ YENİ: Health kontrolü
                     if atmData.Cashier:FindFirstChild("Humanoid") then
                         if atmData.Cashier.Humanoid.Health <= 0 then
                             Utils.Log("ATM already broken, skipping: " .. atmData.Name)
@@ -2163,14 +2107,9 @@ function Farm.Start()
     end)
 end
 
--- ═══════════════════════════════════════════════════════════
--- GUI UPDATERS
--- ═══════════════════════════════════════════════════════════
-
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
-            -- ✅ sessionStartTime nil ise güncelleme yapma
             if not STATE.sessionStartTime then return end
             
             local currentCash = Utils.GetCurrentCash()
@@ -2185,10 +2124,6 @@ task.spawn(function()
         end)
     end
 end)
-
--- ═══════════════════════════════════════════════════════════
--- DEBUG MODE
--- ═══════════════════════════════════════════════════════════
 
 if getgenv()._secretDebugVar then
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -2207,14 +2142,10 @@ if getgenv()._secretDebugVar then
     end)
 end
 
--- ═══════════════════════════════════════════════════════════
--- CHARACTER RESPAWN HANDLER
--- ═══════════════════════════════════════════════════════════
 
 LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
     
-    -- ✅ YENİ: processedATMs'i SIFIRLAMA (death sonrası fresh start)
     STATE.processedATMs = {}
     STATE.lastProcessedReset = os.time()
     
@@ -2245,19 +2176,8 @@ task.spawn(function()
     end)
 end)
 
--- ═══════════════════════════════════════════════════════════
--- AUTO START
--- ═══════════════════════════════════════════════════════════
-
 task.wait(2)
 Farm.Start()
 
-print("═══════════════════════════════════════")
-print("[ATM FARM] v13.0 FINAL LOADED")
+print("ATM FARM LOADED")
 print("[Executor] " .. DETECTED_EXECUTOR)
-print("[Starting Cash] " .. Utils.FormatCash(STATE.startingCash))
-print("[GUI] Modern + Animated + Dynamic Graph")
-print("[Features] Anti-Cheat + Server Hop + Data Persistence")
-print("[processedATMs] ENABLED (3 min reset + death reset)")
-print("[Graph] Dynamic data every 30s")
-print("═══════════════════════════════════════")
