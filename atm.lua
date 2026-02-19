@@ -139,6 +139,7 @@ if not validateSettings() then
 end
 
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
+getgenv()._secretGuiVar = getgenv()._secretGuiVar or false
 
 getgenv().Configuration = getgenv().Configuration or {
     ["ServerHop"] = {
@@ -1407,7 +1408,15 @@ local function teleportToSafeZone()
 end
 
 if getgenv()._secretGuiVar == true then
-    G2L["1"].Enabled = false
+    screenGui.Enabled = false
+    mainFrame.Enabled = false
+    background.Enabled = false
+    walletLabel.Enabled = false
+    elapsedLabel.Enabled = false
+    profitLabel.Enabled = false
+    statusLabel.Enabled = false
+    perHourLabel.Enabled = false
+    graphFrame.Enabled = false
     StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
 else
     RunService:Set3dRenderingEnabled(false)
