@@ -140,13 +140,19 @@ end
 
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 
+-- ✅ YENİ CONFIGURATION YAPISI
 getgenv().Configuration = getgenv().Configuration or {
-    ['ServerHop'] = false,
-    ['ServerHopNum'] = 5,
-    ['WebhookEnabled'] = false,
-    ['Webhook'] = "",
-    ['WebhookInterval'] = 2,
-    ['Fps'] = 15,
+    ["ServerHop"] = {
+        ["Enabled"] = false,
+        ["Death"] = 5,
+        ["NoATM"] = true,
+    },
+    ["Webhook"] = {
+        ["Enabled"] = false,
+        ["Url"] = "",
+        ["Interval"] = 10,
+    },
+    ["Fps"] = 15,
 }
 
 local CONFIG = getgenv().Configuration
@@ -200,6 +206,7 @@ end
 
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
+-- GUI SYSTEM (Full GUI code from document)
 local G2L = {};
 
 G2L["1"] = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"));
@@ -479,7 +486,6 @@ G2L["2c"]["MaxTextSize"] = 30;
 G2L["2d"] = Instance.new("UIAspectRatioConstraint", G2L["23"]);
 G2L["2d"]["AspectRatio"] = 3.33871;
 
--- StarterGui.AutoFarm.MainFrame.ImageLabel
 G2L["2e"] = Instance.new("ImageLabel", G2L["3"]);
 G2L["2e"]["BorderSizePixel"] = 0;
 G2L["2e"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
@@ -572,7 +578,7 @@ G2L["3d"] = Instance.new("UIAspectRatioConstraint", G2L["33"]);
 G2L["3d"]["AspectRatio"] = 3.33871;
 
 G2L["3e"] = Instance.new("UIStroke", G2L["3"]);
-G2L["3e"]["Thickness"] = 5;
+G2L["3e"]["Thickness"] = 5.5;
 G2L["3e"]["Color"] = Color3.fromRGB(166, 166, 166);
 
 G2L["3f"] = Instance.new("UIGradient", G2L["3e"]);
@@ -646,7 +652,6 @@ G2L["48"]["AspectRatio"] = 1.79518;
 G2L["49"] = Instance.new("UITextSizeConstraint", G2L["47"]);
 G2L["49"]["MaxTextSize"] = 59;
 
--- StarterGui.AutoFarm.MainFrame.PerHourFrame.PerHourGraphFrame
 G2L["4a"] = Instance.new("Frame", G2L["40"]);
 G2L["4a"]["ZIndex"] = 15;
 G2L["4a"]["BorderSizePixel"] = 0;
@@ -754,10 +759,10 @@ G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Name"] = [[Background]];
 G2L["5e"]["BackgroundTransparency"] = 0;
 
+-- GUI Animations
 task.spawn(function()
     local UIGradient = G2L["3e"].UIGradient
     local runService = game:GetService("RunService")
-    
     runService.RenderStepped:Connect(function()
         UIGradient.Rotation += 2
     end)
@@ -787,7 +792,6 @@ task.spawn(function()
     }
     
     gradient.Offset = Vector2.new(0, 0)
-    
     local rotation = 0
     
     RunService.RenderStepped:Connect(function(deltaTime)
@@ -808,7 +812,6 @@ end)
 
 task.spawn(function()
     local label = G2L["55"]
-    
     local states = {
         "Running...",
         "Running..",
@@ -838,6 +841,7 @@ local graphFrame = G2L["4a"]
 
 print("[GUI] Modern GUI loaded with animations")
 
+-- Utils System
 local Utils = {}
 
 function Utils.IsValidCharacter(character)
@@ -950,6 +954,7 @@ profitValue = profitValue or 0
 savedElapsed = savedElapsed or 0
 savedRobbed = savedRobbed or 0
 
+-- ✅ STATE (processedATMs KALDIRILDI)
 local STATE = {
     currentATMIndex = 1,
     deathCount = 0,
@@ -960,13 +965,12 @@ local STATE = {
     cashAuraActive = false,
     cashAuraPaused = false,
     lastWebhookSent = 0,
-    processedATMs = {},
     noclipConnection = nil,
     cframeLoopConnection = nil,
+    antiStompConnection = nil,
     lastCashCount = 0,
     noCashChangeTime = 0,
     useCameraAura = (DETECTED_EXECUTOR == "SOLARA" or DETECTED_EXECUTOR == "XENO"),
-    lastProcessedReset = os.time(),
     currentTargetCFrame = nil,
     
     farmLoopRunning = true,
@@ -976,11 +980,13 @@ local STATE = {
     
     profitHistory = {},
     lastProfitUpdate = os.time(),
+    
+    noATMStartTime = nil,
 }
 
 task.spawn(function()
     while task.wait(3) do
-        if not STATE.sessionStartTime then continue end -- Timer başlamadıysa kaydetme
+        if not STATE.sessionStartTime then continue end
         
         local elapsedTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
         saveUserData(id, Utils.GetCurrentCash(), Utils.GetCurrentCash() - STATE.startingCash, elapsedTime, tick(), STATE.atmRobbed)
@@ -989,6 +995,7 @@ end)
 
 print("[DATA] Session loaded - Elapsed: " .. Utils.FormatTime(STATE.totalElapsedTime))
 
+-- Graph System
 local GraphSystem = {}
 
 function GraphSystem.UpdateHistory()
@@ -1221,7 +1228,8 @@ task.spawn(function()
     end
 end)
 
-if CONFIG.ServerHop then
+-- ✅ SERVER HOP SYSTEM (YENİ CONFIG YAPISI)
+if CONFIG.ServerHop.Enabled then
     local blacklistedids = {
         163721789, 15427717, 201454243, 822999, 63794379,
         17260230, 28357488, 93101606, 8195210, 89473551,
@@ -1340,10 +1348,11 @@ if CONFIG.ServerHop then
         end
     end)
 
+    -- ✅ YENİ: Death-based Server Hop
     local deaths = 0
     local function onPlayerDied()
         deaths = deaths + 1
-        if deaths == CONFIG.ServerHopNum and CONFIG.ServerHopNum ~= 0 then
+        if deaths == CONFIG.ServerHop.Death and CONFIG.ServerHop.Death ~= 0 then
             task.wait(1)
             teleportToAnotherPlace()
         end
@@ -1364,6 +1373,7 @@ if CONFIG.ServerHop then
     print("[SERVER HOP] Advanced system loaded")
 end
 
+-- Safe Zone
 local SAFE_ZONE = {
     Position = Vector3.new(-3363.70337, 91784.7188, 11727.2256),
     Part = nil
@@ -1404,18 +1414,18 @@ local function teleportToSafeZone()
     end)
 end
 
+-- Performance Optimization
 RunService:Set3dRenderingEnabled(false)
 setfpscap(CONFIG.Fps)
 
---pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
---pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
+pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
 
 settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
 Lighting.GlobalShadows = false
 Lighting.FogEnd = 100
 Lighting.Brightness = 0
 
-local decalsyeeted = true -- Leaving this on makes games look shitty but the fps goes up by at least 20.
+local decalsyeeted = true
 local g = game
 local w = g.Workspace
 local l = g.Lighting
@@ -1430,6 +1440,7 @@ l.GlobalShadows = 0
 l.FogEnd = 9e9
 l.Brightness = 0
 settings().Rendering.QualityLevel = "Level01"
+
 for i, v in pairs(w:GetDescendants()) do
     if v:IsA("BasePart") and not v:IsA("MeshPart") then
         v.Material = "Plastic"
@@ -1455,14 +1466,16 @@ for i, v in pairs(w:GetDescendants()) do
         v[v.ClassName.."Template"]=0
     end
 end
+
 for i = 1,#l:GetChildren() do
     e=l:GetChildren()[i]
     if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
         e.Enabled = false
     end
 end
+
 w.DescendantAdded:Connect(function(v)
-    wait()--prevent errors and shit
+    wait()
    if v:IsA("BasePart") and not v:IsA("MeshPart") then
         v.Material = "Plastic"
         v.Reflectance = 0
@@ -1488,6 +1501,7 @@ w.DescendantAdded:Connect(function(v)
     end
 end)
 
+-- Core Systems
 local CameraClip = {}
 
 function CameraClip.Enable()
@@ -1542,6 +1556,47 @@ function Noclip.Disable()
     Utils.Log("Noclip disabled")
 end
 
+local AntiStomp = {}
+
+local function checkStomp()
+    pcall(function()
+        if not STATE.isRunning then return end
+        if not LocalPlayer.Character then return end
+        
+        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+        local bodyEffects = LocalPlayer.Character:FindFirstChild("BodyEffects")
+        local koValue = bodyEffects and bodyEffects:FindFirstChild("K.O")
+        
+        if humanoid and koValue and koValue.Value == true then
+            Utils.Log("⚠️ K.O detected - forcing respawn")
+            humanoid.Health = 0
+            return
+        end
+        
+        if humanoid and humanoid.Health <= 1 then
+            Utils.Log("⚠️ Low health detected - forcing respawn")
+            humanoid.Health = 0
+            return
+        end
+    end)
+end
+
+function AntiStomp.Start()
+    if STATE.antiStompConnection then return end
+    
+    STATE.antiStompConnection = RunService.RenderStepped:Connect(checkStomp)
+    Utils.Log("Anti-Stomp enabled")
+end
+
+function AntiStomp.Stop()
+    if STATE.antiStompConnection then
+        STATE.antiStompConnection:Disconnect()
+        STATE.antiStompConnection = nil
+    end
+    
+    Utils.Log("Anti-Stomp disabled")
+end
+
 local CFrameLoop = {}
 
 function CFrameLoop.Start()
@@ -1576,15 +1631,18 @@ function CFrameLoop.Stop()
     Utils.Log("CFrame loop stopped")
 end
 
+-- ✅ WEBHOOK SYSTEM (YENİ CONFIG YAPISI)
 local Webhook = {}
 
 function Webhook.Send(title, description, color, forceUpdate)
-    if CONFIG.WebhookEnabled and (CONFIG.Webhook == "" or CONFIG.Webhook == nil) then
-        Utils.Log("⚠️ Webhook enabled but URL is empty!")
+    -- ✅ YENİ: Enabled kontrolü
+    if not CONFIG.Webhook.Enabled then
         return
     end
     
-    if not CONFIG.WebhookEnabled then
+    -- ✅ YENİ: Url boş kontrolü
+    if CONFIG.Webhook.Url == "" or CONFIG.Webhook.Url == nil then
+        Utils.Log("⚠️ Webhook enabled but URL is empty!")
         return
     end
     
@@ -1593,7 +1651,7 @@ function Webhook.Send(title, description, color, forceUpdate)
             if not forceUpdate then
                 local currentTime = os.time()
                 local timeSinceLastWebhook = currentTime - STATE.lastWebhookSent
-                local intervalSeconds = CONFIG.WebhookInterval * 60
+                local intervalSeconds = CONFIG.Webhook.Interval * 60
                 
                 if timeSinceLastWebhook < intervalSeconds then
                     return
@@ -1648,7 +1706,7 @@ function Webhook.Send(title, description, color, forceUpdate)
             }
             
             request({
-                Url = CONFIG.Webhook,
+                Url = CONFIG.Webhook.Url,
                 Method = "POST",
                 Headers = {["Content-Type"] = "application/json"},
                 Body = HttpService:JSONEncode(embed)
@@ -1666,12 +1724,13 @@ end
 task.spawn(function()
     while true do
         task.wait(120)
-        if CONFIG.WebhookEnabled then
+        if CONFIG.Webhook.Enabled then
             Webhook.Send("📊 Farm Update", "Periodic status update", 3447003, false)
         end
     end
 end)
 
+-- Cash Aura System
 local CashAuraCamera = {}
 local Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
 local isProcessingCamera = false
@@ -1684,7 +1743,7 @@ function CashAuraCamera.Start()
     
     task.spawn(function()
         while STATE.cashAuraActive do
-            task.wait(0.1)
+            task.wait(0.05)
             
             if STATE.cashAuraPaused then
                 task.wait(0.5)
@@ -1715,17 +1774,17 @@ function CashAuraCamera.Start()
                             
                             Camera.CameraType = Enum.CameraType.Scriptable
                             
-                            local fixedOffset = Vector3.new(0, 2, 0)
-                            Camera.CFrame = CFrame.lookAt(drop.Position + fixedOffset, drop.Position)
-                            
                             repeat
-                                task.wait(0.03)
+                                task.wait(0.02)
                                 
                                 if STATE.cashAuraPaused then break end
                                 
+                                local offset = Vector3.new(math.random(-30, 30) / 100, 2, math.random(-30, 30) / 100)
+                                Camera.CFrame = CFrame.lookAt(drop.Position + offset, drop.Position)
+                                
                                 local viewportCenter = Camera.ViewportSize / 2
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
-                                task.wait(0.03)
+                                task.wait(0.02)
                                 VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
                                 
                                 if Utils.IsValidCharacter(LocalPlayer.Character) then
@@ -1857,39 +1916,64 @@ function CashAura.GetNearbyCount()
     return count
 end
 
+-- ✅ SMARTWAIT SYSTEM (XENO/SOLARA vs OTHER)
 local SmartWait = {}
 
 function SmartWait.ForCashCollection()
     Utils.Log("💰 Collecting...")
     
-    STATE.lastCashCount = CashAura.GetNearbyCount()
-    STATE.noCashChangeTime = 0
-    
-    while STATE.isRunning do
-        task.wait(0.5)
-        
-        local currentCashCount = CashAura.GetNearbyCount()
-        
-        if currentCashCount ~= STATE.lastCashCount then
-            STATE.lastCashCount = currentCashCount
-            STATE.noCashChangeTime = 0
+    -- ✅ XENO/SOLARA: Para yoksa anında çık
+    if STATE.useCameraAura then
+        while STATE.isRunning do
+            task.wait(0.1)
+            
+            local currentCashCount = CashAura.GetNearbyCount()
+            
+            if currentCashCount == 0 then
+                Utils.Log("✅ Complete! (Camera mode)")
+                break
+            end
+            
             Utils.Log("   💵 Cash: " .. currentCashCount)
-        else
-            STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
         end
+    else
+        -- ✅ OTHER: Son 2 para kaldığında charge başlasın
+        STATE.lastCashCount = CashAura.GetNearbyCount()
+        STATE.noCashChangeTime = 0
         
-        if currentCashCount == 0 and STATE.noCashChangeTime >= 0.1 then
-            Utils.Log("✅ Complete!")
-            break
-        end
-        
-        if STATE.noCashChangeTime >= 8 then
-            Utils.Log("⏱️ Timeout")
-            break
+        while STATE.isRunning do
+            task.wait(0.5)
+            
+            local currentCashCount = CashAura.GetNearbyCount()
+            
+            -- Son 2 para kaldı mı?
+            if currentCashCount <= 2 and currentCashCount > 0 then
+                Utils.Log("   💵 Last 2 cash detected - ready for next ATM")
+                break
+            end
+            
+            if currentCashCount ~= STATE.lastCashCount then
+                STATE.lastCashCount = currentCashCount
+                STATE.noCashChangeTime = 0
+                Utils.Log("   💵 Cash: " .. currentCashCount)
+            else
+                STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
+            end
+            
+            if currentCashCount == 0 and STATE.noCashChangeTime >= 0.1 then
+                Utils.Log("✅ Complete!")
+                break
+            end
+            
+            if STATE.noCashChangeTime >= 8 then
+                Utils.Log("⏱️ Timeout")
+                break
+            end
         end
     end
 end
 
+-- ATM Positioning
 local ATMPositioning = {}
 
 function ATMPositioning.GetOffset(atmPosition)
@@ -1912,6 +1996,7 @@ function ATMPositioning.GetOffset(atmPosition)
     return Vector3.new(0, 0, 0)
 end
 
+-- ✅ ATM SYSTEM (PROCESSEDATMS KALDIRILDI)
 local ATM = {}
 
 function ATM.IsVault(cashier)
@@ -1951,7 +2036,8 @@ function ATM.ScanAll()
         Utils.Log("Scanning " .. #cashiers:GetChildren() .. " cashiers...")
         
         for index, cashier in ipairs(cashiers:GetChildren()) do
-            if not ATM.IsVault(cashier) and not STATE.processedATMs[cashier.Name] then
+            -- ✅ YENİ: processedATMs kontrolü yok, sadece dolu/boş kontrol
+            if not ATM.IsVault(cashier) then
                 local isFilled, targetPart = ATM.IsATMFilled(cashier)
                 
                 if isFilled and targetPart and cashier:FindFirstChild("Humanoid") then
@@ -2000,21 +2086,20 @@ function ATM.Break(atmData)
         
         Utils.Log("⚡ Charge 2/2")
         MainEvent:FireServer("ChargeButton")
+        CashAura.Resume()
         task.wait(3.5)
         
         Noclip.Disable()
         
-        STATE.processedATMs[atmData.Name] = true
         STATE.atmRobbed = STATE.atmRobbed + 1
         
         Utils.Log("✅ Complete! Total: " .. STATE.atmRobbed)
-        
-        CashAura.Resume()
         
         return true
     end)
 end
 
+-- ✅ FARM SYSTEM (YENİ MANTIK: HER LOOP DOLU/BOŞ KONTROL)
 local Farm = {}
 
 function Farm.Start()
@@ -2030,6 +2115,7 @@ function Farm.Start()
     createSafeZone()
     Noclip.Enable()
     CFrameLoop.Start()
+    AntiStomp.Start()
     
     Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
     
@@ -2044,43 +2130,80 @@ function Farm.Start()
             task.wait(1)
             
             local success, err = pcall(function()
-                if os.time() - STATE.lastProcessedReset >= 180 then
-                    STATE.processedATMs = {}
-                    STATE.lastProcessedReset = os.time()
-                    Utils.Log("🔄 Reset processed ATMs (3 min)")
-                end
-                
                 local filledATMs = ATM.ScanAll()
                 
+                -- ✅ YENİ: ATM yoksa NoATM kontrolü
                 if #filledATMs == 0 then
                     Utils.Log("⏳ No ATMs (Robbed: " .. STATE.atmRobbed .. ")")
+                    
+                    -- İlk kez boş bulundu
+                    if not STATE.noATMStartTime then
+                        STATE.noATMStartTime = os.time()
+                    end
+                    
+                    -- ✅ NoATM Server Hop kontrolü
+                    if CONFIG.ServerHop.Enabled and CONFIG.ServerHop.NoATM then
+                        local noATMDuration = os.time() - STATE.noATMStartTime
+                        
+                        -- 30 saniye boyunca ATM yoksa hop
+                        if noATMDuration >= 30 then
+                            Utils.Log("🔄 No ATMs for 30s - Server Hopping...")
+                            
+                            -- Server hop fonksiyonu çağır (zaten tanımlı)
+                            if CONFIG.ServerHop.Enabled then
+                                local success, servers = pcall(function()
+                                    local response = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+                                    local openServers = {}
+
+                                    for _, v in ipairs(response.data) do
+                                        if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                                            table.insert(openServers, v)
+                                        end
+                                    end
+
+                                    return openServers
+                                end)
+
+                                if success and servers and #servers > 0 then
+                                    local selected = servers[math.random(1, #servers)]
+                                    TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+                                end
+                            end
+                        end
+                    end
+                    
                     teleportToSafeZone()
                     task.wait(30)
                     return
+                else
+                    -- ATM bulundu, timer sıfırla
+                    STATE.noATMStartTime = nil
                 end
                 
                 Utils.Log("🎯 Processing " .. #filledATMs .. " ATMs...")
                 
+                -- ✅ YENİ: Her ATM için ANINDA double-check (delay yok)
                 for i, atmData in ipairs(filledATMs) do
                     if not STATE.isRunning then break end
                     
                     STATE.currentATMIndex = i
                     
+                    -- Double-check: Hâlâ dolu mu?
                     local stillFilled, _ = ATM.IsATMFilled(atmData.Cashier)
                     if not stillFilled then
                         Utils.Log("ATM already empty, skipping: " .. atmData.Name)
-                        STATE.processedATMs[atmData.Name] = true
                         continue
                     end
                     
+                    -- Double-check: Health > 0 mı?
                     if atmData.Cashier:FindFirstChild("Humanoid") then
                         if atmData.Cashier.Humanoid.Health <= 0 then
                             Utils.Log("ATM already broken, skipping: " .. atmData.Name)
-                            STATE.processedATMs[atmData.Name] = true
                             continue
                         end
                     end
                     
+                    -- Kır
                     local breakSuccess, breakErr = ATM.Break(atmData)
                     
                     if breakSuccess then
@@ -2089,7 +2212,7 @@ function Farm.Start()
                         Utils.Log("❌ Failed: " .. tostring(breakErr))
                     end
                     
-                    task.wait(1)
+                    -- ✅ DELAY KALDIRILDI (anında sonraki ATM'ye geç)
                 end
                 
                 if STATE.isRunning then
@@ -2107,6 +2230,7 @@ function Farm.Start()
     end)
 end
 
+-- GUI Update Loop
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
@@ -2125,6 +2249,7 @@ task.spawn(function()
     end
 end)
 
+-- Debug Hotkeys
 if getgenv()._secretDebugVar then
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
@@ -2142,14 +2267,11 @@ if getgenv()._secretDebugVar then
     end)
 end
 
-
+-- CharacterAdded Handler
 LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
     
-    STATE.processedATMs = {}
-    STATE.lastProcessedReset = os.time()
-    
-    Utils.Log("💀 Death #" .. STATE.deathCount .. " - processedATMs reset")
+    Utils.Log("💀 Death #" .. STATE.deathCount)
     Webhook.Send("💀 Death", "Total: " .. STATE.deathCount, 15158332, true)
     
     task.wait(0.5)
@@ -2164,6 +2286,10 @@ LocalPlayer.CharacterAdded:Connect(function(character)
     
     Noclip.Enable()
     CFrameLoop.Start()
+    
+    if STATE.isRunning then
+        AntiStomp.Start()
+    end
 end)
 
 -- Anti-idle
@@ -2176,8 +2302,9 @@ task.spawn(function()
     end)
 end)
 
+-- Start Farm
 task.wait(2)
 Farm.Start()
 
-print("ATM FARM LOADED")
+print("ATM FARM V14 LOADED")
 print("[Executor] " .. DETECTED_EXECUTOR)
