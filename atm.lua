@@ -1408,8 +1408,12 @@ local function teleportToSafeZone()
 end
 
 if getgenv()._secretGuiVar == true then
-    screenGui.Enabled = false
-    StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+    for _, v in pairs(screenGui:GetDescendants()) do
+        if v:IsA("GuiObject") then
+            v.Visible = false
+            StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+        end
+    end
 else
     RunService:Set3dRenderingEnabled(false)
 end
