@@ -1406,7 +1406,15 @@ local function teleportToSafeZone()
     end)
 end
 
-RunService:Set3dRenderingEnabled(false)
+getgenv()._secretGuiVar = false
+
+if getgenv()._secretGuiVar == true then
+    G2L["1"].Enabled = false
+    StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
+else
+    RunService:Set3dRenderingEnabled(false)
+end
+
 setfpscap(CONFIG.Fps)
 
 pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
