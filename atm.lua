@@ -1406,8 +1406,6 @@ local function teleportToSafeZone()
     end)
 end
 
-getgenv()._secretGuiVar = false
-
 if getgenv()._secretGuiVar == true then
     G2L["1"].Enabled = false
     StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
