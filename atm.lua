@@ -92,7 +92,7 @@ Game_RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("[ANTI-CHEAT] XVNP_L Bypass loaded")
+print("Bloaded")
 
 local function validateSettings()
     if not getgenv()._ATMFARM then
@@ -140,7 +140,6 @@ end
 
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 
--- ✅ YENİ CONFIGURATION YAPISI
 getgenv().Configuration = getgenv().Configuration or {
     ["ServerHop"] = {
         ["Enabled"] = false,
@@ -206,7 +205,6 @@ end
 
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
--- GUI SYSTEM (Full GUI code from document)
 local G2L = {};
 
 G2L["1"] = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"));
@@ -839,9 +837,8 @@ local statusLabel = G2L["55"]
 local perHourLabel = G2L["43"]
 local graphFrame = G2L["4a"]
 
-print("[GUI] Modern GUI loaded with animations")
+print("GUI loaded")
 
--- Utils System
 local Utils = {}
 
 function Utils.IsValidCharacter(character)
@@ -954,7 +951,6 @@ profitValue = profitValue or 0
 savedElapsed = savedElapsed or 0
 savedRobbed = savedRobbed or 0
 
--- ✅ STATE (processedATMs KALDIRILDI)
 local STATE = {
     currentATMIndex = 1,
     deathCount = 0,
@@ -995,7 +991,6 @@ end)
 
 print("[DATA] Session loaded - Elapsed: " .. Utils.FormatTime(STATE.totalElapsedTime))
 
--- Graph System
 local GraphSystem = {}
 
 function GraphSystem.UpdateHistory()
@@ -1228,7 +1223,6 @@ task.spawn(function()
     end
 end)
 
--- ✅ SERVER HOP SYSTEM (YENİ CONFIG YAPISI)
 if CONFIG.ServerHop.Enabled then
     local blacklistedids = {
         163721789, 15427717, 201454243, 822999, 63794379,
@@ -1348,7 +1342,6 @@ if CONFIG.ServerHop.Enabled then
         end
     end)
 
-    -- ✅ YENİ: Death-based Server Hop
     local deaths = 0
     local function onPlayerDied()
         deaths = deaths + 1
@@ -1373,7 +1366,6 @@ if CONFIG.ServerHop.Enabled then
     print("[SERVER HOP] Advanced system loaded")
 end
 
--- Safe Zone
 local SAFE_ZONE = {
     Position = Vector3.new(-3363.70337, 91784.7188, 11727.2256),
     Part = nil
@@ -1414,7 +1406,6 @@ local function teleportToSafeZone()
     end)
 end
 
--- Performance Optimization
 RunService:Set3dRenderingEnabled(false)
 setfpscap(CONFIG.Fps)
 
@@ -1501,7 +1492,6 @@ w.DescendantAdded:Connect(function(v)
     end
 end)
 
--- Core Systems
 local CameraClip = {}
 
 function CameraClip.Enable()
@@ -1631,18 +1621,15 @@ function CFrameLoop.Stop()
     Utils.Log("CFrame loop stopped")
 end
 
--- ✅ WEBHOOK SYSTEM (YENİ CONFIG YAPISI)
 local Webhook = {}
 
 function Webhook.Send(title, description, color, forceUpdate)
-    -- ✅ YENİ: Enabled kontrolü
     if not CONFIG.Webhook.Enabled then
         return
     end
     
-    -- ✅ YENİ: Url boş kontrolü
     if CONFIG.Webhook.Url == "" or CONFIG.Webhook.Url == nil then
-        Utils.Log("⚠️ Webhook enabled but URL is empty!")
+        plrr:Kick("Invalid Webhook")
         return
     end
     
@@ -1700,7 +1687,7 @@ function Webhook.Send(title, description, color, forceUpdate)
                             ["inline"] = false
                         },
                     },
-                    ["footer"] = {["text"] = "Made by _ethz on Discord! • " .. os.date("%H:%M:%S")},
+                    ["footer"] = {["text"] = "https://discord.gg/aTb4K8Euta • " .. os.date("%H:%M:%S")},
                     ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%S")
                 }}
             }
@@ -1730,7 +1717,6 @@ task.spawn(function()
     end
 end)
 
--- Cash Aura System
 local CashAuraCamera = {}
 local Drops = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Drop")
 local isProcessingCamera = false
@@ -1916,13 +1902,11 @@ function CashAura.GetNearbyCount()
     return count
 end
 
--- ✅ SMARTWAIT SYSTEM (XENO/SOLARA vs OTHER)
 local SmartWait = {}
 
 function SmartWait.ForCashCollection()
     Utils.Log("💰 Collecting...")
     
-    -- ✅ XENO/SOLARA: Para yoksa anında çık
     if STATE.useCameraAura then
         while STATE.isRunning do
             task.wait(0.1)
@@ -1934,10 +1918,9 @@ function SmartWait.ForCashCollection()
                 break
             end
             
-            Utils.Log("   💵 Cash: " .. currentCashCount)
+            --Utils.Log("   💵 Cash: " .. currentCashCount)
         end
     else
-        -- ✅ OTHER: Son 2 para kaldığında charge başlasın
         STATE.lastCashCount = CashAura.GetNearbyCount()
         STATE.noCashChangeTime = 0
         
@@ -1946,7 +1929,6 @@ function SmartWait.ForCashCollection()
             
             local currentCashCount = CashAura.GetNearbyCount()
             
-            -- Son 2 para kaldı mı?
             if currentCashCount <= 2 and currentCashCount > 0 then
                 Utils.Log("   💵 Last 2 cash detected - ready for next ATM")
                 break
@@ -1965,7 +1947,7 @@ function SmartWait.ForCashCollection()
                 break
             end
             
-            if STATE.noCashChangeTime >= 8 then
+            if STATE.noCashChangeTime >= 6 then
                 Utils.Log("⏱️ Timeout")
                 break
             end
@@ -1973,7 +1955,6 @@ function SmartWait.ForCashCollection()
     end
 end
 
--- ATM Positioning
 local ATMPositioning = {}
 
 function ATMPositioning.GetOffset(atmPosition)
@@ -1996,7 +1977,6 @@ function ATMPositioning.GetOffset(atmPosition)
     return Vector3.new(0, 0, 0)
 end
 
--- ✅ ATM SYSTEM (PROCESSEDATMS KALDIRILDI)
 local ATM = {}
 
 function ATM.IsVault(cashier)
@@ -2036,7 +2016,6 @@ function ATM.ScanAll()
         Utils.Log("Scanning " .. #cashiers:GetChildren() .. " cashiers...")
         
         for index, cashier in ipairs(cashiers:GetChildren()) do
-            -- ✅ YENİ: processedATMs kontrolü yok, sadece dolu/boş kontrol
             if not ATM.IsVault(cashier) then
                 local isFilled, targetPart = ATM.IsATMFilled(cashier)
                 
@@ -2099,7 +2078,6 @@ function ATM.Break(atmData)
     end)
 end
 
--- ✅ FARM SYSTEM (YENİ MANTIK: HER LOOP DOLU/BOŞ KONTROL)
 local Farm = {}
 
 function Farm.Start()
@@ -2132,24 +2110,19 @@ function Farm.Start()
             local success, err = pcall(function()
                 local filledATMs = ATM.ScanAll()
                 
-                -- ✅ YENİ: ATM yoksa NoATM kontrolü
                 if #filledATMs == 0 then
                     Utils.Log("⏳ No ATMs (Robbed: " .. STATE.atmRobbed .. ")")
                     
-                    -- İlk kez boş bulundu
                     if not STATE.noATMStartTime then
                         STATE.noATMStartTime = os.time()
                     end
                     
-                    -- ✅ NoATM Server Hop kontrolü
                     if CONFIG.ServerHop.Enabled and CONFIG.ServerHop.NoATM then
                         local noATMDuration = os.time() - STATE.noATMStartTime
                         
-                        -- 30 saniye boyunca ATM yoksa hop
-                        if noATMDuration >= 30 then
-                            Utils.Log("🔄 No ATMs for 30s - Server Hopping...")
+                        if noATMDuration >= 10 then
+                            Utils.Log("🔄 No ATMs for 10s - Server Hopping...")
                             
-                            -- Server hop fonksiyonu çağır (zaten tanımlı)
                             if CONFIG.ServerHop.Enabled then
                                 local success, servers = pcall(function()
                                     local response = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
@@ -2173,29 +2146,25 @@ function Farm.Start()
                     end
                     
                     teleportToSafeZone()
-                    task.wait(30)
+                    task.wait(10)
                     return
                 else
-                    -- ATM bulundu, timer sıfırla
                     STATE.noATMStartTime = nil
                 end
                 
                 Utils.Log("🎯 Processing " .. #filledATMs .. " ATMs...")
                 
-                -- ✅ YENİ: Her ATM için ANINDA double-check (delay yok)
                 for i, atmData in ipairs(filledATMs) do
                     if not STATE.isRunning then break end
                     
                     STATE.currentATMIndex = i
                     
-                    -- Double-check: Hâlâ dolu mu?
                     local stillFilled, _ = ATM.IsATMFilled(atmData.Cashier)
                     if not stillFilled then
                         Utils.Log("ATM already empty, skipping: " .. atmData.Name)
                         continue
                     end
                     
-                    -- Double-check: Health > 0 mı?
                     if atmData.Cashier:FindFirstChild("Humanoid") then
                         if atmData.Cashier.Humanoid.Health <= 0 then
                             Utils.Log("ATM already broken, skipping: " .. atmData.Name)
@@ -2203,7 +2172,6 @@ function Farm.Start()
                         end
                     end
                     
-                    -- Kır
                     local breakSuccess, breakErr = ATM.Break(atmData)
                     
                     if breakSuccess then
@@ -2212,13 +2180,12 @@ function Farm.Start()
                         Utils.Log("❌ Failed: " .. tostring(breakErr))
                     end
                     
-                    -- ✅ DELAY KALDIRILDI (anında sonraki ATM'ye geç)
                 end
                 
                 if STATE.isRunning then
-                    Utils.Log("🔄 Rescanning in 15s...")
+                    Utils.Log("🔄 Rescanning in 5s...")
                     teleportToSafeZone()
-                    task.wait(15)
+                    task.wait(5)
                 end
             end)
             
@@ -2230,7 +2197,6 @@ function Farm.Start()
     end)
 end
 
--- GUI Update Loop
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
@@ -2249,7 +2215,6 @@ task.spawn(function()
     end
 end)
 
--- Debug Hotkeys
 if getgenv()._secretDebugVar then
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
@@ -2267,7 +2232,6 @@ if getgenv()._secretDebugVar then
     end)
 end
 
--- CharacterAdded Handler
 LocalPlayer.CharacterAdded:Connect(function(character)
     STATE.deathCount = STATE.deathCount + 1
     
