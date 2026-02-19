@@ -1409,14 +1409,6 @@ end
 
 if getgenv()._secretGuiVar == true then
     screenGui.Enabled = false
-    mainFrame.Enabled = false
-    background.Enabled = false
-    walletLabel.Enabled = false
-    elapsedLabel.Enabled = false
-    profitLabel.Enabled = false
-    statusLabel.Enabled = false
-    perHourLabel.Enabled = false
-    graphFrame.Enabled = false
     StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
 else
     RunService:Set3dRenderingEnabled(false)
