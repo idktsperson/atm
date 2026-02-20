@@ -136,9 +136,23 @@ if not validateSettings() then
     return
 end
 
-pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
+local gm = getrawmetatable(game)
+setreadonly(gm, false)
+local namecall = gm.__namecall
+gm.__namecall = newcclosure(function(self, ...)
+    local args = {...}
+    if not checkcaller() and getnamecallmethod() == "FireServer" and tostring(self) == "MainEvent" then
+        if tostring(getcallingscript()) ~= "Framework" then
+            return
+        end
+    end
+    if not checkcaller() and getnamecallmethod() == "Kick" then
+        return
+    end
+    return namecall(self, unpack(args))
+end)
 
-wait(4)
+wait(3)
 
 print("Bloaded")
 
