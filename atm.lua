@@ -980,6 +980,9 @@ local STATE = {
     lastProfitUpdate = os.time(),
     
     noATMStartTime = nil,
+
+    lastCashAmount = Utils.GetCurrentCash(),
+    lastCashChangeTime = os.time(),
 }
 
 task.spawn(function()
@@ -1925,6 +1928,7 @@ function SmartWait.ForCashCollection()
     Utils.Log("💰 Collecting...")
     
     if STATE.useCameraAura then
+        -- ✅ Xeno/Solara: Para = 0 → Çık
         while STATE.isRunning do
             task.wait(0.1)
             
@@ -1934,21 +1938,28 @@ function SmartWait.ForCashCollection()
                 Utils.Log("✅ Complete! (Camera mode)")
                 break
             end
-            
-            --Utils.Log("   💵 Cash: " .. currentCashCount)
         end
     else
+        -- ✅ Other Executor: Son 2 para → Charge başlat (TP YOK!)
         STATE.lastCashCount = CashAura.GetNearbyCount()
         STATE.noCashChangeTime = 0
+        local preChargeStarted = false
         
         while STATE.isRunning do
             task.wait(0.5)
             
             local currentCashCount = CashAura.GetNearbyCount()
             
-            if currentCashCount <= 2 and currentCashCount > 0 then
-                Utils.Log("   💵 Last 2 cash detected - ready for next ATM")
-                break
+            -- Son 2 para kaldı mı? ve henüz pre-charge başlamadı mı?
+            if currentCashCount <= 2 and currentCashCount > 0 and not preChargeStarted then
+                Utils.Log("   💵 Last 2 cash - starting pre-charge...")
+                
+                -- ✅ Sadece charge başlat (TP atma!)
+                Utils.Log("⚡ Pre-Charge 1/2 (while collecting)")
+                MainEvent:FireServer("ChargeButton")
+                preChargeStarted = true
+                
+                -- Charge başladı, devam et
             end
             
             if currentCashCount ~= STATE.lastCashCount then
@@ -2005,15 +2016,9 @@ function ATM.IsATMFilled(cashier)
         return false, nil
     end
     
-    local open = cashier:FindFirstChild("Open")
-    if open and open:IsA("BasePart") then
-        local size = open.Size
-        if math.abs(size.X - 2.6) < 0.2 and math.abs(size.Y - 0.5) < 0.2 and math.abs(size.Z - 0.1) < 0.2 then
-            return true, open
-        end
-    end
-    
-    if open then
+    local humanoid = cashier:FindFirstChild("Humanoid")
+    if humanoid and humanoid.Health > 0 then
+        local open = cashier:FindFirstChild("Open")
         return true, open
     end
     
@@ -2076,14 +2081,39 @@ function ATM.Break(atmData)
         Utils.EquipCombat()
         task.wait(0.3)
         
-        Utils.Log("⚡ Charge 1/2")
-        MainEvent:FireServer("ChargeButton")
-        task.wait(3.5)
+        -- ✅ Health 0 olana kadar vur (max 2 charge)
+        local chargeCount = 0
+        local maxCharges = 2
         
-        Utils.Log("⚡ Charge 2/2")
-        MainEvent:FireServer("ChargeButton")
-        CashAura.Resume()
-        task.wait(3.5)
+        while chargeCount < maxCharges do
+            chargeCount = chargeCount + 1
+            
+            Utils.Log("⚡ Charge " .. chargeCount .. "/" .. maxCharges)
+            MainEvent:FireServer("ChargeButton")
+            
+            if chargeCount == 1 then
+                CashAura.Resume() -- İlk charge'dan sonra para toplanmaya başla
+            end
+            
+            task.wait(3.5)
+            
+            -- Health kontrol
+            if atmData.Cashier:FindFirstChild("Humanoid") then
+                if atmData.Cashier.Humanoid.Health <= 0 then
+                    Utils.Log("✅ ATM broken! (Health: 0)")
+                    break
+                end
+            end
+        end
+        
+        -- Bug Protection: 2 charge sonra hâlâ health > 0 ise skip
+        if atmData.Cashier:FindFirstChild("Humanoid") then
+            if atmData.Cashier.Humanoid.Health > 0 then
+                Utils.Log("⚠️ ATM still alive after 2 charges, skipping...")
+                Noclip.Disable()
+                return false
+            end
+        end
         
         Noclip.Disable()
         
@@ -2181,27 +2211,23 @@ function Farm.Start()
                     
                     STATE.currentATMIndex = i
                     
-                    local stillFilled, _ = ATM.IsATMFilled(atmData.Cashier)
-                    if not stillFilled then
-                        Utils.Log("ATM already empty, skipping: " .. atmData.Name)
-                        continue
-                    end
-                    
+                    -- Health > 0 kontrolü
                     if atmData.Cashier:FindFirstChild("Humanoid") then
                         if atmData.Cashier.Humanoid.Health <= 0 then
-                            Utils.Log("ATM already broken, skipping: " .. atmData.Name)
+                            Utils.Log("ATM already dead (Health: 0), skipping: " .. atmData.Name)
                             continue
                         end
                     end
                     
+                    -- Current ATM'yi kır
                     local breakSuccess, breakErr = ATM.Break(atmData)
                     
                     if breakSuccess then
+                        -- ✅ Sadece SmartWait çağır (parametre yok!)
                         SmartWait.ForCashCollection()
                     else
-                        Utils.Log("❌ Failed: " .. tostring(breakErr))
+                        Utils.Log("❌ ATM break failed: " .. tostring(breakErr))
                     end
-                    
                 end
                 
                 if STATE.isRunning then
@@ -2234,6 +2260,58 @@ task.spawn(function()
             elapsedLabel.Text = Utils.FormatTime(elapsedTime)
             perHourLabel.Text = Utils.FormatCash(perHour)
         end)
+    end
+end)
+
+-- ✅ YENİ: Anti-Bug Server Hop (30s para değişmezse hop)
+task.spawn(function()
+    while STATE.farmLoopRunning do
+        task.wait(5) -- Her 5 saniyede kontrol et
+        
+        if not CONFIG.ServerHop.Enabled then
+            continue
+        end
+        
+        local currentCash = Utils.GetCurrentCash()
+        
+        -- Para değişti mi?
+        if currentCash ~= STATE.lastCashAmount then
+            -- Para değişti, timer sıfırla
+            STATE.lastCashAmount = currentCash
+            STATE.lastCashChangeTime = os.time()
+        else
+            -- Para değişmedi, ne kadar zamandır?
+            local timeSinceLastChange = os.time() - STATE.lastCashChangeTime
+            
+            if timeSinceLastChange >= 30 then
+                Utils.Log("⚠️ Anti-Bug: No cash change for 30s - Server Hopping...")
+                
+                -- Server hop
+                local success, servers = pcall(function()
+                    local response = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+                    local openServers = {}
+
+                    for _, v in ipairs(response.data) do
+                        if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                            table.insert(openServers, v)
+                        end
+                    end
+
+                    return openServers
+                end)
+
+                if success and servers and #servers > 0 then
+                    -- En az kişili servera git
+                    table.sort(servers, function(a, b)
+                        return a.playing < b.playing
+                    end)
+                    
+                    local selected = servers[1]
+                    Utils.Log("🔄 Anti-Bug Hop to server with " .. selected.playing .. " players")
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+                end
+            end
+        end
     end
 end)
 
