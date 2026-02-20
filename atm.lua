@@ -2154,7 +2154,12 @@ function Farm.Start()
                                 end)
 
                                 if success and servers and #servers > 0 then
-                                    local selected = servers[math.random(1, #servers)]
+                                    table.sort(servers, function(a, b)
+                                        return a.playing < b.playing
+                                    end)
+                                    
+                                    local selected = servers[1]
+                                    Utils.Log("🔄 No ATMs - Hopping to server with " .. selected.playing .. " players")
                                     TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
                                 end
                             end
