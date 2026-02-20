@@ -152,8 +152,6 @@ gm.__namecall = newcclosure(function(self, ...)
     return namecall(self, unpack(args))
 end)
 
-wait(3)
-
 print("Bloaded")
 
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
