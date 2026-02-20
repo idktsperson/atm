@@ -92,8 +92,6 @@ Game_RunService.RenderStepped:Connect(function()
     end
 end)
 
-print("Bloaded")
-
 local function validateSettings()
     if not getgenv()._ATMFARM then
         plrr:Kick("Invalid Configuration - Missing _ATMFARM")
@@ -137,6 +135,12 @@ task.wait(0.5)
 if not validateSettings() then
     return
 end
+
+pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
+
+wait(4)
+
+print("Bloaded")
 
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 getgenv()._secretGuiVar = getgenv()._secretGuiVar or false
@@ -2284,8 +2288,8 @@ task.spawn(function()
             -- Para değişmedi, ne kadar zamandır?
             local timeSinceLastChange = os.time() - STATE.lastCashChangeTime
             
-            if timeSinceLastChange >= 30 then
-                Utils.Log("⚠️ Anti-Bug: No cash change for 30s - Server Hopping...")
+            if timeSinceLastChange >= 60 then
+                Utils.Log("⚠️ Anti-Bug: No cash change for 60s - Server Hopping...")
                 
                 -- Server hop
                 local success, servers = pcall(function()
