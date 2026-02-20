@@ -1261,27 +1261,32 @@ if CONFIG.ServerHop.Enabled then
     end
 
     local function teleportToAnotherPlace()
-        local success, servers = pcall(function()
-            local response = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
-            local openServers = {}
+    local success, servers = pcall(function()
+        local response = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+        local openServers = {}
 
-            for _, v in ipairs(response.data) do
-                if v.playing < v.maxPlayers and v.id ~= game.JobId then
-                    table.insert(openServers, v)
-                end
+        for _, v in ipairs(response.data) do
+            if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                table.insert(openServers, v)
             end
-
-            return openServers
-        end)
-
-        if success and servers and #servers > 0 then
-            local selected = servers[math.random(1, #servers)]
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
-        else
-            warn("Primary Server Hop Failed. Trying backup.")
-            backup()
         end
+
+        return openServers
+    end)
+
+    if success and servers and #servers > 0 then
+        table.sort(servers, function(a, b)
+            return a.playing < b.playing
+        end)
+        
+        local selected = servers[1]
+        Utils.Log("🔄 Hopping to server with " .. selected.playing .. "/" .. selected.maxPlayers .. " players")
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+    else
+        warn("Primary Server Hop Failed. Trying backup.")
+        backup()
     end
+end
 
     local ismod = function(player)
         local character = player.Character or player.CharacterAdded:Wait()
