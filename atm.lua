@@ -136,23 +136,25 @@ if not validateSettings() then
     return
 end
 
-local gm = getrawmetatable(game)
-setreadonly(gm, false)
-local namecall = gm.__namecall
-gm.__namecall = newcclosure(function(self, ...)
-    local args = {...}
-    if not checkcaller() and getnamecallmethod() == "FireServer" and tostring(self) == "MainEvent" then
-        if tostring(getcallingscript()) ~= "Framework" then
-            return
-        end
-    end
-    if not checkcaller() and getnamecallmethod() == "Kick" then
-        return
-    end
-    return namecall(self, unpack(args))
-end)
-
-print("Bloaded")
+local function otherBypass()
+    pcall(function()
+        local gm = getrawmetatable(game)
+        setreadonly(gm, false)
+        local namecall = gm.__namecall
+        gm.__namecall = newcclosure(function(self, ...)
+            local args = {...}
+            if not checkcaller() and getnamecallmethod() == "FireServer" and tostring(self) == "MainEvent" then
+                if tostring(getcallingscript()) ~= "Framework" then
+                    return
+                end
+            end
+            if not checkcaller() and getnamecallmethod() == "Kick" then
+                return
+            end
+            return namecall(self, unpack(args))
+        end)
+    end)
+end
 
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 getgenv()._secretGuiVar = getgenv()._secretGuiVar or false
@@ -959,6 +961,14 @@ end
 
 local DETECTED_EXECUTOR = detectExecutor()
 Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
+
+if DETECTED_EXECUTOR == "XENO" or "SOLARA" then
+    pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
+    print("loadstring loaded.")
+else
+    otherBypass()
+    print("other loaded.")
+end
 
 local id = tostring(LocalPlayer.UserId)
 local walletValue, profitValue, savedElapsed, savedRobbed = loadUserData(id)
