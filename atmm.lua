@@ -1,5 +1,5 @@
 local plrr = game.Players.LocalPlayer
-print("ok")
+--[[
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
 local Lua_Hook = hookfunction 
@@ -58,7 +58,7 @@ XVNP_CONNECTIONSNIFFER = Game_RunService.RenderStepped:Connect(function()
     end
 
     if tick() - XVNP_LASTUPDATE >= XVNP_UPDATEINTERVAL then
-        --XVNP_LASTUPDATE = tick() 
+        XVNP_LASTUPDATE = tick() 
 
         local OpenAc_Connections = Lua_Fetch_Connections(Game_LogService_MessageOut)
 
@@ -91,6 +91,8 @@ Game_RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
+]]
 
 local function otherBypass()
     pcall(function()
