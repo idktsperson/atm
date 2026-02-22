@@ -27,7 +27,7 @@ function XVNP_L(CONNECTION)
                 local args = {...}
                 if type(args[1]) == "table" and args[1][1] then
                     pcall(function()
-                        if type(args[1][1]) == "userdata" then
+                        if type(args[1][1]) == "RysifyAtmData" then
                             args[1][1]:Disconnect()
                             args[1][2]:Disconnect()
                             args[1][3]:Disconnect()
@@ -92,6 +92,52 @@ Game_RunService.RenderStepped:Connect(function()
     end
 end)
 
+local function otherBypass()
+    pcall(function()
+        local gm = getrawmetatable(game)
+        setreadonly(gm, false)
+        local namecall = gm.__namecall
+        gm.__namecall = newcclosure(function(self, ...)
+            local args = {...}
+            if not checkcaller() and getnamecallmethod() == "FireServer" and tostring(self) == "MainEvent" then
+                if tostring(getcallingscript()) ~= "Framework" then
+                    return
+                end
+            end
+            if not checkcaller() and getnamecallmethod() == "Kick" then
+                return
+            end
+            return namecall(self, unpack(args))
+        end)
+    end)
+end
+
+getgenv().Configuration = getgenv().Configuration or {
+    ["Misc"] = {
+        ["FightingStyle"] = "Default", -- For best results, set this to "Boxing" (highly recommended) Options: "Default", "Boxing" OOOO
+    },
+
+    ["ServerHop"] = {
+        ["Enabled"] = false, -- Turn this on first if you want any of the options below to actually work
+        ["Death"] = 5, -- Automatically switches servers after you die 5 times OOOOOO
+        ["FarmerDetector"] = true, -- Switches servers if another farmer is detected in the same server
+        ["NoATM"] = true, -- Switches servers if there are no ATMs left to farm
+        ["NoATMDelay"] = 10, -- How many seconds to wait before server hopping if no ATMs are found.
+        --If you're using "Default" fighting style, 10 seconds is recommended.
+        --If you're using "Boxing", setting this to 1 is strongly recommended for maximum efficiency.
+    },
+
+    ["Webhook"] = {
+        ["Enabled"] = false, -- Enable this if you want webhook notifications to be sent
+        ["Url"] = "", -- Paste your Discord webhook URL here OOOOO
+        ["Interval"] = 10, -- How often it sends updates (in minutes) OOOOO
+    },
+
+    ["Fps"] = 15, -- FPS cap. 10–20 is recommended
+}
+
+local CONFIG = getgenv().Configuration
+
 local function validateSettings()
     if not getgenv()._ATMFARM then
         plrr:Kick("Invalid Configuration - Missing _ATMFARM")
@@ -136,52 +182,41 @@ if not validateSettings() then
     return
 end
 
-local function otherBypass()
-    pcall(function()
-        local gm = getrawmetatable(game)
-        setreadonly(gm, false)
-        local namecall = gm.__namecall
-        gm.__namecall = newcclosure(function(self, ...)
-            local args = {...}
-            if not checkcaller() and getnamecallmethod() == "FireServer" and tostring(self) == "MainEvent" then
-                if tostring(getcallingscript()) ~= "Framework" then
-                    return
-                end
-            end
-            if not checkcaller() and getnamecallmethod() == "Kick" then
-                return
-            end
-            return namecall(self, unpack(args))
-        end)
-    end)
+
+local function validateConfiguration()
+    local config = getgenv().Configuration
+    
+    if config.Misc.FightingStyle ~= "Default" and config.Misc.FightingStyle ~= "Boxing" then
+        plrr:Kick("Invalid FightingStyle. Must be 'Default' or 'Boxing'")
+        return false
+    end
+    
+    if config.Webhook.Enabled then
+        if config.Webhook.Url == "" or config.Webhook.Url == nil then
+            plrr:Kick("Webhook Enabled but URL is empty!")
+            return false
+        end
+        
+        if not string.find(config.Webhook.Url, "discord.com/api/webhooks") then
+            plrr:Kick("Invalid Webhook URL format!")
+            return false
+        end
+    end
+    
+    if config.ServerHop.NoATMDelay < 1 or config.ServerHop.NoATMDelay > 60 then
+        plrr:Kick("Invalid NoATMDelay. Must be between 1-60 seconds")
+        return false
+    end
+    
+    return true
+end
+
+if not validateConfiguration() then
+    return
 end
 
 getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 getgenv()._secretGuiVar = getgenv()._secretGuiVar or false
-
-getgenv().Configuration = getgenv().Configuration or {
-    ["Misc"] = {
-        ["FightingStyle"] = "Default", -- For best results, set this to "Boxing" (highly recommended) Options: "Default", "Boxing"
-    },
-
-    ["ServerHop"] = {
-        ["Enabled"] = false, -- Turn this on first if you want any of the options below to actually work
-        ["Death"] = 5, -- Automatically switches servers after you die 5 times
-        ["FarmerDetector"] = true, -- Switches servers if another farmer is detected in the same server
-        ["NoATM"] = true, -- Switches servers if there are no ATMs left to farm
-        ["NoATMDelay"] = 10, -- How many seconds to wait before server hopping if no ATMs are found. If you're using "Default" fighting style, 10 seconds is recommended. If you're using "Boxing", setting this to 1 is strongly recommended for maximum efficiency.
-    },
-
-    ["Webhook"] = {
-        ["Enabled"] = false, -- Enable this if you want webhook notifications to be sent
-        ["Url"] = "", -- Paste your Discord webhook URL here
-        ["Interval"] = 10, -- How often it sends updates (in minutes)
-    },
-
-    ["Fps"] = 15, -- FPS cap. 10–20 is recommended
-}
-
-local CONFIG = getgenv().Configuration
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1406,6 +1441,50 @@ end
             end
         end)
     end)
+
+    -- FarmerDetector sistemi
+    if CONFIG.ServerHop.Enabled and CONFIG.ServerHop.FarmerDetector then
+        task.spawn(function()
+            while true do
+                task.wait(10) -- Her 10 saniyede kontrol
+                
+                pcall(function()
+                    local farmersFound = {}
+                    
+                    for _, player in ipairs(Players:GetPlayers()) do
+                        if player ~= LocalPlayer then
+                            -- Wanted kontrolü
+                            local dataFolder = player:FindFirstChild("DataFolder")
+                            if dataFolder then
+                                local information = dataFolder:FindFirstChild("Information")
+                                if information then
+                                    local wanted = information:FindFirstChild("Wanted")
+                                    if wanted and wanted.Value >= 10000 then
+                                        table.insert(farmersFound, {
+                                            Name = player.Name,
+                                            Wanted = wanted.Value
+                                        })
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    
+                    if #farmersFound > 0 then
+                        Utils.Log("⚠️ FARMER DETECTED!")
+                        for _, farmer in ipairs(farmersFound) do
+                            Utils.Log("  → " .. farmer.Name .. " (Wanted: " .. farmer.Wanted .. ")")
+                        end
+                        
+                        Utils.Log("🔄 Server Hopping...")
+                        teleportToAnotherPlace()
+                    end
+                end)
+            end
+        end)
+        
+        print("[FARMER DETECTOR] System loaded - Checking every 10s")
+    end
     
     print("[SERVER HOP] Advanced system loaded")
 end
@@ -2152,6 +2231,163 @@ function ATM.Break(atmData)
     end)
 end
 
+local FightingStyle = {}
+
+function FightingStyle.Setup()
+    Utils.Log("═══════════════════════════════════════")
+    Utils.Log("🥊 Fighting Style Setup Starting...")
+    Utils.Log("═══════════════════════════════════════")
+    
+    local selectedStyle = CONFIG.Misc.FightingStyle
+    Utils.Log("Selected Style: " .. selectedStyle)
+    
+    -- DataFolder al
+    local dataFolder = LocalPlayer:WaitForChild("DataFolder")
+    local information = dataFolder:WaitForChild("Information")
+    local currentStyle = information:WaitForChild("FightingStyle")
+    local boxingValue = information:WaitForChild("BoxingValue")
+    
+    Utils.Log("Current Style: " .. currentStyle.Value)
+    Utils.Log("Boxing Value: " .. boxingValue.Value .. "/2500")
+    
+    -- Eğer zaten doğru style aktifse skip
+    if currentStyle.Value == selectedStyle then
+        Utils.Log("✅ Fighting Style already set to " .. selectedStyle)
+        return true
+    end
+    
+    -- Boxing seçilmişse
+    if selectedStyle == "Boxing" then
+        -- BoxingValue kontrolü
+        if boxingValue.Value < 2500 then
+            plrr:Kick("Boxing style not unlocked yet. BoxingValue: " .. boxingValue.Value .. "/2500. Please unlock it first by hitting the punching bag.")
+            return false
+        end
+        
+        Utils.Log("🥊 Activating Boxing Style...")
+        
+        -- Boxing shop location'a TP
+        local boxingShop = Workspace:FindFirstChild("Ignored") and 
+                          Workspace.Ignored:FindFirstChild("Shop") and 
+                          Workspace.Ignored.Shop:FindFirstChild("Boxing Moveset (Require: Max Box Stat) - $0")
+        
+        if not boxingShop then
+            plrr:Kick("Boxing shop not found in workspace!")
+            return false
+        end
+        
+        -- TP to shop
+        local shopPos = boxingShop.Head.Position
+        STATE.currentTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        task.wait(1)
+        
+        -- Activate Boxing
+        if STATE.useCameraAura then
+            -- XENO/SOLARA: Camera Click
+            Utils.Log("🎥 Using Camera Click (Xeno/Solara)")
+            
+            Camera.CameraType = Enum.CameraType.Scriptable
+            Camera.CFrame = CFrame.lookAt(boxingShop.Head.Position + Vector3.new(0, 2, 0), boxingShop.Head.Position)
+            
+            task.wait(0.5)
+            
+            local viewportCenter = Camera.ViewportSize / 2
+            VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
+            task.wait(0.1)
+            VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
+            
+            task.wait(1)
+            
+            Camera.CameraType = Enum.CameraType.Custom
+            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+        else
+            -- OTHER: Fire ClickDetector
+            Utils.Log("🖱️ Using FireClickDetector (Other)")
+            
+            if boxingShop:FindFirstChild("ClickDetector") then
+                fireclickdetector(boxingShop.ClickDetector)
+            else
+                plrr:Kick("Boxing shop ClickDetector not found!")
+                return false
+            end
+        end
+        
+        task.wait(2)
+        
+        -- Verify
+        if currentStyle.Value == "Boxing" then
+            Utils.Log("✅ Boxing Style Activated!")
+            return true
+        else
+            plrr:Kick("Failed to activate Boxing style")
+            return false
+        end
+        
+    -- Default seçilmişse
+    elseif selectedStyle == "Default" then
+        Utils.Log("🤜 Activating Default Style...")
+        
+        -- Default shop location'a TP
+        local defaultShop = Workspace:FindFirstChild("Ignored") and 
+                           Workspace.Ignored:FindFirstChild("Shop") and 
+                           Workspace.Ignored.Shop:FindFirstChild("[Default Moveset] - $0")
+        
+        if not defaultShop then
+            plrr:Kick("Default shop not found in workspace!")
+            return false
+        end
+        
+        -- TP to shop
+        local shopPos = defaultShop.Head.Position
+        STATE.currentTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        task.wait(1)
+        
+        -- Activate Default
+        if STATE.useCameraAura then
+            -- XENO/SOLARA: Camera Click
+            Utils.Log("🎥 Using Camera Click (Xeno/Solara)")
+            
+            Camera.CameraType = Enum.CameraType.Scriptable
+            Camera.CFrame = CFrame.lookAt(defaultShop.Head.Position + Vector3.new(0, 2, 0), defaultShop.Head.Position)
+            
+            task.wait(0.5)
+            
+            local viewportCenter = Camera.ViewportSize / 2
+            VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
+            task.wait(0.1)
+            VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
+            
+            task.wait(1)
+            
+            Camera.CameraType = Enum.CameraType.Custom
+            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+        else
+            -- OTHER: Fire ClickDetector
+            Utils.Log("🖱️ Using FireClickDetector (Other)")
+            
+            if defaultShop:FindFirstChild("ClickDetector") then
+                fireclickdetector(defaultShop.ClickDetector)
+            else
+                plrr:Kick("Default shop ClickDetector not found!")
+                return false
+            end
+        end
+        
+        task.wait(2)
+        
+        -- Verify
+        if currentStyle.Value == "Default" then
+            Utils.Log("✅ Default Style Activated!")
+            return true
+        else
+            plrr:Kick("Failed to activate Default style")
+            return false
+        end
+    end
+    
+    return true
+end
+
 local Farm = {}
 
 function Farm.Start()
@@ -2387,8 +2623,29 @@ task.spawn(function()
 end)
 
 
+-- SIRA ÖNEMLİ!
 task.wait(2)
+
+Utils.Log("═══════════════════════════════════════")
+Utils.Log("🚀 STARTING SEQUENCE")
+Utils.Log("═══════════════════════════════════════")
+
+-- 1. Anti-Cheat Bypass (zaten yukarda yüklendi)
+Utils.Log("1/3 ✅ Anti-Cheat Bypass Loaded")
+
+-- 2. Fighting Style Setup
+Utils.Log("2/3 ⏳ Fighting Style Setup...")
+if not FightingStyle.Setup() then
+    return -- Hata varsa durdur
+end
+
+-- 3. ATM Farm Start
+Utils.Log("3/3 ⏳ Starting ATM Farm...")
 Farm.Start()
+
+Utils.Log("═══════════════════════════════════════")
+Utils.Log("✅ ALL SYSTEMS OPERATIONAL")
+Utils.Log("═══════════════════════════════════════")
 
 print("ATM FARM V14 LOADED")
 print("[Executor] " .. DETECTED_EXECUTOR)
