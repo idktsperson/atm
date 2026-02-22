@@ -2312,7 +2312,7 @@ function FightingStyle.Setup()
             end
         end
         
-        task.wait(2)
+        task.wait(4.5)
         
         -- Verify
         if currentStyle.Value == "Boxing" then
