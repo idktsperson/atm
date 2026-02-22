@@ -2259,7 +2259,7 @@ function FightingStyle.Setup()
     -- Boxing seçilmişse
     if selectedStyle == "Boxing" then
         -- BoxingValue kontrolü
-        if boxingValue.Value ~= 2500 then
+        if boxingValue.Value ~= "2500" then
             plrr:Kick("Boxing style not unlocked yet. BoxingValue: " .. boxingValue.Value .. "/2500. Please unlock it first by hitting the punching bag.")
             return false
         end
