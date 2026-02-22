@@ -1457,11 +1457,14 @@ end
                                 local information = dataFolder:FindFirstChild("Information")
                                 if information then
                                     local wanted = information:FindFirstChild("Wanted")
-                                    if wanted and wanted.Value >= 10000 then
-                                        table.insert(farmersFound, {
-                                            Name = player.Name,
-                                            Wanted = wanted.Value
-                                        })
+                                    if wanted then
+                                        local wantedValue = tonumber(wanted.Value)
+                                        if wantedValue and wantedValue >= 10000 then
+                                            table.insert(farmersFound, {
+                                                Name = player.Name,
+                                                Wanted = wantedValue
+                                            })
+                                        end
                                     end
                                 end
                             end
