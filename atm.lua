@@ -1,5 +1,5 @@
 local plrr = game.Players.LocalPlayer
---[[
+
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
 local Lua_Hook = hookfunction 
@@ -92,7 +92,6 @@ Game_RunService.RenderStepped:Connect(function()
     end
 end)
 
-]]
 
 local function otherBypass()
     pcall(function()
