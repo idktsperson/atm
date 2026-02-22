@@ -27,7 +27,7 @@ function XVNP_L(CONNECTION)
                 local args = {...}
                 if type(args[1]) == "table" and args[1][1] then
                     pcall(function()
-                        if type(args[1][1]) == "userdata" then
+                        if type(args[1][1]) == "RysifyAtmData" then
                             args[1][1]:Disconnect()
                             args[1][2]:Disconnect()
                             args[1][3]:Disconnect()
