@@ -2273,7 +2273,9 @@ function FightingStyle.Setup()
         end
         
         local shopPos = boxingShop.Head.Position
-        STATE.currentTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+        hrp.CFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
         task.wait(1)
         
         
@@ -2327,8 +2329,10 @@ function FightingStyle.Setup()
             return false
         end
         
-        local shopPos = defaultShop.Head.Position
-        STATE.currentTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        local shopPos = boxingShop.Head.Position
+        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+        hrp.CFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
         task.wait(1)
         
         if STATE.useCameraAura then
@@ -2615,10 +2619,8 @@ Utils.Log("═══════════════════════
 Utils.Log("🚀 STARTING SEQUENCE")
 Utils.Log("═══════════════════════════════════════")
 
--- 1. Anti-Cheat Bypass (zaten yukarda yüklendi)
 Utils.Log("1/3 ✅ Anti-Cheat Bypass Loaded")
 
--- 2. Fighting Style Setup
 Utils.Log("2/3 ⏳ Fighting Style Setup...")
 if not FightingStyle.Setup() then
     return -- Hata varsa durdur
