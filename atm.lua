@@ -2278,7 +2278,8 @@ function FightingStyle.Setup()
         
         -- TP to shop
         local shopPos = boxingShop.Head.Position
-        STATE.currentTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        boxingTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        CFrameLoop.UpdatePosition(boxingTargetCFrame)
         task.wait(1)
         
         -- Activate Boxing
@@ -2312,7 +2313,7 @@ function FightingStyle.Setup()
             end
         end
         
-        task.wait(4.5)
+        task.wait(3)
         
         -- Verify
         if currentStyle.Value == "Boxing" then
@@ -2339,8 +2340,9 @@ function FightingStyle.Setup()
         
         -- TP to shop
         local shopPos = defaultShop.Head.Position
-        STATE.currentTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
-        task.wait(4)
+        defaultTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        CFrameLoop.UpdatePosition(defaultTargetCFrame)
+        task.wait(1)
         
         -- Activate Default
         if STATE.useCameraAura then
@@ -2373,7 +2375,7 @@ function FightingStyle.Setup()
             end
         end
         
-        task.wait(2)
+        task.wait(3)
         
         -- Verify
         if currentStyle.Value == "Default" then
