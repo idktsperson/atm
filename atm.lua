@@ -27,7 +27,7 @@ function XVNP_L(CONNECTION)
                 local args = {...}
                 if type(args[1]) == "table" and args[1][1] then
                     pcall(function()
-                        if type(args[1][1]) == "userdata" then
+                        if type(args[1][1]) == "RysifyAtmData" then
                             args[1][1]:Disconnect()
                             args[1][2]:Disconnect()
                             args[1][3]:Disconnect()
@@ -160,17 +160,27 @@ getgenv()._secretDebugVar = getgenv()._secretDebugVar or false
 getgenv()._secretGuiVar = getgenv()._secretGuiVar or false
 
 getgenv().Configuration = getgenv().Configuration or {
+    ["Misc"] = {
+        ["FightingStyle"] = "Default", -- For best results, set this to "Boxing" (highly recommended) Options: "Default", "Boxing" OOOO
+    },
+
     ["ServerHop"] = {
-        ["Enabled"] = false,
-        ["Death"] = 5,
-        ["NoATM"] = true,
+        ["Enabled"] = false, -- Turn this on first if you want any of the options below to actually work
+        ["Death"] = 5, -- Automatically switches servers after you die 5 times
+        ["FarmerDetector"] = true, -- Switches servers if another farmer is detected in the same server
+        ["NoATM"] = true, -- Switches servers if there are no ATMs left to farm
+        ["NoATMDelay"] = 10, -- How many seconds to wait before server hopping if no ATMs are found.
+        --If you're using "Default" fighting style, 10 seconds is recommended.
+        --If you're using "Boxing", setting this to 1 is strongly recommended for maximum efficiency.
     },
+
     ["Webhook"] = {
-        ["Enabled"] = false,
-        ["Url"] = "",
-        ["Interval"] = 10,
+        ["Enabled"] = false, -- Enable this if you want webhook notifications to be sent
+        ["Url"] = "", -- Paste your Discord webhook URL here
+        ["Interval"] = 10, -- How often it sends updates (in minutes)
     },
-    ["Fps"] = 15,
+
+    ["Fps"] = 15, -- FPS cap. 10–20 is recommended
 }
 
 local CONFIG = getgenv().Configuration
@@ -199,9 +209,9 @@ end
 
 local Camera = Workspace.CurrentCamera
 
-local function saveUserData(userid, walletValue, profitValue, elapsedTime, timestamp, atmRobbed)
-    local userFolder = "userdata/"..userid
-    if not isfolder("userdata") then makefolder("userdata") end
+local function saveRysifyAtmData(userid, walletValue, profitValue, elapsedTime, timestamp, atmRobbed)
+    local userFolder = "RysifyAtmData/"..userid
+    if not isfolder("RysifyAtmData") then makefolder("RysifyAtmData") end
     if not isfolder(userFolder) then makefolder(userFolder) end
 
     local data = string.format("%s,%s,%s,%s", walletValue, profitValue, elapsedTime, atmRobbed)
@@ -209,8 +219,8 @@ local function saveUserData(userid, walletValue, profitValue, elapsedTime, times
     writefile(userFolder.."/timestamp.txt", tostring(timestamp))
 end
 
-local function loadUserData(userid)
-    local userFolder = "userdata/"..userid
+local function loadRysifyAtmData(userid)
+    local userFolder = "RysifyAtmData/"..userid
     if not isfolder(userFolder) then return nil end
     if not isfile(userFolder.."/data.txt") or not isfile(userFolder.."/timestamp.txt") then return nil end
 
@@ -964,14 +974,14 @@ Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
 
 if DETECTED_EXECUTOR == "XENO" or "SOLARA" then
     pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
-    print("loadstring loaded.")
+    print("loadstring bypass loaded.")
 else
     otherBypass()
-    print("other loaded.")
+    print("other bypass loaded.")
 end
 
 local id = tostring(LocalPlayer.UserId)
-local walletValue, profitValue, savedElapsed, savedRobbed = loadUserData(id)
+local walletValue, profitValue, savedElapsed, savedRobbed = loadRysifyAtmData(id)
 
 local data_folder = LocalPlayer:WaitForChild("DataFolder")
 walletValue = walletValue or data_folder.Currency.Value
@@ -1016,7 +1026,7 @@ task.spawn(function()
         if not STATE.sessionStartTime then continue end
         
         local elapsedTime = (os.time() - STATE.sessionStartTime) + STATE.totalElapsedTime
-        saveUserData(id, Utils.GetCurrentCash(), Utils.GetCurrentCash() - STATE.startingCash, elapsedTime, tick(), STATE.atmRobbed)
+        saveRysifyAtmData(id, Utils.GetCurrentCash(), Utils.GetCurrentCash() - STATE.startingCash, elapsedTime, tick(), STATE.atmRobbed)
     end
 end)
 
@@ -1955,7 +1965,6 @@ function SmartWait.ForCashCollection()
     Utils.Log("💰 Collecting...")
     
     if STATE.useCameraAura then
-        -- ✅ Xeno/Solara: Para = 0 → Çık
         while STATE.isRunning do
             task.wait(0.1)
             
@@ -1967,7 +1976,6 @@ function SmartWait.ForCashCollection()
             end
         end
     else
-        -- ✅ Other Executor: Son 2 para → Charge başlat (TP YOK!)
         STATE.lastCashCount = CashAura.GetNearbyCount()
         STATE.noCashChangeTime = 0
         local preChargeStarted = false
@@ -1977,16 +1985,13 @@ function SmartWait.ForCashCollection()
             
             local currentCashCount = CashAura.GetNearbyCount()
             
-            -- Son 2 para kaldı mı? ve henüz pre-charge başlamadı mı?
             if currentCashCount <= 2 and currentCashCount > 0 and not preChargeStarted then
                 Utils.Log("   💵 Last 2 cash - starting pre-charge...")
                 
-                -- ✅ Sadece charge başlat (TP atma!)
                 Utils.Log("⚡ Pre-Charge 1/2 (while collecting)")
                 MainEvent:FireServer("ChargeButton")
                 preChargeStarted = true
                 
-                -- Charge başladı, devam et
             end
             
             if currentCashCount ~= STATE.lastCashCount then
@@ -2108,7 +2113,6 @@ function ATM.Break(atmData)
         Utils.EquipCombat()
         task.wait(0.3)
         
-        -- ✅ Health 0 olana kadar vur (max 2 charge)
         local chargeCount = 0
         local maxCharges = 2
         
@@ -2119,12 +2123,11 @@ function ATM.Break(atmData)
             MainEvent:FireServer("ChargeButton")
             
             if chargeCount == 1 then
-                CashAura.Resume() -- İlk charge'dan sonra para toplanmaya başla
+                CashAura.Resume()
             end
             
             task.wait(3.5)
             
-            -- Health kontrol
             if atmData.Cashier:FindFirstChild("Humanoid") then
                 if atmData.Cashier.Humanoid.Health <= 0 then
                     Utils.Log("✅ ATM broken! (Health: 0)")
@@ -2133,7 +2136,6 @@ function ATM.Break(atmData)
             end
         end
         
-        -- Bug Protection: 2 charge sonra hâlâ health > 0 ise skip
         if atmData.Cashier:FindFirstChild("Humanoid") then
             if atmData.Cashier.Humanoid.Health > 0 then
                 Utils.Log("⚠️ ATM still alive after 2 charges, skipping...")
@@ -2194,8 +2196,8 @@ function Farm.Start()
                     if CONFIG.ServerHop.Enabled and CONFIG.ServerHop.NoATM then
                         local noATMDuration = os.time() - STATE.noATMStartTime
                         
-                        if noATMDuration >= 10 then
-                            Utils.Log("🔄 No ATMs for 10s - Server Hopping...")
+                        if noATMDuration >= CONFIG.ServerHop.NoATMDelay then
+                            Utils.Log("🔄 No ATMs for " .. CONFIG.ServerHop.NoATMDelay .. "s - Server Hopping...")
                             
                             if CONFIG.ServerHop.Enabled then
                                 local success, servers = pcall(function()
@@ -2238,7 +2240,6 @@ function Farm.Start()
                     
                     STATE.currentATMIndex = i
                     
-                    -- Health > 0 kontrolü
                     if atmData.Cashier:FindFirstChild("Humanoid") then
                         if atmData.Cashier.Humanoid.Health <= 0 then
                             Utils.Log("ATM already dead (Health: 0), skipping: " .. atmData.Name)
@@ -2246,11 +2247,9 @@ function Farm.Start()
                         end
                     end
                     
-                    -- Current ATM'yi kır
                     local breakSuccess, breakErr = ATM.Break(atmData)
                     
                     if breakSuccess then
-                        -- ✅ Sadece SmartWait çağır (parametre yok!)
                         SmartWait.ForCashCollection()
                     else
                         Utils.Log("❌ ATM break failed: " .. tostring(breakErr))
@@ -2290,10 +2289,10 @@ task.spawn(function()
     end
 end)
 
--- ✅ YENİ: Anti-Bug Server Hop (30s para değişmezse hop)
+--antibug
 task.spawn(function()
     while STATE.farmLoopRunning do
-        task.wait(5) -- Her 5 saniyede kontrol et
+        task.wait(5)
         
         if not CONFIG.ServerHop.Enabled then
             continue
@@ -2301,13 +2300,10 @@ task.spawn(function()
         
         local currentCash = Utils.GetCurrentCash()
         
-        -- Para değişti mi?
         if currentCash ~= STATE.lastCashAmount then
-            -- Para değişti, timer sıfırla
             STATE.lastCashAmount = currentCash
             STATE.lastCashChangeTime = os.time()
         else
-            -- Para değişmedi, ne kadar zamandır?
             local timeSinceLastChange = os.time() - STATE.lastCashChangeTime
             
             if timeSinceLastChange >= 60 then
@@ -2328,7 +2324,6 @@ task.spawn(function()
                 end)
 
                 if success and servers and #servers > 0 then
-                    -- En az kişili servera git
                     table.sort(servers, function(a, b)
                         return a.playing < b.playing
                     end)
@@ -2393,7 +2388,7 @@ task.spawn(function()
     end)
 end)
 
--- Start Farm
+
 task.wait(2)
 Farm.Start()
 
