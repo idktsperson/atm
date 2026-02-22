@@ -1541,7 +1541,7 @@ else
     RunService:Set3dRenderingEnabled(false)
 end
 
-setfpscap(CONFIG.Fps)
+setfpscap(60)
 
 --pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
 pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
@@ -2273,7 +2273,7 @@ function FightingStyle.Setup()
         local shopPos = boxingShop.Head.Position
         local char2 = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
         local hrp2 = char2:WaitForChild("HumanoidRootPart")
-        hrp2.CFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        hrp2.CFrame = CFrame.new(shopPos + Vector3.new(3, 3, 0))
         task.wait(1)
         
         
@@ -2333,10 +2333,10 @@ function FightingStyle.Setup()
         local shopPos = defaultShop.Head.Position
         local char2 = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
         local hrp2 = char2:WaitForChild("HumanoidRootPart")
-        hrp2.CFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        hrp2.CFrame = CFrame.new(shopPos + Vector3.new(-3, 3, 0))
         task.wait(1)
         
-        if STATE.useCameraAura then
+        if  then
             Utils.Log("Using Camera Click")
             
             Camera.CameraType = Enum.CameraType.Scriptable
@@ -2634,6 +2634,7 @@ end
 
 -- 3. ATM Farm Start
 Utils.Log("3/3 ⏳ Starting ATM Farm...")
+setfpscap(CONFIG.Fps)
 Farm.Start()
 
 Utils.Log("═══════════════════════════════════════")
