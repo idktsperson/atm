@@ -27,7 +27,7 @@ function XVNP_L(CONNECTION)
                 local args = {...}
                 if type(args[1]) == "table" and args[1][1] then
                     pcall(function()
-                        if type(args[1][1]) == "RysifyAtmData" then
+                        if type(args[1][1]) == "userdata" then
                             args[1][1]:Disconnect()
                             args[1][2]:Disconnect()
                             args[1][3]:Disconnect()
@@ -2305,13 +2305,18 @@ function FightingStyle.Setup()
             end
         end
         
-        task.wait(3)
+        local startTime = tick()
         
-        if currentStyle.Value == "Boxing" then
-            Utils.Log("✅ Boxing Style Activated!")
+        repeat
+            task.wait(0.1)
+        until currentStyle.Value == selectedStyle 
+           or tick() - startTime >= 10
+        
+        if currentStyle.Value == selectedStyle then
+            Utils.Log("✅ " .. selectedStyle .. " Style Activated!")
             return true
         else
-            plrr:Kick("Failed to activate Boxing style")
+            Utils.Log("❌ Failed to activate " .. selectedStyle .. " (Timeout 10s)")
             return false
         end
         
@@ -2358,14 +2363,19 @@ function FightingStyle.Setup()
                 return false
             end
         end
+
+        local startTime = tick()
+
+        repeat
+            task.wait(0.1)
+        until currentStyle.Value == selectedStyle 
+           or tick() - startTime >= 10
         
-        task.wait(3)
-        
-        if currentStyle.Value == "Default" then
-            Utils.Log("✅ Default Style Activated!")
+        if currentStyle.Value == selectedStyle then
+            Utils.Log("✅ " .. selectedStyle .. " Style Activated!")
             return true
         else
-            Utils.Log("Failed to activate Default style")
+            Utils.Log("❌ Failed to activate " .. selectedStyle .. " (Timeout 10s)")
             return false
         end
     end
