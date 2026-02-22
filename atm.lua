@@ -2337,7 +2337,7 @@ function FightingStyle.Setup()
         hrp2.CFrame = CFrame.new(shopPos + Vector3.new(-3, 3, 0))
         task.wait(1)
         
-        if  then
+        if STATE.useCameraAura then
             Utils.Log("Using Camera Click")
             
             Camera.CameraType = Enum.CameraType.Scriptable
