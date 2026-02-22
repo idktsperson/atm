@@ -2340,7 +2340,7 @@ function FightingStyle.Setup()
         -- TP to shop
         local shopPos = defaultShop.Head.Position
         STATE.currentTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
-        task.wait(1)
+        task.wait(4)
         
         -- Activate Default
         if STATE.useCameraAura then
