@@ -1006,12 +1006,19 @@ end
 local DETECTED_EXECUTOR = detectExecutor()
 Utils.Log("Detected executor: " .. DETECTED_EXECUTOR)
 
-if DETECTED_EXECUTOR == "XENO" or "SOLARA" then
-    pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
-    print("loadstring bypass loaded.")
-else
+if DETECTED_EXECUTOR == "OTHER" then
     otherBypass()
     print("other bypass loaded.")
+end
+
+if DETECTED_EXECUTOR == "XENO" then
+    pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
+    print("xeno loadstring bypass loaded.")
+end
+
+if DETECTED_EXECUTOR == "SOLARA" then
+    pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
+    print("solara loadstring bypass loaded.")
 end
 
 local id = tostring(LocalPlayer.UserId)
