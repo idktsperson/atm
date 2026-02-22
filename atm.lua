@@ -2262,20 +2262,18 @@ function FightingStyle.Setup()
         end
         
         Utils.Log("🥊 Activating Boxing Style...")
-        
-        local boxingShop = Workspace:FindFirstChild("Ignored") and 
-                          Workspace.Ignored:FindFirstChild("Shop") and 
-                          Workspace.Ignored.Shop:FindFirstChild("Boxing Moveset (Require: Max Box Stat) - $0")
+
+        local boxingShop = Workspace.Ignored.Shop:WaitForChild("Boxing Moveset (Require: Max Box Stat) - $0")
         
         if not boxingShop then
-            plrr:Kick("Boxing shop not found in workspace!")
+            Utils.Log("Boxing shop not found in workspace!")
             return false
         end
         
         local shopPos = boxingShop.Head.Position
-        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-        local hrp = char:WaitForChild("HumanoidRootPart")
-        hrp.CFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        local char2 = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local hrp2 = char2:WaitForChild("HumanoidRootPart")
+        hrp2.CFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
         task.wait(1)
         
         
@@ -2302,7 +2300,7 @@ function FightingStyle.Setup()
             if boxingShop:FindFirstChild("ClickDetector") then
                 fireclickdetector(boxingShop.ClickDetector)
             else
-                plrr:Kick("Boxing shop ClickDetector not found!")
+                Utils.Log("Boxing shop ClickDetector not found!")
                 return false
             end
         end
@@ -2319,20 +2317,18 @@ function FightingStyle.Setup()
         
     elseif selectedStyle == "Default" then
         Utils.Log("🤜 Activating Default Style...")
-        
-        local defaultShop = Workspace:FindFirstChild("Ignored") and 
-                           Workspace.Ignored:FindFirstChild("Shop") and 
-                           Workspace.Ignored.Shop:FindFirstChild("[Default Moveset] - $0")
+
+        local defaultShop = Workspace.Ignored.Shop:WaitForChild("[Default Moveset] - $0")
         
         if not defaultShop then
-            plrr:Kick("Default shop not found in workspace!")
+            Utils.Log("default shop not found in workspace!")
             return false
         end
         
-        local shopPos = boxingShop.Head.Position
-        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-        local hrp = char:WaitForChild("HumanoidRootPart")
-        hrp.CFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
+        local shopPos = defaultShop.Head.Position
+        local char2 = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local hrp2 = char2:WaitForChild("HumanoidRootPart")
+        hrp2.CFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
         task.wait(1)
         
         if STATE.useCameraAura then
@@ -2358,7 +2354,7 @@ function FightingStyle.Setup()
             if defaultShop:FindFirstChild("ClickDetector") then
                 fireclickdetector(defaultShop.ClickDetector)
             else
-                plrr:Kick("Default shop ClickDetector not found!")
+                Utils.Log("Default shop ClickDetector not found!")
                 return false
             end
         end
@@ -2369,7 +2365,7 @@ function FightingStyle.Setup()
             Utils.Log("✅ Default Style Activated!")
             return true
         else
-            plrr:Kick("Failed to activate Default style")
+            Utils.Log("Failed to activate Default style")
             return false
         end
     end
