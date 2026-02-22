@@ -2273,7 +2273,7 @@ function FightingStyle.Setup()
         end
         
         local shopPos = boxingShop.Head.Position
-        STATE.currentTargetCFrame = CFrame.new(shopPos.Position + Vector3.new(0, 3, 0))
+        STATE.currentTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
         task.wait(1)
         
         
@@ -2328,7 +2328,7 @@ function FightingStyle.Setup()
         end
         
         local shopPos = defaultShop.Head.Position
-        STATE.currentTargetCFrame = CFrame.new(shopPos.Position + Vector3.new(0, 3, 0))
+        STATE.currentTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
         task.wait(1)
         
         if STATE.useCameraAura then
