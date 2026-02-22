@@ -2543,8 +2543,8 @@ task.spawn(function()
         else
             local timeSinceLastChange = os.time() - STATE.lastCashChangeTime
             
-            if timeSinceLastChange >= 60 then
-                Utils.Log("⚠️ Anti-Bug: No cash change for 60s - Server Hopping...")
+            if timeSinceLastChange >= 30 then
+                Utils.Log("⚠️ Anti-Bug: No cash change for 30s - Server Hopping...")
                 
                 -- Server hop
                 local success, servers = pcall(function()
