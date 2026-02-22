@@ -58,7 +58,7 @@ XVNP_CONNECTIONSNIFFER = Game_RunService.RenderStepped:Connect(function()
     end
 
     if tick() - XVNP_LASTUPDATE >= XVNP_UPDATEINTERVAL then
-        XVNP_LASTUPDATE = tick() 
+        --XVNP_LASTUPDATE = tick() 
 
         local OpenAc_Connections = Lua_Fetch_Connections(Game_LogService_MessageOut)
 
