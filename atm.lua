@@ -114,12 +114,12 @@ end
 
 getgenv().Configuration = getgenv().Configuration or {
     ["Misc"] = {
-        ["FightingStyle"] = "Default", -- For best results, set this to "Boxing" (highly recommended) Options: "Default", "Boxing" OOOO
+        ["FightingStyle"] = "Default", -- For best results, set this to "Boxing" (highly recommended) Options: "Default", "Boxing"
     },
 
     ["ServerHop"] = {
         ["Enabled"] = false, -- Turn this on first if you want any of the options below to actually work
-        ["Death"] = 5, -- Automatically switches servers after you die 5 times OOOOOO
+        ["Death"] = 5, -- Automatically switches servers after you die 5 times
         ["FarmerDetector"] = true, -- Switches servers if another farmer is detected in the same server
         ["NoATM"] = true, -- Switches servers if there are no ATMs left to farm
         ["NoATMDelay"] = 10, -- How many seconds to wait before server hopping if no ATMs are found.
@@ -129,8 +129,8 @@ getgenv().Configuration = getgenv().Configuration or {
 
     ["Webhook"] = {
         ["Enabled"] = false, -- Enable this if you want webhook notifications to be sent
-        ["Url"] = "", -- Paste your Discord webhook URL here OOOOO
-        ["Interval"] = 10, -- How often it sends updates (in minutes) OOOOO
+        ["Url"] = "", -- Paste your Discord webhook URL here
+        ["Interval"] = 10, -- How often it sends updates (in minutes)
     },
 
     ["Fps"] = 15, -- FPS cap. 10–20 is recommended
@@ -1442,18 +1442,16 @@ end
         end)
     end)
 
-    -- FarmerDetector sistemi
     if CONFIG.ServerHop.Enabled and CONFIG.ServerHop.FarmerDetector then
         task.spawn(function()
             while true do
-                task.wait(10) -- Her 10 saniyede kontrol
+                task.wait(10)
                 
                 pcall(function()
                     local farmersFound = {}
                     
                     for _, player in ipairs(Players:GetPlayers()) do
                         if player ~= LocalPlayer then
-                            -- Wanted kontrolü
                             local dataFolder = player:FindFirstChild("DataFolder")
                             if dataFolder then
                                 local information = dataFolder:FindFirstChild("Information")
@@ -2241,7 +2239,6 @@ function FightingStyle.Setup()
     local selectedStyle = CONFIG.Misc.FightingStyle
     Utils.Log("Selected Style: " .. selectedStyle)
     
-    -- DataFolder al
     local dataFolder = LocalPlayer:WaitForChild("DataFolder")
     local information = dataFolder:WaitForChild("Information")
     local currentStyle = information:WaitForChild("FightingStyle")
@@ -2250,15 +2247,12 @@ function FightingStyle.Setup()
     Utils.Log("Current Style: " .. currentStyle.Value)
     Utils.Log("Boxing Value: " .. boxingValue.Value .. "/2500")
     
-    -- Eğer zaten doğru style aktifse skip
     if currentStyle.Value == selectedStyle then
         Utils.Log("✅ Fighting Style already set to " .. selectedStyle)
         return true
     end
     
-    -- Boxing seçilmişse
     if selectedStyle == "Boxing" then
-        -- BoxingValue kontrolü
         if boxingValue.Value ~= "2500" then
             plrr:Kick("Boxing style not unlocked yet. BoxingValue: " .. boxingValue.Value .. "/2500. Please unlock it first by hitting the punching bag.")
             return false
@@ -2266,7 +2260,6 @@ function FightingStyle.Setup()
         
         Utils.Log("🥊 Activating Boxing Style...")
         
-        -- Boxing shop location'a TP
         local boxingShop = Workspace:FindFirstChild("Ignored") and 
                           Workspace.Ignored:FindFirstChild("Shop") and 
                           Workspace.Ignored.Shop:FindFirstChild("Boxing Moveset (Require: Max Box Stat) - $0")
@@ -2276,16 +2269,13 @@ function FightingStyle.Setup()
             return false
         end
         
-        -- TP to shop
         local shopPos = boxingShop.Head.Position
-        boxingTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
-        CFrameLoop.UpdatePosition(boxingTargetCFrame)
+        STATE.currentTargetCFrame = CFrame.new(shopPos.Position + Vector3.new(0, 3, 0))
         task.wait(1)
         
-        -- Activate Boxing
+        
         if STATE.useCameraAura then
-            -- XENO/SOLARA: Camera Click
-            Utils.Log("🎥 Using Camera Click (Xeno/Solara)")
+            Utils.Log("Using Camera Click")
             
             Camera.CameraType = Enum.CameraType.Scriptable
             Camera.CFrame = CFrame.lookAt(boxingShop.Head.Position + Vector3.new(0, 2, 0), boxingShop.Head.Position)
@@ -2302,7 +2292,6 @@ function FightingStyle.Setup()
             Camera.CameraType = Enum.CameraType.Custom
             Camera.CameraSubject = LocalPlayer.Character.Humanoid
         else
-            -- OTHER: Fire ClickDetector
             Utils.Log("🖱️ Using FireClickDetector (Other)")
             
             if boxingShop:FindFirstChild("ClickDetector") then
@@ -2315,7 +2304,6 @@ function FightingStyle.Setup()
         
         task.wait(3)
         
-        -- Verify
         if currentStyle.Value == "Boxing" then
             Utils.Log("✅ Boxing Style Activated!")
             return true
@@ -2324,11 +2312,9 @@ function FightingStyle.Setup()
             return false
         end
         
-    -- Default seçilmişse
     elseif selectedStyle == "Default" then
         Utils.Log("🤜 Activating Default Style...")
         
-        -- Default shop location'a TP
         local defaultShop = Workspace:FindFirstChild("Ignored") and 
                            Workspace.Ignored:FindFirstChild("Shop") and 
                            Workspace.Ignored.Shop:FindFirstChild("[Default Moveset] - $0")
@@ -2338,16 +2324,12 @@ function FightingStyle.Setup()
             return false
         end
         
-        -- TP to shop
         local shopPos = defaultShop.Head.Position
-        defaultTargetCFrame = CFrame.new(shopPos + Vector3.new(0, 3, 0))
-        CFrameLoop.UpdatePosition(defaultTargetCFrame)
+        STATE.currentTargetCFrame = CFrame.new(shopPos.Position + Vector3.new(0, 3, 0))
         task.wait(1)
         
-        -- Activate Default
         if STATE.useCameraAura then
-            -- XENO/SOLARA: Camera Click
-            Utils.Log("🎥 Using Camera Click (Xeno/Solara)")
+            Utils.Log("Using Camera Click")
             
             Camera.CameraType = Enum.CameraType.Scriptable
             Camera.CFrame = CFrame.lookAt(defaultShop.Head.Position + Vector3.new(0, 2, 0), defaultShop.Head.Position)
@@ -2364,7 +2346,6 @@ function FightingStyle.Setup()
             Camera.CameraType = Enum.CameraType.Custom
             Camera.CameraSubject = LocalPlayer.Character.Humanoid
         else
-            -- OTHER: Fire ClickDetector
             Utils.Log("🖱️ Using FireClickDetector (Other)")
             
             if defaultShop:FindFirstChild("ClickDetector") then
@@ -2377,7 +2358,6 @@ function FightingStyle.Setup()
         
         task.wait(3)
         
-        -- Verify
         if currentStyle.Value == "Default" then
             Utils.Log("✅ Default Style Activated!")
             return true
