@@ -1,5 +1,5 @@
 local plrr = game.Players.LocalPlayer
-
+print("ok")
 local Lua_Fetch_Connections = getconnections
 local Lua_Fetch_Upvalues = getupvalues
 local Lua_Hook = hookfunction 
