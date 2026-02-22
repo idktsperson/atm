@@ -27,7 +27,7 @@ function XVNP_L(CONNECTION)
                 local args = {...}
                 if type(args[1]) == "table" and args[1][1] then
                     pcall(function()
-                        if type(args[1][1]) == "RysifyAtmData" then
+                        if type(args[1][1]) == "userdata" then
                             args[1][1]:Disconnect()
                             args[1][2]:Disconnect()
                             args[1][3]:Disconnect()
@@ -161,7 +161,7 @@ getgenv()._secretGuiVar = getgenv()._secretGuiVar or false
 
 getgenv().Configuration = getgenv().Configuration or {
     ["Misc"] = {
-        ["FightingStyle"] = "Default", -- For best results, set this to "Boxing" (highly recommended) Options: "Default", "Boxing" OOOO
+        ["FightingStyle"] = "Default", -- For best results, set this to "Boxing" (highly recommended) Options: "Default", "Boxing"
     },
 
     ["ServerHop"] = {
@@ -169,9 +169,7 @@ getgenv().Configuration = getgenv().Configuration or {
         ["Death"] = 5, -- Automatically switches servers after you die 5 times
         ["FarmerDetector"] = true, -- Switches servers if another farmer is detected in the same server
         ["NoATM"] = true, -- Switches servers if there are no ATMs left to farm
-        ["NoATMDelay"] = 10, -- How many seconds to wait before server hopping if no ATMs are found.
-        --If you're using "Default" fighting style, 10 seconds is recommended.
-        --If you're using "Boxing", setting this to 1 is strongly recommended for maximum efficiency.
+        ["NoATMDelay"] = 10, -- How many seconds to wait before server hopping if no ATMs are found. If you're using "Default" fighting style, 10 seconds is recommended. If you're using "Boxing", setting this to 1 is strongly recommended for maximum efficiency.
     },
 
     ["Webhook"] = {
