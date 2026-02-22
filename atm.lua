@@ -259,7 +259,7 @@ local function loadRysifyAtmData(userid)
     if not isfile(userFolder.."/data.txt") or not isfile(userFolder.."/timestamp.txt") then return nil end
 
     local lastSave = tonumber(readfile(userFolder.."/timestamp.txt"))
-    if not lastSave or (tick() - lastSave > 180) then return nil end
+    if not lastSave or (tick() - lastSave > 380) then return nil end
 
     local data = readfile(userFolder.."/data.txt")
     local wallet, profit, elapsed, robbed = string.match(data, "([^,]+),([^,]+),([^,]+),([^,]+)")
@@ -2543,8 +2543,8 @@ task.spawn(function()
         else
             local timeSinceLastChange = os.time() - STATE.lastCashChangeTime
             
-            if timeSinceLastChange >= 30 then
-                Utils.Log("⚠️ Anti-Bug: No cash change for 30s - Server Hopping...")
+            if timeSinceLastChange >= 20 then
+                Utils.Log("⚠️ Anti-Bug: No cash change for 20s - Server Hopping...")
                 
                 -- Server hop
                 local success, servers = pcall(function()
