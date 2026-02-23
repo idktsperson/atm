@@ -821,7 +821,6 @@ G2L["5e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["5e"]["Name"] = [[Background]];
 G2L["5e"]["BackgroundTransparency"] = 0;
 
--- GUI Animations
 task.spawn(function()
     local UIGradient = G2L["3e"].UIGradient
     local runService = game:GetService("RunService")
@@ -1361,7 +1360,7 @@ if CONFIG.ServerHop.Enabled then
         end)
         
         local selected = servers[1]
-        Utils.Log("🔄 Hopping to server with " .. selected.playing .. "/" .. selected.maxPlayers .. " players")
+        Utils.Log("Hopping to server with " .. selected.playing .. "/" .. selected.maxPlayers .. " players")
         TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
     else
         warn("Primary Server Hop Failed. Trying backup.")
@@ -1480,12 +1479,12 @@ end
                     end
                     
                     if #farmersFound > 0 then
-                        Utils.Log("⚠️ FARMER DETECTED!")
+                        Utils.Log("FARMER DETECTED!")
                         for _, farmer in ipairs(farmersFound) do
                             Utils.Log("  → " .. farmer.Name .. " (Wanted: " .. farmer.Wanted .. ")")
                         end
                         
-                        Utils.Log("🔄 Server Hopping...")
+                        Utils.Log("Server Hopping...")
                         teleportToAnotherPlace()
                     end
                 end)
@@ -1549,7 +1548,7 @@ else
     RunService:Set3dRenderingEnabled(false)
 end
 
-setfpscap(60)
+setfpscap(1000)
 
 --pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiCheatBypass.Lua"))()end)
 pcall(function()loadstring(game:HttpGet("https://raw.githubusercontent.com/idktsperson/stuff/refs/heads/main/AntiSit.lua"))()end)
@@ -1701,13 +1700,13 @@ local function checkStomp()
         local koValue = bodyEffects and bodyEffects:FindFirstChild("K.O")
         
         if humanoid and koValue and koValue.Value == true then
-            Utils.Log("⚠️ K.O detected - forcing respawn")
+            Utils.Log("K.O detected - forcing respawn")
             humanoid.Health = 0
             return
         end
         
         if humanoid and humanoid.Health <= 1 then
-            Utils.Log("⚠️ Low health detected - forcing respawn")
+            Utils.Log("   Low health detected - forcing respawn")
             humanoid.Health = 0
             return
         end
@@ -2048,7 +2047,7 @@ end
 local SmartWait = {}
 
 function SmartWait.ForCashCollection()
-    Utils.Log("💰 Collecting...")
+    Utils.Log("Collecting...")
     
     if STATE.useCameraAura then
         while STATE.isRunning do
@@ -2057,45 +2056,75 @@ function SmartWait.ForCashCollection()
             local currentCashCount = CashAura.GetNearbyCount()
             
             if currentCashCount == 0 then
-                Utils.Log("✅ Complete! (Camera mode)")
+                Utils.Log("Complete! (Camera mode)")
                 break
             end
         end
     else
-        STATE.lastCashCount = CashAura.GetNearbyCount()
-        STATE.noCashChangeTime = 0
-        local preChargeStarted = false
-        
-        while STATE.isRunning do
-            task.wait(0.5)
+        if CONFIG.Misc.FightingStyle == "Boxing" then
+            Utils.Log("Boxing Mode - Waiting for all cash...")
             
-            local currentCashCount = CashAura.GetNearbyCount()
+            STATE.lastCashCount = CashAura.GetNearbyCount()
+            STATE.noCashChangeTime = 0
             
-            if currentCashCount <= 2 and currentCashCount > 0 and not preChargeStarted then
-                Utils.Log("   💵 Last 2 cash - starting pre-charge...")
+            while STATE.isRunning do
+                task.wait(0.1)
                 
-                Utils.Log("⚡ Pre-Charge 1/2 (while collecting)")
-                MainEvent:FireServer("ChargeButton")
-                preChargeStarted = true
+                local currentCashCount = CashAura.GetNearbyCount()
                 
+                if currentCashCount ~= STATE.lastCashCount then
+                    STATE.lastCashCount = currentCashCount
+                    STATE.noCashChangeTime = 0
+                else
+                    STATE.noCashChangeTime = STATE.noCashChangeTime + 0.1
+                end
+                
+                if currentCashCount == 0 then
+                    Utils.Log("Complete! (Boxing mode)")
+                    break
+                end
+                
+                if STATE.noCashChangeTime >= 6 then
+                    Utils.Log("Timeout (Boxing mode)")
+                    break
+                end
             end
+        else
+            Utils.Log("Default Mode - Pre-charge enabled...")
             
-            if currentCashCount ~= STATE.lastCashCount then
-                STATE.lastCashCount = currentCashCount
-                STATE.noCashChangeTime = 0
-                Utils.Log("   💵 Cash: " .. currentCashCount)
-            else
-                STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
-            end
+            STATE.lastCashCount = CashAura.GetNearbyCount()
+            STATE.noCashChangeTime = 0
+            local preChargeStarted = false
             
-            if currentCashCount == 0 and STATE.noCashChangeTime >= 0.1 then
-                Utils.Log("✅ Complete!")
-                break
-            end
-            
-            if STATE.noCashChangeTime >= 6 then
-                Utils.Log("⏱️ Timeout")
-                break
+            while STATE.isRunning do
+                task.wait(0.5)
+                
+                local currentCashCount = CashAura.GetNearbyCount()
+                
+                if currentCashCount <= 2 and currentCashCount > 0 and not preChargeStarted then
+                    Utils.Log("Last 2 cash - starting pre-charge...")
+                    Utils.Log("Pre-Charge 1/2 (while collecting)")
+                    MainEvent:FireServer("ChargeButton")
+                    preChargeStarted = true
+                end
+                
+                if currentCashCount ~= STATE.lastCashCount then
+                    STATE.lastCashCount = currentCashCount
+                    STATE.noCashChangeTime = 0
+                    Utils.Log("Cash: " .. currentCashCount)
+                else
+                    STATE.noCashChangeTime = STATE.noCashChangeTime + 0.5
+                end
+                
+                if currentCashCount == 0 and STATE.noCashChangeTime >= 0.1 then
+                    Utils.Log("Complete! (Default mode)")
+                    break
+                end
+                
+                if STATE.noCashChangeTime >= 6 then
+                    Utils.Log("Timeout (Default mode)")
+                    break
+                end
             end
         end
     end
@@ -2183,7 +2212,6 @@ end
 
 function ATM.Break(atmData)
     return pcall(function()
-        Utils.Log("═══════════════════════════════")
         Utils.Log("Breaking: " .. atmData.Name)
         
         CashAura.Pause()
@@ -2205,7 +2233,7 @@ function ATM.Break(atmData)
         while chargeCount < maxCharges do
             chargeCount = chargeCount + 1
             
-            Utils.Log("⚡ Charge " .. chargeCount .. "/" .. maxCharges)
+            Utils.Log("Charge " .. chargeCount .. "/" .. maxCharges)
             MainEvent:FireServer("ChargeButton")
             
             if chargeCount == 1 then
@@ -2216,7 +2244,7 @@ function ATM.Break(atmData)
             
             if atmData.Cashier:FindFirstChild("Humanoid") then
                 if atmData.Cashier.Humanoid.Health <= 0 then
-                    Utils.Log("✅ ATM broken! (Health: 0)")
+                    Utils.Log("ATM broken! (Health: 0)")
                     break
                 end
             end
@@ -2224,7 +2252,7 @@ function ATM.Break(atmData)
         
         if atmData.Cashier:FindFirstChild("Humanoid") then
             if atmData.Cashier.Humanoid.Health > 0 then
-                Utils.Log("⚠️ ATM still alive after 2 charges, skipping...")
+                Utils.Log("ATM still alive after 2 charges, skipping...")
                 Noclip.Disable()
                 return false
             end
@@ -2234,7 +2262,7 @@ function ATM.Break(atmData)
         
         STATE.atmRobbed = STATE.atmRobbed + 1
         
-        Utils.Log("✅ Complete! Total: " .. STATE.atmRobbed)
+        Utils.Log("Complete! Total: " .. STATE.atmRobbed)
         
         return true
     end)
@@ -2244,7 +2272,7 @@ local FightingStyle = {}
 
 function FightingStyle.Setup()
     Utils.Log("═══════════════════════════════════════")
-    Utils.Log("🥊 Fighting Style Setup Starting...")
+    Utils.Log("Fighting Style Setup Starting...")
     Utils.Log("═══════════════════════════════════════")
     
     local selectedStyle = CONFIG.Misc.FightingStyle
@@ -2259,7 +2287,7 @@ function FightingStyle.Setup()
     Utils.Log("Boxing Value: " .. boxingValue.Value .. "/2500")
     
     if currentStyle.Value == selectedStyle then
-        Utils.Log("✅ Fighting Style already set to " .. selectedStyle)
+        Utils.Log("Fighting Style already set to " .. selectedStyle)
         return true
     end
     
@@ -2269,7 +2297,7 @@ function FightingStyle.Setup()
             return false
         end
         
-        Utils.Log("🥊 Activating Boxing Style...")
+        Utils.Log("Activating Boxing Style...")
 
         local boxingShop = Workspace.Ignored.Shop:WaitForChild("Boxing Moveset (Require: Max Box Stat) - $0")
         
@@ -2303,7 +2331,7 @@ function FightingStyle.Setup()
             Camera.CameraType = Enum.CameraType.Custom
             Camera.CameraSubject = LocalPlayer.Character.Humanoid
         else
-            Utils.Log("🖱️ Using FireClickDetector (Other)")
+            Utils.Log("Using FireClickDetector (Other)")
             
             if boxingShop:FindFirstChild("ClickDetector") then
                 fireclickdetector(boxingShop.ClickDetector)
@@ -2321,7 +2349,7 @@ function FightingStyle.Setup()
            or tick() - startTime >= 10
         
         if currentStyle.Value == selectedStyle then
-            Utils.Log("✅ " .. selectedStyle .. " Style Activated!")
+            Utils.Log("" .. selectedStyle .. " Style Activated!")
             return true
         else
             Utils.Log("❌ Failed to activate " .. selectedStyle .. " (Timeout 10s)")
@@ -2329,7 +2357,7 @@ function FightingStyle.Setup()
         end
         
     elseif selectedStyle == "Default" then
-        Utils.Log("🤜 Activating Default Style...")
+        Utils.Log("Activating Default Style...")
 
         local defaultShop = Workspace.Ignored.Shop:WaitForChild("[Default Moveset] - $0")
         
@@ -2362,7 +2390,7 @@ function FightingStyle.Setup()
             Camera.CameraType = Enum.CameraType.Custom
             Camera.CameraSubject = LocalPlayer.Character.Humanoid
         else
-            Utils.Log("🖱️ Using FireClickDetector (Other)")
+            Utils.Log("Using FireClickDetector (Other)")
             
             if defaultShop:FindFirstChild("ClickDetector") then
                 fireclickdetector(defaultShop.ClickDetector)
@@ -2380,10 +2408,11 @@ function FightingStyle.Setup()
            or tick() - startTime >= 10
         
         if currentStyle.Value == selectedStyle then
-            Utils.Log("✅ " .. selectedStyle .. " Style Activated!")
+            Utils.Log("" .. selectedStyle .. " Style Activated!")
             return true
         else
-            Utils.Log("❌ Failed to activate " .. selectedStyle .. " (Timeout 10s)")
+            Utils.Log("Failed to activate " .. selectedStyle .. " (Timeout 10s)")
+            plrr:Kick("Failed to activate " .. selectedStyle .. " Please Report This")
             return false
         end
     end
@@ -2395,7 +2424,7 @@ local Farm = {}
 
 function Farm.Start()
     Utils.Log("═══════════════════════════════════════")
-    Utils.Log("🏧 ATM Farm Started!")
+    Utils.Log("ATM Farm Started!")
     Utils.Log("Executor: " .. DETECTED_EXECUTOR)
     Utils.Log("Starting Cash: " .. Utils.FormatCash(STATE.startingCash))
     Utils.Log("═══════════════════════════════════════")
@@ -2424,7 +2453,7 @@ function Farm.Start()
                 local filledATMs = ATM.ScanAll()
                 
                 if #filledATMs == 0 then
-                    Utils.Log("⏳ No ATMs (Robbed: " .. STATE.atmRobbed .. ")")
+                    Utils.Log("No ATMs (Robbed: " .. STATE.atmRobbed .. ")")
                     
                     if not STATE.noATMStartTime then
                         STATE.noATMStartTime = os.time()
@@ -2434,7 +2463,7 @@ function Farm.Start()
                         local noATMDuration = os.time() - STATE.noATMStartTime
                         
                         if noATMDuration >= CONFIG.ServerHop.NoATMDelay then
-                            Utils.Log("🔄 No ATMs for " .. CONFIG.ServerHop.NoATMDelay .. "s - Server Hopping...")
+                            Utils.Log("No ATMs for " .. CONFIG.ServerHop.NoATMDelay .. "s - Server Hopping...")
                             
                             if CONFIG.ServerHop.Enabled then
                                 local success, servers = pcall(function()
@@ -2456,7 +2485,7 @@ function Farm.Start()
                                     end)
                                     
                                     local selected = servers[1]
-                                    Utils.Log("🔄 No ATMs - Hopping to server with " .. selected.playing .. " players")
+                                    Utils.Log("No ATMs - Hopping to server with " .. selected.playing .. " players")
                                     TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
                                 end
                             end
@@ -2470,7 +2499,7 @@ function Farm.Start()
                     STATE.noATMStartTime = nil
                 end
                 
-                Utils.Log("🎯 Processing " .. #filledATMs .. " ATMs...")
+                Utils.Log("Processing " .. #filledATMs .. " ATMs...")
                 
                 for i, atmData in ipairs(filledATMs) do
                     if not STATE.isRunning then break end
@@ -2489,19 +2518,19 @@ function Farm.Start()
                     if breakSuccess then
                         SmartWait.ForCashCollection()
                     else
-                        Utils.Log("❌ ATM break failed: " .. tostring(breakErr))
+                        Utils.Log("ATM break failed: " .. tostring(breakErr))
                     end
                 end
                 
                 if STATE.isRunning then
-                    Utils.Log("🔄 Rescanning in 5s...")
+                    Utils.Log("Rescanning in 5s...")
                     teleportToSafeZone()
                     task.wait(5)
                 end
             end)
             
             if not success then
-                Utils.Log("❌ ERROR: " .. tostring(err))
+                Utils.Log("ERROR: " .. tostring(err))
                 task.wait(5)
             end
         end
@@ -2544,7 +2573,7 @@ task.spawn(function()
             local timeSinceLastChange = os.time() - STATE.lastCashChangeTime
             
             if timeSinceLastChange >= 20 then
-                Utils.Log("⚠️ Anti-Bug: No cash change for 20s - Server Hopping...")
+                Utils.Log("Anti-Bug: No cash change for 20s - Server Hopping...")
                 
                 -- Server hop
                 local success, servers = pcall(function()
@@ -2566,7 +2595,7 @@ task.spawn(function()
                     end)
                     
                     local selected = servers[1]
-                    Utils.Log("🔄 Anti-Bug Hop to server with " .. selected.playing .. " players")
+                    Utils.Log("Anti-Bug Hop to server with " .. selected.playing .. " players")
                     TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
                 end
             end
@@ -2625,29 +2654,20 @@ task.spawn(function()
     end)
 end)
 
-
--- SIRA ÖNEMLİ!
 task.wait(2)
 
-Utils.Log("═══════════════════════════════════════")
-Utils.Log("🚀 STARTING SEQUENCE")
-Utils.Log("═══════════════════════════════════════")
+Utils.Log("1/3 Anti-Cheat Bypass Loaded")
 
-Utils.Log("1/3 ✅ Anti-Cheat Bypass Loaded")
-
-Utils.Log("2/3 ⏳ Fighting Style Setup...")
+Utils.Log("2/3 Fighting Style Setup...")
 if not FightingStyle.Setup() then
-    return -- Hata varsa durdur
+    return
 end
 
--- 3. ATM Farm Start
-Utils.Log("3/3 ⏳ Starting ATM Farm...")
+Utils.Log("3/3 Starting ATM Farm...")
 setfpscap(CONFIG.Fps)
 Farm.Start()
 
-Utils.Log("═══════════════════════════════════════")
-Utils.Log("✅ ALL SYSTEMS OPERATIONAL")
-Utils.Log("═══════════════════════════════════════")
+Utils.Log("ALL SYSTEMS OPERATIONAL")
 
 print("ATM FARM V14 LOADED")
 print("[Executor] " .. DETECTED_EXECUTOR)
