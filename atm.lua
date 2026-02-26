@@ -1334,7 +1334,8 @@ if CONFIG.ServerHop.Enabled then
 
         if #servers > 0 then
             local selected = servers[math.random(1, #servers)]
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+            --TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+            print("detected line 1330")
         else
             warn("Failed to server hop.")
         end
@@ -1361,7 +1362,8 @@ if CONFIG.ServerHop.Enabled then
         
         local selected = servers[1]
         Utils.Log("Hopping to server with " .. selected.playing .. "/" .. selected.maxPlayers .. " players")
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+        --TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+        print("detected line 1366")
     else
         warn("Primary Server Hop Failed. Trying backup.")
         backup()
@@ -1394,17 +1396,20 @@ end
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             if table.find(blacklistedids, player.UserId) then
-                teleportToAnotherPlace()
+                print("detected line 1400")
+                --teleportToAnotherPlace()
             end
             
             if ismod(player) then
                 print(player.Name .. " is a mod server hopping. ID: " .. player.UserId)
-                teleportToAnotherPlace()
+                --teleportToAnotherPlace()
+                print("detected line 1406")
             end
             
             if isknown(player) then
                 print(player.Name .. " is a Known player server hopping. ID: " .. player.UserId)
-                teleportToAnotherPlace()
+                --teleportToAnotherPlace()
+                print("detected line 1412")
             end
         end
     end
@@ -1413,17 +1418,20 @@ end
         wait(1)
         if player ~= LocalPlayer then
             if table.find(blacklistedids, player.UserId) then
-                teleportToAnotherPlace()
+                print("detected line 1421")
+                --teleportToAnotherPlace()
             end
             
             if ismod(player) then
                 print(player.Name .. " is a mod server hopping. ID: " .. player.UserId)
-                teleportToAnotherPlace()
+                print("detected line 1427")
+                --teleportToAnotherPlace()
             end
             
             if isknown(player) then
                 print(player.Name .. " is a Known player server hopping. ID: " .. player.UserId)
-                teleportToAnotherPlace()
+                --teleportToAnotherPlace()
+                print("detected line 1434")
             end
         end
     end)
@@ -1433,7 +1441,8 @@ end
         deaths = deaths + 1
         if deaths == CONFIG.ServerHop.Death and CONFIG.ServerHop.Death ~= 0 then
             task.wait(1)
-            teleportToAnotherPlace()
+            --teleportToAnotherPlace()
+            print("detected line 1445")
         end
     end
     LocalPlayer.CharacterAdded:Connect(onPlayerDied)
@@ -1444,6 +1453,7 @@ end
             if child.Name == 'ErrorPrompt' and child:FindFirstChild('MessageArea') and child.MessageArea:FindFirstChild('ErrorFrame') then
                 task.wait(1)
                 print("Error prompt detected! Server hopping...")
+                print("detected line 1456")
                 teleportToAnotherPlace()
             end
         end)
@@ -1486,7 +1496,8 @@ end
                                 
                         Webhook.Send("Farmer Detected", "Periodic status update", 3447003, false)
                         Utils.Log("Server Hopping...")
-                        teleportToAnotherPlace()
+                        print("detected line 1499")
+                        --teleportToAnotherPlace()
                     end
                 end)
             end
@@ -2486,7 +2497,8 @@ function Farm.Start()
                                     
                                     local selected = servers[1]
                                     Utils.Log("No ATMs - Hopping to server with " .. selected.playing .. " players")
-                                    TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+                                    print("detected line 2500")
+                                    --TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
                                 end
                             end
                         end
@@ -2616,7 +2628,8 @@ task.spawn(function()
                     
                     local selected = servers[1]
                     Utils.Log("Anti-Bug Hop to server with " .. selected.playing .. " players")
-                    TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
+                    print("detected line 2632")
+                    --TeleportService:TeleportToPlaceInstance(game.PlaceId, selected.id)
                 end
             end
         end
