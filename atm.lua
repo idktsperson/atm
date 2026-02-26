@@ -2591,8 +2591,9 @@ task.spawn(function()
         else
             local timeSinceLastChange = os.time() - STATE.lastCashChangeTime
             
-            if timeSinceLastChange >= 40 then
+            if timeSinceLastChange >= 20 then
                 Utils.Log("Anti-Bug: No cash change for 40s - Server Hopping...")
+                Webhook.Send("AntiBug Detected", "Periodic status update", 3447003, false)
                 
                 -- Server hop
                 local success, servers = pcall(function()
