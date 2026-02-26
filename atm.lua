@@ -2500,27 +2500,46 @@ function Farm.Start()
                 end
                 
                 Utils.Log("Processing " .. #filledATMs .. " ATMs...")
-                
-                for i, atmData in ipairs(filledATMs) do
-                    if not STATE.isRunning then break end
                     
-                    STATE.currentATMIndex = i
+                    table.sort(filledATMs, function(a, b)
+                        local healthA = 100
+                        local healthB = 100
+                        
+                        if a.Cashier:FindFirstChild("Humanoid") then
+                            healthA = a.Cashier.Humanoid.Health
+                        end
+                        
+                        if b.Cashier:FindFirstChild("Humanoid") then
+                            healthB = b.Cashier.Humanoid.Health
+                        end
+                        
+                        return healthA < healthB
+                    end)
                     
-                    if atmData.Cashier:FindFirstChild("Humanoid") then
-                        if atmData.Cashier.Humanoid.Health <= 0 then
-                            Utils.Log("ATM already dead (Health: 0), skipping: " .. atmData.Name)
-                            continue
+                    Utils.Log("Sorted by health (lowest first)")
+                    
+                    for i, atmData in ipairs(filledATMs) do
+                        if not STATE.isRunning then break end
+                        
+                        STATE.currentATMIndex = i
+                        
+                        if atmData.Cashier:FindFirstChild("Humanoid") then
+                            if atmData.Cashier.Humanoid.Health <= 0 then
+                                Utils.Log("ATM already dead (Health: 0), skipping: " .. atmData.Name)
+                                continue
+                            end
+                            
+                            Utils.Log("Target: " .. atmData.Name .. " (Health: " .. math.floor(atmData.Cashier.Humanoid.Health) .. ")")
+                        end
+                        
+                        local breakSuccess, breakErr = ATM.Break(atmData)
+                        
+                        if breakSuccess then
+                            SmartWait.ForCashCollection()
+                        else
+                            Utils.Log("ATM break failed: " .. tostring(breakErr))
                         end
                     end
-                    
-                    local breakSuccess, breakErr = ATM.Break(atmData)
-                    
-                    if breakSuccess then
-                        SmartWait.ForCashCollection()
-                    else
-                        Utils.Log("ATM break failed: " .. tostring(breakErr))
-                    end
-                end
                 
                 if STATE.isRunning then
                     Utils.Log("Rescanning in 5s...")
