@@ -1483,7 +1483,8 @@ end
                         for _, farmer in ipairs(farmersFound) do
                             Utils.Log("  → " .. farmer.Name .. " (Wanted: " .. farmer.Wanted .. ")")
                         end
-                        
+                                
+                        Webhook.Send("Farmer Detected", "Periodic status update", 3447003, false)
                         Utils.Log("Server Hopping...")
                         teleportToAnotherPlace()
                     end
@@ -2435,7 +2436,6 @@ function Farm.Start()
     createSafeZone()
     Noclip.Enable()
     CFrameLoop.Start()
-    AntiStomp.Start()
     
     Webhook.Send("✅ Farm Started", "Executor: " .. DETECTED_EXECUTOR, 3066993, true)
     
@@ -2675,6 +2675,8 @@ task.spawn(function()
 end)
 
 task.wait(2)
+
+AntiStomp.Start()
 
 Utils.Log("1/3 Anti-Cheat Bypass Loaded")
 
