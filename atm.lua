@@ -2421,6 +2421,121 @@ function FightingStyle.Setup()
     return true
 end
 
+local AntiJail = {}
+
+function AntiJail.Check()
+    Utils.Log("🔒 Anti-Jail System Started")
+    
+    task.spawn(function()
+        while true do
+            task.wait(1)
+            
+            pcall(function()
+                local jailValue = LocalPlayer.DataFolder.Information.Jail.Value
+                
+                if jailValue ~= 0 then
+                    AntiJail.Escape()
+                end
+            end)
+        end
+    end)
+end
+
+function AntiJail.Escape()
+    local wasRunning = STATE.isRunning
+    STATE.isRunning = false
+    CashAura.Pause()
+    
+    Utils.Log("⚠️ JAIL DETECTED! Escaping...")
+    Webhook.Send("🔒 Jail Detected", "Attempting to escape...", 15158332, true)
+    
+    task.wait(1.5)
+    
+    pcall(function()
+        -- Key Shop bul
+        local keyShop = Workspace.Ignored.Shop:FindFirstChild("[Key] - $141")
+        if not keyShop or not keyShop:FindFirstChild("Head") then
+            Utils.Log("❌ Key shop not found!")
+            STATE.isRunning = wasRunning
+            CashAura.Resume()
+            return
+        end
+            
+        local shopPos = keyShop.Head.Position
+        local targetPos = shopPos + Vector3.new(0, 0, -2)
+        
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos)
+        task.wait(0.5)
+        
+        Utils.Log("Buying Key...")
+        
+        if STATE.useCameraAura then
+            Utils.Log("Using Camera Click (Xeno/Solara)")
+            
+            local attempts = 0
+            while not LocalPlayer.Backpack:FindFirstChild("[Key]") and attempts < 50 do
+                Camera.CameraType = Enum.CameraType.Scriptable
+                Camera.CFrame = CFrame.lookAt(keyShop.Head.Position + Vector3.new(0, 2, 0), keyShop.Head.Position)
+                
+                task.wait(0.1)
+                
+                local viewportCenter = Camera.ViewportSize / 2
+                VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, true, game, 1)
+                task.wait(0.05)
+                VirtualInputManager:SendMouseButtonEvent(viewportCenter.X, viewportCenter.Y, 0, false, game, 1)
+                
+                task.wait(0.15)
+                attempts = attempts + 1
+            end
+            
+            Camera.CameraType = Enum.CameraType.Custom
+            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+        else
+            Utils.Log("Using FireClickDetector (Other)")
+            
+            if not keyShop:FindFirstChild("ClickDetector") then
+                Utils.Log("Key shop ClickDetector not found!")
+                STATE.isRunning = wasRunning
+                CashAura.Resume()
+                return
+            end
+            
+            local attempts = 0
+            while not LocalPlayer.Backpack:FindFirstChild("[Key]") and attempts < 50 do
+                fireclickdetector(keyShop.ClickDetector)
+                task.wait(0.2)
+                attempts = attempts + 1
+            end
+        end
+        
+        local key = LocalPlayer.Backpack:FindFirstChild("[Key]")
+        if not key then
+            Utils.Log("Failed to get Key!")
+            STATE.isRunning = wasRunning
+            CashAura.Resume()
+            return
+        end
+        
+        Utils.Log("Key obtained! Using...")
+        
+        LocalPlayer.Character.Humanoid:EquipTool(key)
+        task.wait(0.5)
+        
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+        task.wait(0.1)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+        
+        Utils.Log("Escaped jail!")
+        Webhook.Send("✅ Jail Escaped", "Successfully escaped from jail", 3066993, true)
+        
+        task.wait(2)
+    end)
+    
+    STATE.isRunning = wasRunning
+    CashAura.Resume()
+    Utils.Log("🔄 Resuming farm...")
+end
+
 local Farm = {}
 
 function Farm.Start()
@@ -2583,6 +2698,11 @@ task.spawn(function()
             continue
         end
         
+        local currentProfit = Utils.GetCurrentCash() - STATE.startingCash
+        if currentProfit <= 0 then
+            continue -- Henüz profit yok, anti-bug çalışmasın
+        end
+        
         local currentCash = Utils.GetCurrentCash()
         
         if currentCash ~= STATE.lastCashAmount then
@@ -2591,8 +2711,8 @@ task.spawn(function()
         else
             local timeSinceLastChange = os.time() - STATE.lastCashChangeTime
             
-            if timeSinceLastChange >= 60 then
-                Utils.Log("Anti-Bug: No cash change for 60s - Server Hopping...")
+            if timeSinceLastChange >= 30 then
+                Utils.Log("Anti-Bug: No cash change for 30s - Server Hopping...")
                 --Webhook.Send("AntiBug Detected", "Periodic status update", 3447003, false)
                 
                 -- Server hop
@@ -2678,14 +2798,17 @@ task.wait(2)
 
 AntiStomp.Start()
 
-Utils.Log("1/3 Anti-Cheat Bypass Loaded")
+Utils.Log("1/4 Anti-Cheat Bypass Loaded")
 
-Utils.Log("2/3 Fighting Style Setup...")
+Utils.Log("2/4 Fighting Style Setup...")
 if not FightingStyle.Setup() then
     return
 end
 
-Utils.Log("3/3 Starting ATM Farm...")
+Utils.Log("3/4 Starting Anti-Jail System...")
+AntiJail.Check()
+
+Utils.Log("4/4 Starting ATM Farm...")
 setfpscap(CONFIG.Fps)
 Farm.Start()
 
