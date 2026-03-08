@@ -2433,7 +2433,7 @@ function AntiJail.Check()
             pcall(function()
                 local jailValue = LocalPlayer.DataFolder.Information.Jail.Value
                 
-                if jailValue ~= 0 then
+                if jailValue ~= "0" then
                     AntiJail.Escape()
                 end
             end)
