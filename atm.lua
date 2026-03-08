@@ -2461,11 +2461,11 @@ function AntiJail.Escape()
             CashAura.Resume()
             return
         end
-            
+
         local shopPos = keyShop.Head.Position
-        local targetPos = shopPos + Vector3.new(0, 0, -2)
-        
-        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos)
+        local char2 = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local hrp2 = char2:WaitForChild("HumanoidRootPart")
+        hrp2.CFrame = CFrame.new(shopPos + Vector3.new(-3, 3, 0))
         task.wait(0.5)
         
         Utils.Log("Buying Key...")
